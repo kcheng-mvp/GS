@@ -10,13 +10,19 @@ if(!root.exists()){
     println "The file ${args[0]} does not exits";
     return  -1;
 }
-searchInputFile(root);
-def searchInputFile(inputFile){
-    if (inputFile.isDirectory()){
-        inputFile.eachFileRecurse{
+def f = new File("folder.txt");
+def fw = new FileWriter(f);
+def bw = new BufferedWriter(fw);
+//searchInputFile(root);
+//def searchInputFile(inputFile){
+    if (root.isDirectory()){
+        root.eachFileRecurse{
             if(it.isDirectory()){
                 println "--> "+ it.getPath();
+                bw.write(it.getPath());
+                bw.newLine();
             }
         }
     }
-}
+//}
+bw.close();
