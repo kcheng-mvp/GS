@@ -46,7 +46,7 @@ if (file.exists()) {
     def rootFolder = null;
     sqlCon.withTransaction {
         sqlCon.withBatch(100, 'INSERT INTO JUNK_DETAIL (OWNER, PATH, ROOT_PATH) values(?,?, ?) ') { stmt ->
-            file.eachLine { line ->
+            file.eachLine("UTF-8", { line ->
                 if (line.indexOf("root:") > -1) {
                     rootFolder = ((line.split("root:"))[1]).trim();
                 } else if (rootFolder && line.indexOf(rootFolder) > -1) {
@@ -57,7 +57,7 @@ if (file.exists()) {
 //                    println("path -> ${path}, rootPath -> ${rootPath}");
                     stmt.addBatch(args[1], path, rootPath);
                 }
-            }
+            })
         }
     }
 
