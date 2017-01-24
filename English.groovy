@@ -2,12 +2,12 @@
 
 @Grapes([
         @Grab(group = 'org.jsoup', module = 'jsoup', version = '1.10.2'),
-        @Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.5.2'),
         @Grab(group = 'it.sauronsoftware.cron4j', module = 'cron4j', version = '2.2.5'),
         @GrabConfig(systemClassLoader = true),
         @Grab(group = 'com.h2database', module = 'h2', version = '1.3.175')
 ])
 
+//@Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.5.2'),
 import org.jsoup.Jsoup
 import groovyx.net.http.*
 import groovy.sql.Sql
