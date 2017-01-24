@@ -111,17 +111,18 @@ def download = {
     sqlCon.eachRow(getWords, {
         def mp3Url = "${downloadUrl}/${it.spelling}.mp3"
         println mp3Url
-        def file = null;
+        def ops = null;
         try {
-            file = new File(vFolder, "${it.spelling}.mp3").newOutputStream()
-            file << new URL(mp3Url).openStream()
+            def file = new File(vFolder, "${it.spelling}.mp3");
+            ops = file.newOutputStream()
+            ops << new URL(mp3Url).openStream()
             sqlCon.executeUpdate(updateDown, [1, it.spelling])
         } catch (Exception e) {
             println e
             sqlCon.executeUpdate(updateDown, [-1, it.spelling])
             file.delete()
         } finally {
-            file.close()
+            ops.close()
         }
     })
     sqlCon.close();
