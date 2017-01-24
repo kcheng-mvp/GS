@@ -119,9 +119,9 @@ def download = {
         } catch (Exception e) {
             println e
             sqlCon.executeUpdate(updateDown, [-1, it.spelling])
+            file.delete()
         } finally {
             file.close()
-            file.delete()
         }
     })
     sqlCon.close();
