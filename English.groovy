@@ -121,6 +121,7 @@ def download = {
             sqlCon.executeUpdate(updateDown, [-1, it.spelling])
         } finally {
             file.close()
+            file.delete()
         }
     })
     sqlCon.close();
@@ -129,11 +130,13 @@ def download = {
 def dummy = {
     println "hello..."
 }
-
+println "start ......"
 def scheduler = new Scheduler();
 scheduler.schedule("30 13 * * *", new Runnable() {
     public void run() {
+        println "start crawle ......"
         scrawle()
+        println "start download ......"
         download()
     }
 });
