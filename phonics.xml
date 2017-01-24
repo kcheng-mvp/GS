@@ -1,0 +1,589 @@
+
+<data>
+    <set title="a-e">
+        <item sound1="assets/sounds/a.mp3" sound2="assets/sounds/w_a.mp3">
+            <phonic><![CDATA[
+				<br/><br/>a<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<br/><br/>a
+			]]></letters>
+            <examples><![CDATA[
+				<p><br /><br/><span class="strong">a</span>nt</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/ai.mp3" sound2="assets/sounds/w_ai.mp3">
+            <phonic><![CDATA[
+				<br/><br/>ai<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>a, ai, ay, a-e, ey, ei, eigh, aigh<p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">a</span>pron, r<span class="strong">ai</span>n, d<span class="strong">ay</span>, m<span class="strong">a</span>k<span class="strong">e</span>, th<span class="strong">ey</span>, v<span class="strong">ei</span>l, w<span class="strong">eigh</span>, str<span class="strong">aigh</span>t</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/ar.mp3" sound2="assets/sounds/w_ar.mp3">
+            <phonic><![CDATA[
+				<br/><br/>ar<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>ar, a, al, are, au, ear</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/>f<span class="strong">ar</span>m, f<span class="strong">a</span>ther, c<span class="strong">al</span>m, <span class="strong">are</span>, <span class="strong">au</span>nt, h<span class="strong">ear</span>t</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/air.mp3" sound2="assets/sounds/w_air.mp3">
+            <phonic><![CDATA[
+				<br/><br/>air<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>air, are, ear, ere</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/>f<span class="strong">air</span>, c<span class="strong">are</span>, b<span class="strong">ear</span>, th<span class="strong">ere</span></p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/b_alt1.mp3" sound2="assets/sounds/w_b.mp3">
+            <phonic><![CDATA[
+				<br/><br/>b<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>b, bb</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">b</span>at, ra<span class="strong">bb</span>it</p>
+			]]></examples>
+        </item>
+        <item sound1="" sound2="">
+            <phonic><![CDATA[
+				<br/><br/>c (see k)<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/><br/></p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><br></p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/ch.mp3" sound2="assets/sounds/w_ch.mp3">
+            <phonic><![CDATA[
+				<br/><br/>ch<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>ch, tch, t</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">ch</span>ip, ma<span class="strong">tch</span>, fu<span class="strong">t</span>ure</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/d_alt1.mp3" sound2="assets/sounds/w_d.mp3">
+            <phonic><![CDATA[
+				<br/><br/>d<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>d, dd, -ed</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">d</span>og, mu<span class="strong">dd</span>y, pull<span class="strong">ed</span></p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/e.mp3" sound2="assets/sounds/w_e.mp3">
+            <phonic><![CDATA[
+				<br/><br/>e<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>e, ea, ie, eo, a</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">e</span>gg, h<span class="strong">ea</span>d, fr<span class="strong">ie</span>nd, l<span class="strong">eo</span>pard, <span class="strong">a</span>ny</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/ee.mp3" sound2="assets/sounds/w_ee.mp3">
+            <phonic><![CDATA[
+				<br/><br/>ee<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>ee, ea, e, ie, e-e, ei</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/>f<span class="strong">ee</span>t, s<span class="strong">ea</span>, h<span class="strong">e</span>, ch<span class="strong">ie</span>f, th<span class="strong">e</span>s<span class="strong">e</span>, c<span class="strong">ei</span>ling</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/eer.mp3" sound2="assets/sounds/w_ear.mp3">
+            <phonic><![CDATA[
+				<br/><br/>ear<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>ear, eer, ere, ier</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/>d<span class="strong">ear</span>, d<span class="strong">eer</span>, h<span class="strong">ere</span>, p<span class="strong">ier</span></p>
+			]]></examples>
+        </item>
+    </set>
+    <set title="f-n">
+        <item sound1="assets/sounds/f.mp3" sound2="assets/sounds/w_f.mp3">
+            <phonic><![CDATA[
+				<br/><br/>f<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>f, ff, ph, gh</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">f</span>an, pu<span class="strong">ff</span>, <span class="strong">ph</span>oto, rou<span class="strong">gh</span></p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/g_alt2.mp3" sound2="assets/sounds/w_g.mp3">
+            <phonic><![CDATA[
+				<br/><br/>g<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>g, gg, gu, gh, gue</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">g</span>o, bi<span class="strong">gg</span>er, <span class="strong">gu</span>itar, <span class="strong">Gh</span>ana, catalo<span class="strong">gue</span></p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/Gz_new.mp3" sound2="assets/sounds/W_gz.mp3">
+            <phonic><![CDATA[
+				<br/><br/>gz<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>x</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/>e<span class="strong">x</span>am</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/h.mp3" sound2="assets/sounds/w_h.mp3">
+            <phonic><![CDATA[
+				<br/><br/>h<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>h, wh</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">h</span>en, <span class="strong">wh</span>o</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/i_alt3.mp3" sound2="assets/sounds/w_i_updated.mp3">
+            <phonic><![CDATA[
+				<br/><br/>i<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>i, y, o, u, e</p>
+			]]></letters>
+            <examples><![CDATA[
+				</p><br/><br/><span class="strong">i</span>f, g<span class="strong">y</span>m, w<span class="strong">o</span>men, b<span class="strong">u</span>sy, pr<span class="strong">e</span>tty</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/igh.mp3" sound2="assets/sounds/w_igh.mp3">
+            <phonic><![CDATA[
+				<br/><br/>igh<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>igh, ie, y, i-e, i, eigh, eye, I, ye, y-e</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/>n<span class="strong">igh</span>t, t<span class="strong">ie</span>, m<span class="strong">y</span>, l<span class="strong">i</span>k<span class="strong">e</span>, f<span class="strong">i</span>nd, h<span class="strong">eigh</span>t, <span class="strong">eye</span>, <span class="strong">I</span>, goodb<span class="strong">ye</span>, t<span class="strong">y</span>p<span class="strong">e</span></p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/j.mp3" sound2="assets/sounds/w_ib.mp3">
+            <phonic><![CDATA[
+				<br/><br/>j<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>j, gi, gy, ge-, -ge, <br />dge, gg</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">j</span>et, <span class="strong">g</span>iant, <span class="strong">gy</span>m, <span class="strong">ge</span>m, gara<span class="strong">ge</span>, ba<span class="strong">dge</span>, su<span class="strong">gg</span>est</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/k.mp3" sound2="assets/sounds/w_k.mp3">
+            <phonic><![CDATA[
+				<br/><br/>k<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>c, k, ck, ch, qu</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">c</span>at, <span class="strong">k</span>it, du<span class="strong">ck</span>, s<span class="strong">ch</span>ool, mos<span class="strong">qu</span>ito, <span class="strong">qu</span>eue </p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/Ks_new.mp3" sound2="assets/sounds/w_ks.mp3">
+            <phonic><![CDATA[
+				<br/><br/>ks<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>x</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/>fo<span class="strong">x</span></p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/Kw_new.mp3" sound2="assets/sounds/w_kw.mp3">
+            <phonic><![CDATA[
+				<br/><br/>kw<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>qu</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">qu</span>een, <span class="strong">qu</span>estion</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/l_alt2.mp3" sound2="assets/sounds/w_l.mp3">
+            <phonic><![CDATA[
+				<br/><br/>l<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>l, ll, le</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">l</span>eg, be<span class="strong">ll</span>, bott<span class="strong">le</span></p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/m.mp3" sound2="assets/sounds/w_m.mp3">
+            <phonic><![CDATA[
+				<br/><br/>m<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>m, mm, mb, mn</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">m</span>ap, ha<span class="strong">mm</span>er, la<span class="strong">mb</span>, autu<span class="strong">mn</span></p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/n.mp3" sound2="assets/sounds/w_n.mp3">
+            <phonic><![CDATA[
+				<br/><br/>n<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>n, nn, gn, kn</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">n</span>et, fu<span class="strong">nn</span>y, <span class="strong">gn</span>at, <span class="strong">kn</span>ock</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/ng_alt1.mp3" sound2="assets/sounds/w_ng.mp3">
+            <phonic><![CDATA[
+				<br/><br/>ng<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>ng, n (before k)</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/>ri<span class="strong">ng</span>, pi<span class="strong">n</span>k</p>
+			]]></examples>
+        </item>
+    </set>
+    <set title="o-s">
+        <item sound1="assets/sounds/o_alt1.mp3" sound2="assets/sounds/w_o.mp3">
+            <phonic><![CDATA[
+				<br/><br/>o<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>o, a (after 'w'), a</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">o</span>n, w<span class="strong">a</span>s, qu<span class="strong">a</span>d</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/oa.mp3" sound2="assets/sounds/w_oa.mp3">
+            <phonic><![CDATA[
+				<br/><br/>oa<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>oa, ow, oe, o, o-e, ough, ol</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/>b<span class="strong">oa</span>t, gr<span class="strong">ow</span>, t<span class="strong">oe</span>, g<span class="strong">o</span>, h<span class="strong">o</span>m<span class="strong">e</span>, th<span class="strong">ough</span>, f<span class="strong">ol</span>k</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/oo_l_alt12.mp3" sound2="assets/sounds/w_oo_l.mp3">
+            <phonic><![CDATA[
+				<br/><br/>oo (long)<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>oo, ew, ue, o, ou, ough, ui</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/>b<span class="strong">oo</span>t, gr<span class="strong">ew</span>, bl<span class="strong">ue</span>, t<span class="strong">o</span>, s<span class="strong">ou</span>p, thr<span class="strong">ough</span>, fr<span class="strong">ui</span>t</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/oo_s.mp3" sound2="assets/sounds/w_oo_s.mp3">
+            <phonic><![CDATA[
+				<br/><br/>oo (short)<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>oo, u, oul</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/>l<span class="strong">oo</span>k, p<span class="strong">u</span>t, c<span class="strong">oul</span>d</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/or.mp3" sound2="assets/sounds/w_or.mp3">
+            <phonic><![CDATA[
+				<br/><br/>or<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/>or, aw, au, ore, al, augh, ough, our, oor, oa, ure, ar, a</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/>f<span class="strong">or</span>, s<span class="strong">aw</span>, P<span class="strong">au</span>l, m<span class="strong">ore</span>, t<span class="strong">al</span>k, c<span class="strong">augh</span>t, th<span class="strong">ough</span>t, f<span class="strong">our</span>, d<span class="strong">oor</span>, br<span class="strong">oa</span>d, s<span class="strong">ure</span>, w<span class="strong">ar</span>drobe, w<span class="strong">a</span>ter </p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/oi.mp3" sound2="assets/sounds/w_oi.mp3">
+            <phonic><![CDATA[
+				<br/><br/>oi<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>oi, oy</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/>c<span class="strong">oi</span>n, b<span class="strong">oy</span></p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/ow.mp3" sound2="assets/sounds/w_ow.mp3">
+            <phonic><![CDATA[
+				<br/><br/>ow<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>ow, ou, ough</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/>c<span class="strong">ow</span>, <span class="strong">ou</span>t, dr<span class="strong">ough</span>t</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/p.mp3" sound2="assets/sounds/w_p.mp3">
+            <phonic><![CDATA[
+				<br/><br/>p<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>p, pp</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">p</span>en, ha<span class="strong">pp</span>y</p>
+			]]></examples>
+        </item>
+        <!-- ADDITION Q -->
+        <item sound1="" sound2="">
+            <phonic><![CDATA[
+				<br/><br/>q (see kw)
+			]]></phonic>
+            <letters><![CDATA[
+
+			]]></letters>
+            <examples><![CDATA[
+				<span class="lt"><br/>This letter only ever features with <span class="strong">u</span> and together <span class="strong">qu</span> is code for two sounds /k//w/ as in 'question' or 'queen'. Mosquito and queue are exceptions to this pronunciation.</span>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/r_alt3.mp3" sound2="assets/sounds/w_r.mp3">
+            <phonic><![CDATA[
+				<br/><br/>r<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>r, rr, wr, rh</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">r</span>at, ca<span class="strong">rr</span>ot, <span class="strong">wr</span>ite, <span class="strong">rh</span>yme</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/s.mp3" sound2="assets/sounds/w_s.mp3">
+            <phonic><![CDATA[
+				<br/><br/>s<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>s, ss, c, sc, st</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">s</span>un, mi<span class="strong">ss</span>, <span class="strong">c</span>ell, <span class="strong">sc</span>ent, li<span class="strong">st</span>en</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/sh.mp3" sound2="assets/sounds/w_sh.mp3">
+            <phonic><![CDATA[
+				<br/><br/>sh<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>sh, s, ssi, ti, ci, ch, ce</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><span class="strong">sh</span>op, <span class="strong">s</span>ure, mi<span class="strong">ssi</span>on, men<span class="strong">ti</span>on, spe<span class="strong">ci</span>al, <span class="strong">ch</span>ef, o<span class="strong">ce</span>an</p>
+			]]></examples>
+        </item>
+    </set>
+    <set title="t-z">
+        <item sound1="assets/sounds/t.mp3" sound2="assets/sounds/w_t.mp3">
+            <phonic><![CDATA[
+				<br/><br/>t<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>t, tt, -ed, th, bt</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br><span class="strong">t</span>ap, bu<span class="strong">tt</span>er, jump<span class="strong">ed</span>, <span class="strong">Th</span>omas, dou<span class="strong">bt</span></p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/th.mp3" sound2="assets/sounds/w_th.mp3">
+            <phonic><![CDATA[
+				<br/><br/>th<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>th</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br><span class="strong">th</span>in</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/th_v.mp3" sound2="assets/sounds/w_th_v.mp3">
+            <phonic><![CDATA[
+				<br/><br/>th<br/>
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>th, the</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br><span class="strong">th</span>en, brea<span class="strong">the</span></p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/u.mp3" sound2="assets/sounds/w_u.mp3">
+            <phonic><![CDATA[
+				<br/><br/>u<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>u, o, ou, oe, oo</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br><span class="strong">u</span>p, s<span class="strong">o</span>n, y<span class="strong">ou</span>ng, d<span class="strong">oe</span>s, bl<span class="strong">oo</span>d</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/ur.mp3" sound2="assets/sounds/w_ur.mp3">
+            <phonic><![CDATA[
+				<br/><br/>ur<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>ur, er, ir, or (after 'w') ear, our, ere</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br>h<span class="strong">ur</span>t, h<span class="strong">er</span>, g<span class="strong">ir</span>l, w<span class="strong">or</span>k, l<span class="strong">ear</span>n, j<span class="strong">our</span>ney, w<span class="strong">ere</span></p>
+			]]></examples>
+        </item>
+        <!--
+                <item sound1="assets/sounds/yoor.mp3" sound2="assets/sounds/w_yoor.mp3">
+                    <phonic>
+                        <![CDATA[<br/><br/>ure<br />]]>
+                    </phonic>
+                    <letters>
+                        <![CDATA[<p><br/><br/>ure, oor, our</p>]]>
+                    </letters>
+                    <examples>
+                        <![CDATA[<p><br/><br>s<span class="strong">ure</span>, p<span class="strong">oor</span>, t<span class="strong">our</span></p>]]>
+                    </examples>
+                </item>
+                -->
+        <item sound1="assets/sounds/v.mp3" sound2="assets/sounds/w_v.mp3">
+            <phonic><![CDATA[
+				<br/><br/>v<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>v, f, ve</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br><span class="strong">v</span>an, o<span class="strong">f</span>, ha<span class="strong">ve</span></p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/w.mp3" sound2="assets/sounds/w_w.mp3">
+            <phonic><![CDATA[
+				<br/><br/>w<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>w, u, wh</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br><span class="strong">w</span>ig, peng<span class="strong">u</span>in, <span class="strong">wh</span>at</p>
+			]]></examples>
+        </item>
+        <!-- ADDITION X -->
+        <item sound1="" sound2="">
+            <phonic><![CDATA[
+				<br/><br/>x (see ks and z)
+			]]></phonic>
+            <letters><![CDATA[
+
+			]]></letters>
+            <examples><![CDATA[
+				<span class="lt">Letter x is code for two sounds /k//s/ in words like 'fox' and it is code for two sounds /g//z/ in words like 'exam'. In some words, it is code for /z/ as in 'xylophone'. </span>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/y.mp3" sound2="assets/sounds/w_y.mp3">
+            <phonic><![CDATA[
+				<br/><br/>y<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>y, i</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/><span class="strong">y</span>es, on<span class="strong">i</span>on</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/yoo_new.mp3" sound2="assets/sounds/w_yoo.mp3">
+            <phonic><![CDATA[
+				<br/><br/>y(oo)<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>ue, ew, u, u-e, eu</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/>resc<span class="strong">ue</span>, n<span class="strong">ew</span>s, <span class="strong">u</span>niform, c<span class="strong">u</span>b<span class="strong">e</span>, f<span class="strong">eu</span>d</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/yoor.mp3" sound2="assets/sounds/w_yoor.mp3">
+            <phonic><![CDATA[
+				<br/><br/>y(ure)<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>ure</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/>p<span class="strong">ure</span></p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/z.mp3" sound2="assets/sounds/w_z.mp3">
+            <phonic><![CDATA[
+				<br/><br/>z<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>z, zz, s, se, ze, ss, x</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><span class="strong">z</span>ip, bu<span class="strong">zz</span>, i<span class="strong">s</span>, plea<span class="strong">se</span>, bree<span class="strong">ze</span>, sci<span class="strong">ss</span>ors, <span class="strong">x</span>ylophone</p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/zh.mp3" sound2="assets/sounds/w_zh.mp3">
+            <phonic><![CDATA[
+				<br/><br/>zh<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p><br/><br/>si, ge</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p><br/><br/>vi<span class="strong">si</span>on, bei<span class="strong">ge</span></p>
+			]]></examples>
+        </item>
+        <item sound1="assets/sounds/schwa_er.mp3" sound2="assets/sounds/w_schwa.mp3">
+            <phonic><![CDATA[
+				<br/><br/>schwa<br />
+			]]></phonic>
+            <letters><![CDATA[
+				<p>The 'schwa' - a sound which is closest to u and represented by many different letters.</p>
+			]]></letters>
+            <examples><![CDATA[
+				<p>corn<span class="strong">er</span>, pill<span class="strong">ar</span>, mot<span class="strong">or</span>, fam<span class="strong">ou</span>s, fav<span class="strong">ou</span>r, murm<span class="strong">ur</span>, <span class="strong">a</span>bout, cott<span class="strong">o</span>n, happ<span class="strong">e</span>n, cent<span class="strong">re</span>, thor<span class="strong">ough</span></p>
+			]]></examples>
+        </item>
+    </set>
+    <head/>
+    <div/>
+</data>

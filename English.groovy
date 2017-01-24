@@ -139,6 +139,7 @@ scheduler.schedule("30 13 * * *", new Runnable() {
         scrawle()
         println "start download ......"
         download()
+        println "finished ......"
     }
 });
 scheduler.start()
