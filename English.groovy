@@ -112,8 +112,8 @@ def download = {
         def mp3Url = "${downloadUrl}/${it.spelling}.mp3"
         println mp3Url
         def ops = null;
+        def file = new File(vFolder, "${it.spelling}.mp3");
         try {
-            def file = new File(vFolder, "${it.spelling}.mp3");
             ops = file.newOutputStream()
             ops << new URL(mp3Url).openStream()
             sqlCon.executeUpdate(updateDown, [1, it.spelling])
