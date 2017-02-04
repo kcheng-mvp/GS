@@ -47,7 +47,7 @@ def scrawle = {
 );
 ''')
 
-    def doc = Jsoup.connect("http://learningenglish.voanews.com/p/5609.html").get()
+    def doc = Jsoup.connect("http://learningenglish.voanews.com").get()
 
     def links = doc.select("a[href]");
     def levels = ["Level One", "Level Two", "Level Three"] as List
@@ -133,7 +133,7 @@ def dummy = {
 }
 println "start ......"
 def scheduler = new Scheduler();
-scheduler.schedule("30 13 * * *", new Runnable() {
+scheduler.schedule("30 */4 * * *", new Runnable() {
     public void run() {
         println "start crawle ......"
         scrawle()
