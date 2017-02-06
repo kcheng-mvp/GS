@@ -162,7 +162,7 @@ def download = {
     int cnt = 0;
     sqlCon.eachRow(getWords, {
         def mp3Url = "${downloadUrl}/${it.spelling}.mp3"
-        println mp3Url
+//        println mp3Url
         def ops = null;
         def file = new File(vFolder, "${it.spelling}.mp3");
         try {
