@@ -28,11 +28,12 @@ def updateFreq = "update words set freq = freq + ?, update_time = CURRENT_TIMEST
 def getWords = "select * from words where downloaded = 0";
 def updateDown = "update words set downloaded = ?, download_time = CURRENT_TIMESTAMP() where spelling = ? "
 
-def context = "http://learningenglish.voanews.com/"
+def voa = "http://learningenglish.voanews.com/"
 def downloadUrl = "https://ssl.gstatic.com/dictionary/static/sounds/de/0"
+def bbc = "http://www.bbc.com/"
 
 
-def scrawle = {
+def crawlerVoa = {
     def sqlCon = Sql.newInstance(url, "sa", "", driver);
 
     sqlCon.execute('''
@@ -47,7 +48,7 @@ def scrawle = {
 );
 ''')
 
-    def doc = Jsoup.connect("http://learningenglish.voanews.com").get()
+    def doc = Jsoup.connect(voa).get()
 
     def links = doc.select("a[href]");
     def levels = ["Level One", "Level Two", "Level Three"] as List
@@ -55,7 +56,7 @@ def scrawle = {
     def articles = new HashSet();
     links.each {
         if (levels.contains(it.ownText())) {
-            def link = "${context}${it.attr('href')}"
+            def link = "${voa}${it.attr('href')}"
 
             doc = Jsoup.connect(link).get()
             def aLinks = doc.select("a[href]");
@@ -67,13 +68,12 @@ def scrawle = {
         }
     }
 
-    println "Total pages -> " + articles.size()
+    println "Total pages(VOA) -> " + articles.size()
     def wordMap = new HashMap();
     articles.each {
-        doc = Jsoup.connect("${context}${it}").get()
+        doc = Jsoup.connect("${voa}${it}").get()
         def divs = doc.select("div.wysiwyg")
         if (divs) {
-            println "page >> ${context}${it}"
             def ps = divs.select("p")
             ps.each { p ->
                 def words = p.text().split(" ");
@@ -82,7 +82,6 @@ def scrawle = {
                     if (w && w.length() > 1) {
 
                         if (w ==~ /[a-zA-Z]*$/) {
-//                        println w
                             def cnt = wordMap.get(w.toLowerCase()) ?: 1;
                             wordMap.put(w.toLowerCase(), cnt + 1)
                         }
@@ -92,7 +91,7 @@ def scrawle = {
             }
         }
     }
-    println "update directory....."
+    println "Update directory(VOA).....${wordMap.size()}"
     wordMap.each { k, v ->
         def rs = sqlCon.firstRow(querySql, [k])
         if (rs) {
@@ -104,10 +103,63 @@ def scrawle = {
     sqlCon.close()
 }
 
+def crawlerBbc = {
+    def sqlCon = Sql.newInstance(url, "sa", "", driver);
+    def doc = Jsoup.connect(bbc).get()
+    def links = doc.select("a[href]");
+    def articles = new HashSet();
+    links.each {
+        def link = it.attr('href')
+        if(link.indexOf("/news/") > -1 && link.indexOf("http://www") < 0){
+            articles.add(link)
+        }
+    }
+    println "Total pages(BBC) -> " + articles.size()
+    def wordMap = new HashMap();
+    articles.each {
+        try {
+            doc = Jsoup.connect("${bbc}${it}").get()
+            def divs = doc.select("div.story-body__inner")
+            divs.each { div ->
+                def ps = divs.select("p")
+                ps.each { p ->
+                    def words = p.text().split(" ");
+                    words.each { w ->
+                        w = w.trim()
+                        if (w && w.length() > 1) {
+                            if (w ==~ /[a-zA-Z]*$/) {
+                                def cnt = wordMap.get(w.toLowerCase()) ?: 1;
+                                wordMap.put(w.toLowerCase(), cnt + 1)
+                            }
+
+                        }
+                    }
+                }
+            }
+        }catch (Exception e){
+
+        }
+
+    }
+    println "Update directory (BBC).....${wordMap.size()}"
+    wordMap.each { k, v ->
+        def rs = sqlCon.firstRow(querySql, [k])
+        if (rs) {
+            sqlCon.executeUpdate(updateFreq, [v, k])
+        } else {
+            sqlCon.executeInsert(insertSql, [k, v])
+        }
+    }
+    sqlCon.close()
+
+}
+
+
 
 def download = {
 
     def sqlCon = Sql.newInstance(url, "sa", "", driver);
+    int cnt = 0;
     sqlCon.eachRow(getWords, {
         def mp3Url = "${downloadUrl}/${it.spelling}.mp3"
         println mp3Url
@@ -117,8 +169,8 @@ def download = {
             ops = file.newOutputStream()
             ops << new URL(mp3Url).openStream()
             sqlCon.executeUpdate(updateDown, [1, it.spelling])
+            cnt ++;
         } catch (Exception e) {
-            println e
             sqlCon.executeUpdate(updateDown, [-1, it.spelling])
             file.delete()
         } finally {
@@ -126,20 +178,22 @@ def download = {
         }
     })
     sqlCon.close();
+    println "New words -> ${cnt}"
 }
 
-def dummy = {
-    println "hello..."
-}
+
 println "start ......"
 def scheduler = new Scheduler();
 scheduler.schedule("30 */4 * * *", new Runnable() {
     public void run() {
-        println "start crawle ......"
-        scrawle()
-        println "start download ......"
+        println "voa start ......"
+        crawlerVoa()
+        println "voa end ......"
+        println "bbc start ......"
+        crawlerBbc()
+        println "bbc end ......"
         download()
         println "finished ......"
     }
-});
+})
 scheduler.start()
