@@ -31,6 +31,7 @@ def updateDown = "update words set downloaded = ?, download_time = CURRENT_TIMES
 def voa = "http://learningenglish.voanews.com/"
 def downloadUrl = "https://ssl.gstatic.com/dictionary/static/sounds/de/0"
 def bbc = "http://www.bbc.com/"
+def usNews = "http://www.usnews.com/news"
 
 
 def crawlerVoa = {
@@ -154,6 +155,56 @@ def crawlerBbc = {
 
 }
 
+def crawlerUSNews = {
+    def sqlCon = Sql.newInstance(url, "sa", "", driver);
+    def doc = Jsoup.connect(usNews).get()
+    def links = doc.select("a[href]");
+    def articles = new HashSet();
+    links.each {
+        def link = it.attr('href')
+        if(link.indexOf("www.usnews.com/news") > -1 && link.indexOf("articles/2017")> -1){
+            articles.add(link)
+        }
+    }
+    println "Total pages(BBC) -> " + articles.size()
+    def wordMap = new HashMap();
+    articles.each {
+        try {
+            doc = Jsoup.connect("http:${it}").get()
+            def divs = doc.select("div.ad-in-text-target")
+            divs.each { div ->
+                def ps = divs.select("p")
+                ps.each { p ->
+                    def words = p.text().split(" ");
+                    words.each { w ->
+                        w = w.trim()
+                        if (w && w.length() > 1) {
+                            if (w ==~ /[a-zA-Z]*$/) {
+                                def cnt = wordMap.get(w.toLowerCase()) ?: 1;
+                                wordMap.put(w.toLowerCase(), cnt + 1)
+                            }
+
+                        }
+                    }
+                }
+            }
+        }catch (Exception e){
+
+        }
+
+    }
+    println "Update directory (USNews).....${wordMap.size()}"
+    wordMap.each { k, v ->
+        def rs = sqlCon.firstRow(querySql, [k])
+        if (rs) {
+            sqlCon.executeUpdate(updateFreq, [v, k])
+        } else {
+            sqlCon.executeInsert(insertSql, [k, v])
+        }
+    }
+    sqlCon.close()
+
+}
 
 
 def download = {
@@ -181,17 +232,14 @@ def download = {
     println "New words -> ${cnt}"
 }
 
-
 println "start ......"
 def scheduler = new Scheduler();
 scheduler.schedule("30 */4 * * *", new Runnable() {
     public void run() {
-        println "voa start ......"
         crawlerVoa()
-        println "voa end ......"
-        println "bbc start ......"
         crawlerBbc()
-        println "bbc end ......"
+        crawlerUSNews()
+        println "Start download ......"
         download()
         println "finished ......"
     }
