@@ -32,6 +32,7 @@ def voa = "http://learningenglish.voanews.com/"
 def downloadUrl = "https://ssl.gstatic.com/dictionary/static/sounds/de/0"
 def bbc = "http://www.bbc.com/"
 def usNews = "http://www.usnews.com/news"
+def usToday = "http://www.usatoday.com/"
 
 
 def crawlerVoa = {
@@ -111,7 +112,7 @@ def crawlerBbc = {
     def articles = new HashSet();
     links.each {
         def link = it.attr('href')
-        if(link.indexOf("/news/") > -1 && link.indexOf("http://www") < 0){
+        if (link.indexOf("/news/") > -1 && link.indexOf("http://www") < 0) {
             articles.add(link)
         }
     }
@@ -137,7 +138,7 @@ def crawlerBbc = {
                     }
                 }
             }
-        }catch (Exception e){
+        } catch (Exception e) {
 
         }
 
@@ -162,11 +163,11 @@ def crawlerUSNews = {
     def articles = new HashSet();
     links.each {
         def link = it.attr('href')
-        if(link.indexOf("www.usnews.com/news") > -1 && link.indexOf("articles/2017")> -1){
+        if (link.indexOf("www.usnews.com/news") > -1 && link.indexOf("articles/2017") > -1) {
             articles.add(link)
         }
     }
-    println "Total pages(BBC) -> " + articles.size()
+    println "Total pages(USNews) -> " + articles.size()
     def wordMap = new HashMap();
     articles.each {
         try {
@@ -188,7 +189,7 @@ def crawlerUSNews = {
                     }
                 }
             }
-        }catch (Exception e){
+        } catch (Exception e) {
 
         }
 
@@ -206,6 +207,56 @@ def crawlerUSNews = {
 
 }
 
+def crawlerUSToday = {
+    def sqlCon = Sql.newInstance(url, "sa", "", driver);
+    def doc = Jsoup.connect(usToday).get()
+    def links = doc.select("a[href]");
+    def articles = new HashSet();
+    links.each {
+        def link = it.attr('href')
+        if (link.startsWith("/story/") && link.indexOf("/2017/") > -1) {
+
+            println link
+            articles.add(link)
+        }
+    }
+    println "Total pages(USToday) -> " + articles.size()
+    def wordMap = new HashMap();
+    articles.each {
+        try {
+            doc = Jsoup.connect("${usToday}${it}").get()
+            def ps = doc.select("p")
+            ps.each { p ->
+                def words = p.text().split(" ");
+                words.each { w ->
+                    w = w.trim()
+                    if (w && w.length() > 1) {
+                        if (w ==~ /[a-zA-Z]*$/) {
+                            def cnt = wordMap.get(w.toLowerCase()) ?: 1;
+                            wordMap.put(w.toLowerCase(), cnt + 1)
+                        }
+
+                    }
+                }
+
+            }
+        } catch (Exception e) {
+
+        }
+
+    }
+    println "Update directory (USToday).....${wordMap.size()}"
+    wordMap.each { k, v ->
+        def rs = sqlCon.firstRow(querySql, [k])
+        if (rs) {
+            sqlCon.executeUpdate(updateFreq, [v, k])
+        } else {
+            sqlCon.executeInsert(insertSql, [k, v])
+        }
+    }
+    sqlCon.close()
+
+}
 
 def download = {
 
@@ -220,7 +271,7 @@ def download = {
             ops = file.newOutputStream()
             ops << new URL(mp3Url).openStream()
             sqlCon.executeUpdate(updateDown, [1, it.spelling])
-            cnt ++;
+            cnt++;
         } catch (Exception e) {
             sqlCon.executeUpdate(updateDown, [-1, it.spelling])
             file.delete()
@@ -232,13 +283,15 @@ def download = {
     println "New words -> ${cnt}"
 }
 
-println "start ......"
+crawlerUSToday()
 def scheduler = new Scheduler();
 scheduler.schedule("30 */4 * * *", new Runnable() {
     public void run() {
+        println "Start crawler......"
         crawlerVoa()
         crawlerBbc()
         crawlerUSNews()
+        crawlerUSToday()
         println "Start download ......"
         download()
         println "finished ......"
