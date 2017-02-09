@@ -282,6 +282,7 @@ def crawlerUSToday = {
 
 def ff = {
     println "Process file ......"
+    def sqlCon = Sql.newInstance(url, "sa", "", driver);
     def f = new File(home, "ff");
     f.eachFileMatch(~/.*.txt/) {
         it.eachLine { line ->
@@ -294,6 +295,7 @@ def ff = {
         }
         it.delete()
     }
+    sqlCon.close()
 }
 
 def download = {
