@@ -284,8 +284,10 @@ def ff = {
     println "Process file ......"
     def sqlCon = Sql.newInstance(url, "sa", "", driver);
     def f = new File(home, "ff");
+    def cnt  = 0
     f.eachFileMatch(~/.*.txt/) {
         it.eachLine { line ->
+            cnt ++
             def rs = sqlCon.firstRow(querySql, line.toLowerCase())
             if (rs) {
                 sqlCon.executeUpdate(updateFreq, [1, line.toLowerCase()])
@@ -296,6 +298,7 @@ def ff = {
         it.delete()
     }
     sqlCon.close()
+    println "Total ${cnt} words "
 }
 
 def download = {
