@@ -50,7 +50,13 @@ def crawlerVoa = {
 );
 ''')
 
-    def doc = Jsoup.connect(voa).get()
+    def doc = null;
+    try{
+        doc = Jsoup.connect(voa).get()
+    } catch (Exception e){
+        println "Ignore VOA ..."
+        return 0
+    }
 
     def links = doc.select("a[href]");
     def levels = ["Level One", "Level Two", "Level Three"] as List
@@ -107,7 +113,13 @@ def crawlerVoa = {
 
 def crawlerBbc = {
     def sqlCon = Sql.newInstance(url, "sa", "", driver);
-    def doc = Jsoup.connect(bbc).get()
+    def doc = null
+    try {
+        doc = Jsoup.connect(bbc).get()
+    } catch (Exception e){
+        println "Ignore BBC ..."
+        return 0
+    }
     def links = doc.select("a[href]");
     def articles = new HashSet();
     links.each {
@@ -158,7 +170,13 @@ def crawlerBbc = {
 
 def crawlerUSNews = {
     def sqlCon = Sql.newInstance(url, "sa", "", driver);
-    def doc = Jsoup.connect(usNews).get()
+    def doc = null;
+    try{
+        doc = Jsoup.connect(usNews).get()
+    }catch (Exception e){
+        println "Ignore USNews ..."
+        return 0
+    }
     def links = doc.select("a[href]");
     def articles = new HashSet();
     links.each {
@@ -209,14 +227,18 @@ def crawlerUSNews = {
 
 def crawlerUSToday = {
     def sqlCon = Sql.newInstance(url, "sa", "", driver);
-    def doc = Jsoup.connect(usToday).get()
+    def doc = null
+    try{
+        doc = Jsoup.connect(usToday).get()
+    }catch (Exception e){
+        println "Ignore USToday ..."
+        return 1
+    }
     def links = doc.select("a[href]");
     def articles = new HashSet();
     links.each {
         def link = it.attr('href')
         if (link.startsWith("/story/") && link.indexOf("/2017/") > -1) {
-
-            println link
             articles.add(link)
         }
     }
@@ -258,6 +280,22 @@ def crawlerUSToday = {
 
 }
 
+def ff = {
+    println "Process file ......"
+    def f = new File(home, "ff");
+    f.eachFileMatch(~/.*.txt/) {
+        it.eachLine { line ->
+            def rs = sqlCon.firstRow(querySql, line.toLowerCase())
+            if (rs) {
+                sqlCon.executeUpdate(updateFreq, [1, line.toLowerCase()])
+            } else {
+                sqlCon.executeInsert(insertSql, [line.toLowerCase(), 1])
+            }
+        }
+        it.delete()
+    }
+}
+
 def download = {
 
     def sqlCon = Sql.newInstance(url, "sa", "", driver);
@@ -283,7 +321,6 @@ def download = {
     println "New words -> ${cnt}"
 }
 
-crawlerUSToday()
 def scheduler = new Scheduler();
 scheduler.schedule("30 */4 * * *", new Runnable() {
     public void run() {
@@ -292,6 +329,7 @@ scheduler.schedule("30 */4 * * *", new Runnable() {
         crawlerBbc()
         crawlerUSNews()
         crawlerUSToday()
+        ff()
         println "Start download ......"
         download()
         println "finished ......"
