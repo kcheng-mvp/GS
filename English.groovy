@@ -323,11 +323,11 @@ def download = {
         }
     })
     sqlCon.close();
-    println "New words -> ${cnt}"
+    println "${new Date(System.currentTimeMillis())} New words -> ${cnt}"
 }
-
 def scheduler = new Scheduler();
-scheduler.schedule("30 */4 * * *", new Runnable() {
+println "${new Date(System.currentTimeMillis())}......"
+scheduler.schedule("30 */1 * * *", new Runnable() {
     public void run() {
         println "Start crawler......"
         crawlerVoa()
