@@ -287,10 +287,10 @@ def genMapper = {
         bw.write("public interface ${entity}Mapper {")
         bw.newLine();
         bw.write("\t");
-        bw.write("Long create${entity}(${entity} ${entity.toLowerCase()});");
+        bw.write("Integer create${entity}(${entity} ${entity.toLowerCase()});");
         bw.newLine();
         bw.write("\t");
-        bw.write("Long update${entity}(${entity} ${entity.toLowerCase()});");
+        bw.write("Integer update${entity}(${entity} ${entity.toLowerCase()});");
         bw.newLine();
         bw.write("\t");
         bw.write("${entity} find${entity}ById(Long id);");
