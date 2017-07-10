@@ -1,14 +1,21 @@
+#! /usr/bin/env groovy
+
 @GrabResolver(name='restlet', root='http://repo2.maven.org/maven2/')
-@Grab(group='org.eclipse.jetty', module='jetty-server', version='8.1.10.v20130312')
-@Grab(group='org.eclipse.jetty', module='jetty-servlet', version='8.1.10.v20130312')
-@Grab(group='javax.servlet', module='javax.servlet-api', version='3.0.1')
-@GrabExclude('org.eclipse.jetty.orbit:javax.servlet')
+@Grab(group='org.eclipse.jetty', module='jetty-webapp', version='9.4.6.v20170531')
+@Grab(group='org.eclipse.jetty', module='jetty-server', version='9.4.6.v20170531')
+@Grab(group='org.eclipse.jetty', module='jetty-servlet', version='9.4.6.v20170531')
+@Grab(group='org.eclipse.jetty', module='apache-jsp', version='9.4.6.v20170531')
+@Grab(group='javax.servlet', module='javax.servlet-api', version='3.1.0')
+//@GrabExclude('org.eclipse.jetty.orbit:javax.servlet')
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.servlet.*
- 
-def runWithJetty(servlet, port) {
-   def jetty = new Server(port)
-   def context = new ServletContextHandler(jetty, '/', ServletContextHandler.SESSIONS);
-   context.addServlet(new ServletHolder(servlet), '/*')
-   jetty.start()
-}
+
+
+def publishedFolder = args ? args[0] : '.'
+
+def server = new Server(8080)
+def context = new ServletContextHandler(server, '/', ServletContextHandler.SESSIONS)
+def webappContext = new org.eclipse.jetty.webapp.WebAppContext(publishedFolder, '/jetty')
+context.setHandler(webappContext)
+server.start()
+println 'Jetty server started. Press Ctrl+C to stop.'
