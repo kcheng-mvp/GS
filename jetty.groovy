@@ -15,7 +15,7 @@ def publishedFolder = args ? args[0] : '.'
 
 def server = new Server(8080)
 def context = new ServletContextHandler(server, '/', ServletContextHandler.SESSIONS)
-def webappContext = new org.eclipse.jetty.webapp.WebAppContext(publishedFolder, '/sandbox')
+def webappContext = new org.eclipse.jetty.webapp.WebAppContext(publishedFolder, '/jetty')
 context.setHandler(webappContext)
 server.start()
 println 'Jetty server started. Press Ctrl+C to stop.'
