@@ -27,10 +27,10 @@ def process = { File f, String... filters ->
 def dateFormat = "yyyy-MM-dd HH:mm:ss";
 def sdf = new SimpleDateFormat(dateFormat)
 
-def formatterClosure = { index, value ->
+def xlsClosure = {rowIndex,colIndex, value ->
     def rtValue = value;
     def rtFormat = null;
-    if (index == 0) {
+    if (rowIndex > 0 && colIndex == 0) {
         def date = new Date(Long.valueOf(value));
         rtValue = sdf.format(date);
         rtStyle = dateFormat;
@@ -46,23 +46,16 @@ if (file.exists()) {
     def dataList = new ArrayList();
     if (file.isDirectory()) {
         file.eachFileRecurse {
-//            process(it, appID);
-//            plainText.split(it, appID);
-//            dataMap.put(it.name, plainText.split(it, appID))
             dataList.addAll(plainText.split(it, appID));
         }
     } else {
-
-//        plainText.split(it, appID);
-//        process(file, appID);
-
-//        dataMap.put(it.name, plainText.split(it, appID))
-
         dataList.addAll(plainText.split(it, appID));
     }
-    dataMap.put("UserInfo", dataList);
-    xls.generateXls(dataMap, formatterClosure);
-
+    def headerList = ["Date","SDK Version","Platform","Channel","AccountType","Gender","Age","Game Server","Resolution",
+    "OS","Brand","Net Type","Country","Province","Carrier","Extend1","Extend2","Extend3","Extend4","Extend5"]
+    dataList.add(0, headerList)
+    dataMap.put("UserInfo", dataList)
+    xls.generateXls(dataMap, xlsClosure)
 }
 
 

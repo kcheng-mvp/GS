@@ -34,13 +34,13 @@ def generateXls(Map dataMap, Closure... closures) {
     dataMap.keySet().each {
         def sheet = wb.createSheet(it);
         def dataList = dataMap.get(it);
-        dataList.eachWithIndex { rowData, index ->
-            def row = sheet.createRow(index);
+        dataList.eachWithIndex { rowData, rowIndex ->
+            def row = sheet.createRow(rowIndex);
             rowData.eachWithIndex { colValue, colIndex ->
                 def cell = row.createCell(colIndex);
 
                 if (closures) {
-                    def formatted = closures[0](colIndex, colValue);
+                    def formatted = closures[0](rowIndex,colIndex, colValue);
                     // set value
                     cell.setCellValue(formatted['value']);
 
