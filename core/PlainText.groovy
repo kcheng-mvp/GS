@@ -4,7 +4,7 @@
  * @param line line of string
  */
 def split(String line) {
-    return line.split("\\W+");
+    return line.split("\\t+");
 }
 
 /**
@@ -14,8 +14,7 @@ def split(String line) {
  * @return
  */
 def split(File file, String... filters) {
-    def map = new HashMap();
-    def lineNum = 0;
+    def dataList = new ArrayList();
     file.eachLine { line ->
         if (filters != null) {
             boolean passed = true;
@@ -26,14 +25,12 @@ def split(File file, String... filters) {
                 };
             }
             if (passed) {
-                lineNum++;
-                map.put(lineNum, split(line));
+                dataList.add(split(line))
             }
         } else {
-            lineNum++;
-            map.put(lineNum, split(line));
+            dataList.add(split(line))
         }
 
     }
-    return map;
+    return dataList;
 }
