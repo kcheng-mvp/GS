@@ -9,7 +9,7 @@ if (!args || args.length != 2) {
 
 def scriptDir = new File(getClass().protectionDomain.codeSource.location.path).parent
 GroovyShell shell = new GroovyShell()
-def plainText = shell.parse(new File(scriptDir, "core/PlainTextCore.groovy"))
+def plainText = shell.parse(new File(scriptDir, "core/PlainText.groovy"))
 
 def file = new File(args[0].trim());
 def appID = args[1].trim();
