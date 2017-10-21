@@ -51,11 +51,10 @@ if (file.exists()) {
     } else {
         dataList.addAll(plainText.split(it, appID));
     }
-    def headerList = ["Date","SDK Version","Platform","Channel","AccountType","Gender","Age","Game Server","Resolution",
+    def headerList = ["Date","SDK Version","App ID","UID","Account ID","Platform","Channel","AccountType","Gender","Age","Game Server","Resolution",
     "OS","Brand","Net Type","Country","Province","Carrier","Extend1","Extend2","Extend3","Extend4","Extend5"]
     dataList.add(0, headerList)
     dataMap.put("UserInfo", dataList)
     xls.generateXls(dataMap, xlsClosure)
 }
-
 
