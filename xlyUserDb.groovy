@@ -20,18 +20,11 @@ if(args.length > 2) namePattern = args[2]
 
 def sqlCon = db.h2Con(appID)
 
-/*
-def headerList = ["Date","SDK Version","App ID","UID","Account ID","Platform","Channel",
-                  "AccountType","Gender","Age","Game Server","Resolution",
-    "OS","Brand","Net Type","Country","Province","Carrier","Extend1",
-                  "Extend2","Extend3","Extend4","Extend5"]
-
-*/
-
 sqlCon.execute('''
 	create table if not exists userInfo (
 	ID INTEGER IDENTITY,
 	LOG_TIME timestamp,
+	LOG_DAY varchar(10),
 	SDK_VERSION varchar(200),
 	APP_ID varchar(50),
 	UID varchar(50),
@@ -54,9 +47,9 @@ sqlCon.execute('''
     Extend3 varchar(30),
     Extend4 varchar(30),
     Extend5 varchar(2048),
-    Extend6 varchar(30),
-    Extend7 varchar(30),
-    Extend8 varchar(30)
+    ACT_TIME INTEGER,
+    REG_TIME INTEGER,
+    ACCOUNT_NUM varchar(30)
 )
 ''');
 
@@ -65,10 +58,6 @@ sqlCon.execute('''
 
 
 
-
-def process = { File f, String... filters ->
-    plainText.split(f, filters);
-}
 
 
 if (file.exists()) {
@@ -89,22 +78,26 @@ if (file.exists()) {
     }
 
     def insert = '''insert into userInfo(
-	LOG_TIME,SDK_VERSION,APP_ID,UID,
+	LOG_TIME,LOG_DAY,SDK_VERSION,APP_ID,UID,
 	ACCOUNT_ID,PLATFORM,CHANNEL,ACCOUNT_TYPE,
 	GENDER,AGE,GAME_SERVER,RESOLUTION,OS,BRAND,
 	NET_TYPE,COUNTRY,PROVINCE,CARRIER,
 	Extend1,Extend2,Extend3,Extend4,
-    Extend5,Extend6,Extend7,Extend8)
-    values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    Extend5,ACT_TIME,REG_TIME,ACCOUNT_NUM)
+    values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     '''
 
+    def sdf = new SimpleDateFormat("yyyy/MM/dd");
     sqlCon.withTransaction {
         sqlCon.withBatch(100, insert){stmt ->
             dataList.each {
                 def logTime = new Date(Long.valueOf(it[0]))
-                stmt.addBatch(logTime,it[1],it[2],it[3],it[4],it[5],it[6],it[7],it[8],it[9],it[10],
+                def logDay = sdf.format(logTime)
+                def actTime =  Integer.valueOf(it[23])
+                def regTime = Integer.valueOf(it[24])
+                stmt.addBatch(logTime,logDay,it[1],it[2],it[3],it[4],it[5],it[6],it[7],it[8],it[9],it[10],
                         it[11],it[12],it[13],it[14],it[15],it[16],it[17],it[18],it[19],it[20],it[21],
-                        it[22],it[23],it[24],it[25])
+                        it[22],actTime,regTime,it[25])
             }
 
         }
