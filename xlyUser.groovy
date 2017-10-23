@@ -3,18 +3,20 @@
 
 import java.text.SimpleDateFormat;
 
-if (!args || args.length != 2) {
-    println "Please input appid: eg xlyUserRetain.groovy filename appid"
+if (!args || args.length < 2) {
+    println "Please input appid: eg xlyUserRetain.groovy filename appid namepattern"
     return -1;
 }
 
 def scriptDir = new File(getClass().protectionDomain.codeSource.location.path).parent
 GroovyShell shell = new GroovyShell()
 def plainText = shell.parse(new File(scriptDir, "core/PlainText.groovy"))
-def xls = shell.parse(new File(scriptDir, "core/xls.groovy"))
+def xls = shell.parse(new File(scriptDir, "core/Xls.groovy"))
 
 def file = new File(args[0].trim());
 def appID = args[1].trim();
+def namePattern = null;
+if(args.length > 2) namePattern = args[2]
 
 
 def process = { File f, String... filters ->
@@ -46,10 +48,16 @@ if (file.exists()) {
     def dataList = new ArrayList();
     if (file.isDirectory()) {
         file.eachFileRecurse {
-            dataList.addAll(plainText.split(it, appID));
+            if(!namePattern || (it.name.indexOf(namePattern) > -1)){
+                println "Process file ${it.name} ..."
+                dataList.addAll(plainText.split(it, appID));
+            }
         }
     } else {
-        dataList.addAll(plainText.split(it, appID));
+        if(!namePattern || (file.name.indexOf(namePattern) > -1)){
+            println "Process file ${file.name} ..."
+            dataList.addAll(plainText.split(file, appID));
+        }
     }
     def headerList = ["Date","SDK Version","App ID","UID","Account ID","Platform","Channel","AccountType","Gender","Age","Game Server","Resolution",
     "OS","Brand","Net Type","Country","Province","Carrier","Extend1","Extend2","Extend3","Extend4","Extend5"]
