@@ -2,29 +2,32 @@
 
 //ssh dev1 'grep `hostname` /etc/hosts'
 
+package core
+abstract class Shell extends Script {
+    def exec(shell, String... host) {
 
-def exec(shell, String... host) {
+        def commands = shell.split("\\t+") as List;
+        if (host) {
+            commands.add(0, host[0])
+            commands.add(0, "ssh")
+        } else {
+            commands.add(shell)
+        }
 
-    def commands = shell.split("\\t+") as List;
-    if (host) {
-        commands.add(0, host[0])
-        commands.add(0, "ssh")
-    } else {
-        commands.add(shell)
-    }
-
-    def processBuilder = new ProcessBuilder(commands);
-    def process = processBuilder.redirectErrorStream(true).start();
-    def rt = [];
-    process.inputStream.eachLine {
-        rt << it
+        def processBuilder = new ProcessBuilder(commands);
+        def process = processBuilder.redirectErrorStream(true).start();
+        def rt = [];
+        process.inputStream.eachLine {
+            rt << it
 //        println it
+        }
+        process.waitFor();
+        if (process.exitValue()) {
+            println "successfully ......";
+        }
+        rt
+
     }
-    process.waitFor();
-    if (process.exitValue()) {
-        println "successfully ......";
-    }
-    rt
 
 }
 

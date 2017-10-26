@@ -1,15 +1,18 @@
 #!/usr/bin/env groovy
 
+import groovy.transform.BaseScript
+import core.Shell
+@BaseScript Shell shell
 
+/*
 def home = new File(System.getProperty("user.home"));
 
-GroovyShell groovyShell = new GroovyShell()
+def groovyShell = new GroovyShell()
 def scriptDir = new File(getClass().protectionDomain.codeSource.location.path).parent
 def shell = groovyShell.parse(new File(scriptDir, "core/Shell.groovy"))
+*/
 
-
-
-
+/*
 if (!args) {
     println "Please specified the manifist"
     return
@@ -34,6 +37,24 @@ if (props.get("hosts")) {
         hosts.each {println it}
     }
 }
+*/
+
+def etcHosts(hosts) {
+    hosts.each { host ->
+        def settings = exec("grep `hostname` /etc/hosts", host.trim())
+        def map = settings.each {
+            if(it.indexOf("#") < 0){
+                def arrs = it.split();
+                [host:arrs[0] , ip:arrs[1]]
+            }
+        }.collect()
+
+        println map.class
+    }
+}
+
+
+etcHosts(["dev1"])
 
 // http://hadoop.apache.org/docs/
 
