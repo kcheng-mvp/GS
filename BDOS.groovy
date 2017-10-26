@@ -42,20 +42,21 @@ if (props.get("hosts")) {
 def etcHosts(hosts) {
     hosts.each { host ->
         def settings = exec("grep `hostname` /etc/hosts", host.trim())
-        def map = settings.each {
-            if(it.indexOf("#") < 0){
-                def arrs = it.split();
-                [host:arrs[0] , ip:arrs[1]]
-            }
-        }.collect()
 
-        println map.class
+        def list = settings.collect {
+            if(it.indexOf("#") < 0){
+                it.split("\\s+")[1]
+            }
+        }
+        if(! hosts.equals(list)){
+            println "${host}'s /etc/hosts does not contains all the hosts: ${hosts}"
+        }
     }
+
 }
 
 
-etcHosts(["dev1"])
-
+etcHosts(["dev1","dev2"])
 // http://hadoop.apache.org/docs/
 
 
