@@ -4,29 +4,25 @@
 
 def exec(shell, String... host) {
 
-    def commands = shell.split("\\t+") as List;
+    def commands = shell.split() as List;
+
+    //for remote shell
     if (host) {
         commands.add(0, host[0])
         commands.add(0, "ssh")
-    } else {
-        commands.add(shell)
     }
 
-    println ">>> ${commands} "
+    println "[Command] : ${commands} "
 
     def processBuilder = new ProcessBuilder(commands);
     def process = processBuilder.redirectErrorStream(true).start();
     def rt = [];
     process.inputStream.eachLine {
         rt << it
-//        println it
     }
     process.waitFor();
-    if (process.exitValue()) {
-        println "successfully ......";
-    }
-    rt
 
+    ["code": process.exitValue(), "msg":rt]
 }
 
 
