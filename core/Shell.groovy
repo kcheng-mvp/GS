@@ -12,11 +12,11 @@ def exec(shell, String... host) {
         commands.add(0, "ssh")
     }
 
-    println "[Command] : ${commands} "
+    println "[Command ] >> : ${commands} "
 
     def processBuilder = new ProcessBuilder(commands);
     def process = processBuilder.redirectErrorStream(true).start();
-    def rt = [];
+    def rt = [] as List;
     process.inputStream.eachLine {
         rt << it
     }
