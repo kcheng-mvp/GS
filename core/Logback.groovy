@@ -18,7 +18,7 @@ import ch.qos.logback.core.rolling.TimeBasedRollingPolicy
 import ch.qos.logback.core.rolling.RollingFileAppender
 import ch.qos.logback.core.util.StatusPrinter
 
-def getLogger(String logFile) {
+def getLogger(String logFile, String folder) {
 
 
 
@@ -31,7 +31,7 @@ def getLogger(String logFile) {
     TimeBasedRollingPolicy rollingPolicy = new TimeBasedRollingPolicy();
     rollingPolicy.setContext(loggerContext);
     rollingPolicy.setParent(rfAppender);
-    rollingPolicy.setFileNamePattern("${logFile}.%d{yyyy-MM-dd-HH}.log");
+    rollingPolicy.setFileNamePattern("${folder}/${logFile}.%d{yyyy-MM-dd-HH}.log");
     rollingPolicy.setMaxHistory(6)
     rollingPolicy.start();
 
