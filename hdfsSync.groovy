@@ -6,6 +6,7 @@ def currentPath = new File(getClass().protectionDomain.codeSource.location.path)
 GroovyShell groovyShell = new GroovyShell()
 def cron4j = groovyShell.parse(new File(currentPath, "core/Cron4J.groovy"))
 def shell = groovyShell.parse(new File(currentPath, "core/Shell.groovy"))
+def logback = groovyShell.parse(new File(currentPath, "core/Logback.groovy"))
 
 
 
@@ -15,6 +16,9 @@ def properties = new Properties()
 properties.load(getClass().getResourceAsStream('hdfsSync.properties'));
 def localPath = new File(properties.get("localPath"))
 def hdfsRoot = properties.get("hdfsRoot")
+def logPath = properties.get("logPath")
+def log = logback.getLogger("logbackTest", properties.get("logPath"))
+
 def backup = new File(localPath,"backup")
 if(!backup.exists()) backup.mkdirs()
 def dataSync = {
@@ -37,7 +41,7 @@ def dataSync = {
                         return true
                     } else {
                         rt = rt["msg"][0].split().findAll { p -> "hadoop".equals(p) }
-                        println rt
+                        log.warn("File owner and group issue {}", f.absolutePath)
                         if (rt.size() < 2) return true
                     }
 
@@ -49,10 +53,10 @@ def dataSync = {
                         command = "hadoop fs -mkdir ${hdfsRoot}/${category}/${datePath}/input"
                         rt = shell.exec(command)
                         if (rt["code"] == 0) {
-                            println "Create folder ${hdfsRoot}/${category}/${datePath}/input success ..."
+                            log.info("Create folder ${hdfsRoot}/${category}/${datePath}/input success ...")
                         } else {
                             rt["msg"].each {
-                                println it;
+                                log.warn("Failed to create folder {}", "${hdfsRoot}/${category}/${datePath}/input")
                             }
                             return true
                         }
@@ -62,11 +66,11 @@ def dataSync = {
                     rt = shell.exec(command)
                     if (rt["code"] != 0) {
                         rt["msg"].each {
-                            println it;
+                            log.warn("Failed to put file {}", "${f.absolutePath}")
                         }
                         return true
                     } else {
-                        println "Put file ${f.absolutePath} successfully ......"
+                        log.info("Put file ${f.absolutePath} successfully ......")
                     }
 
                     //todo: mark it done
@@ -74,12 +78,16 @@ def dataSync = {
                     rt = shell.exec(command)
                     if (rt["code"] != 0) {
                         rt["msg"].each {
-                            println it
+                            log.warn("Failed to touch the file: ${hdfsRoot}/${category}/${datePath}/done.${hostName}")
                         }
                         return true
                     }
                     //todo: backup files
-                    if (f.renameTo(new File(backup, f.name))) println "Backup file ${f.absolutePath} successfully ......"
+                    if (f.renameTo(new File(backup, f.name))) {
+                        log.info("Backup file ${f.absolutePath} successfully ......")
+                    } else {
+                        log.warn("Failed to backup the file ${f.absolutePath}")
+                    }
 
 
 
