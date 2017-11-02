@@ -17,7 +17,7 @@ properties.load(getClass().getResourceAsStream('hdfsSync.properties'));
 def localPath = new File(properties.get("localPath"))
 def hdfsRoot = properties.get("hdfsRoot")
 def logPath = properties.get("logPath")
-def log = logback.getLogger("logbackTest", properties.get("logPath"))
+def log = logback.getLogger("hdfsSync", properties.get("logPath"))
 
 def backup = new File(localPath,"backup")
 if(!backup.exists()) backup.mkdirs()
@@ -38,11 +38,16 @@ def dataSync = {
                     command = "ls -l ${f.absolutePath}"
                     def rt = shell.exec(command)
                     if (rt["code"] != 0) {
+                        log.warn("Failed to change file owner/group ${f.absolutePath}")
                         return true
                     } else {
                         rt = rt["msg"][0].split().findAll { p -> "hadoop".equals(p) }
-                        log.warn("File owner and group issue {}", f.absolutePath)
-                        if (rt.size() < 2) return true
+                        if (rt.size() < 2) {
+                            log.warn("Failed to change file owner/group ${f.absolutePath}")
+                            return true
+                        } else {
+                            log.info("Change file owner/group ${f.absolutePath} success ......")
+                        }
                     }
 
                     def category = f.name.split("\\.")[0]
