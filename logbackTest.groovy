@@ -7,7 +7,12 @@ GroovyShell groovyShell = new GroovyShell(binding)
 def logback = groovyShell.parse(new File(currentPath, "core/Logback.groovy"))
 
 
-def log = logback.getLogger("logbackTest", "/Users/kcheng")
+//def log = logback.getLogger("logbackTest", "/Users/kcheng")
 
-log.info("Hello")
-log.error("its bad")
+def ms = 1509613382000
+Calendar calendar = Calendar.getInstance();
+calendar.setTimeInMillis(ms);
+
+println calendar.getTime().toString()
+//log.info("Hello")
+//log.error("its bad")

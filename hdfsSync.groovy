@@ -104,10 +104,7 @@ def dataSync = {
 
 } as Runnable
 
-//def cron = "30 * * * *"
-def cron = "* * * * *"
-
-//cron4j.start(cron, sayHello)
+def cron = "25 * * * *"
+cron4j.start(cron, dataSync)
 
 
-dataSync()
