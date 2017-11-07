@@ -21,20 +21,23 @@ def appid = properties.get("key1")
 def key = properties.get("key2")
 
 def hourlyRegister = {
-    def sign = digestUtils.md5("appid=${appid}&key=${key}")
-    println sign
+    def sign = digestUtils.md5("app_id=${appid}&key=${key}")
 
     def start = Calendar.getInstance().getTime();
     use(TimeCategory) {
-        start = start - 1.hours
-        start.set(minute: 0, second: 0, millisecond: 0)
+//        start = start - 1.hours
+        start = start - 4.days
+//        start.set(minute: 0, second: 0, millisecond: 0)
+        start.set(hour:0,minute: 0, second: 0, millisecond: 0)
     }
+
 
 
     start = start.getTime() ;
 
 
-    def end = start + 60 * 60 * 1000
+    def end = start + 24*60 * 60 * 1000
+//    def end = start + 60 * 60 * 1000
     def http = new HTTPBuilder(url)
 
     http.get( path : '/api/xlygetpuid',
@@ -47,14 +50,13 @@ def hourlyRegister = {
             println " ${h.name} : ${h.value}"
         }
         println 'Response data: -----'
-        System.out << reader
-        println '\n--------------------'
+        println reader.toString()
     }
 
 } as Runnable
 
 def cron = "05 * * * *"
-cron4j.start(cron, hourlyRegister)
+//cron4j.start(cron, hourlyRegister)
 
-//hourlyRegister()
+hourlyRegister()
 

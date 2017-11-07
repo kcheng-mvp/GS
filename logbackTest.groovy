@@ -1,5 +1,6 @@
 #! /usr/bin/env groovy
 
+import groovy.time.TimeCategory
 
 
 def currentPath = new File(getClass().protectionDomain.codeSource.location.path).parent
@@ -10,9 +11,18 @@ def logback = groovyShell.parse(new File(currentPath, "core/Logback.groovy"))
 //def log = logback.getLogger("logbackTest", "/Users/kcheng")
 
 def ms = 1509613382000
-Calendar calendar = Calendar.getInstance();
-calendar.setTimeInMillis(ms);
+def time = Calendar.getInstance().getTime();
 
-println calendar.getTime().toString()
-//log.info("Hello")
-//log.error("its bad")
+use(TimeCategory){
+    time = time - 3.days
+}
+//calendar.setTimeInMillis(ms);
+//
+//println calendar.getTime().toString()
+
+time.toString()
+
+
+
+
+
