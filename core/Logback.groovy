@@ -98,6 +98,8 @@ def getDataLogger(String logFile, String logPath) {
     // attach the rolling file appender to the logger of your choice
     Logger logger = loggerContext.getLogger(logFile);
     logger.addAppender(rfAppender);
+    // don't print on the console
+    logger.setAdditive(false)
 
     // OPTIONAL: print logback internal status messages
     StatusPrinter.print(loggerContext);
