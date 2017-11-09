@@ -19,7 +19,7 @@ properties.load(getClass().getResourceAsStream('restGet.properties'));
 
 def logPath = properties.get("logPath")
 def log = logback.getLogger("restGet", properties.get("logPath"))
-def dataLog = logback.getLogger("userregister.dts", properties.get("dataPath"))
+def dataLog = logback.getDataLog("userregister.dts", properties.get("dataPath"))
 
 
 def url = properties.get("url")
@@ -41,8 +41,7 @@ def hourlyRegister = {
 
 
 
-    start = start.getTime() ;
-
+    start = start.getTime();
 
 //    def end = start + 24*60 * 60 * 1000
     def end = start + 60 * 60 * 1000
@@ -52,10 +51,12 @@ def hourlyRegister = {
 
     def http = new HTTPBuilder(url)
 
-    http.get( path : '/api/xlygetpuid',
-            contentType : JSON,
-            query : [start_time:(start/1000) as Long, end_time:(end/1000) as Long,sign:sign] ) { resp, reader ->
-        reader.data.each { println JsonOutput.toJson(it) }
+    http.get(path: '/api/xlygetpuid',
+            contentType: JSON,
+            query: [start_time: (start / 1000) as Long, end_time: (end / 1000) as Long, sign: sign]) { resp, reader ->
+        reader.data.each {
+            dataLog.info(JsonOutput.toJson(it))
+        }
     }
 
 } as Runnable
