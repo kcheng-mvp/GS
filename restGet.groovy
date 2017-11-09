@@ -18,7 +18,7 @@ properties.load(getClass().getResourceAsStream('restGet.properties'));
 
 def logPath = properties.get("logPath")
 def log = logback.getLogger("restGet", properties.get("logPath"))
-def dataLog = logback.getDataLog("userregister.dts", properties.get("dataPath"))
+def dataLog = logback.getDataLogger("userregister.dts", properties.get("dataPath"))
 
 
 def url = properties.get("url")
