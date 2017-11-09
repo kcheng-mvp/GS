@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import static groovyx.net.http.ContentType.JSON
 import groovy.time.TimeCategory
 import groovyx.net.http.HTTPBuilder
+import groovy.json.JsonOutput
 
 @Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.5.0')
 
