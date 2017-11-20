@@ -2,6 +2,7 @@
 
 
 import groovy.sql.Sql;
+import groovy.transform.Field
 
 
 @Grab(group = 'com.h2database', module = 'h2', version = '1.3.175')
@@ -13,10 +14,15 @@ import groovy.sql.Sql;
 //def dbHome = new File(home, ".h2");
 //def driver = "org.h2.Driver";
 
+@Field
+String h2Driver = "org.h2.Driver";
 
 
 def h2Con(String dbName) {
-    def driver = "org.h2.Driver";
-    Sql.newInstance("jdbc:h2:~/.h2/${dbName}", "sa", "", driver);
+    Sql.newInstance("jdbc:h2:~/.h2/${dbName}", "sa", "", h2Driver);
+}
+
+def h2mCon(String dbName){
+    Sql.newInstance("jdbc:h2:~/.h2/${dbName}", "sa", "", h2Driver);
 }
 

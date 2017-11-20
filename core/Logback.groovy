@@ -1,4 +1,4 @@
-
+import groovy.transform.Field
 @Grapes([
         @Grab(group = 'ch.qos.logback', module = 'logback-classic', version = '1.2.3')
 
@@ -19,8 +19,15 @@ import ch.qos.logback.core.rolling.RollingFileAppender
 import ch.qos.logback.core.util.StatusPrinter
 
 
+@Field
+String tmpDir = System.getProperty("java.io.tmpdir");
 
-def getLogger(String logFile, String logPath) {
+def getLogger(String... args) {
+
+    assert args: "Please input logFile (optional logPath)"
+
+    logFile = args[0]
+    logPath = args.size() > 1 ? args[1] : tmpDir
 
 
 
@@ -33,11 +40,9 @@ def getLogger(String logFile, String logPath) {
     TimeBasedRollingPolicy rollingPolicy = new TimeBasedRollingPolicy();
     rollingPolicy.setContext(loggerContext);
     rollingPolicy.setParent(rfAppender);
-    if(logPath){
-        rollingPolicy.setFileNamePattern("${logPath}/${logFile}.%d{yyyy-MM-dd-HH}.log");
-    } else {
-        rollingPolicy.setFileNamePattern("${logFile}.%d{yyyy-MM-dd-HH}.log");
-    }
+
+    rollingPolicy.setFileNamePattern("${logPath}/${logFile}.%d{yyyy-MM-dd-HH}.log");
+
     rollingPolicy.setMaxHistory(6)
     rollingPolicy.start();
 
@@ -63,9 +68,12 @@ def getLogger(String logFile, String logPath) {
     return logger;
 }
 
-def getDataLogger(String logFile, String logPath) {
+def getDataLogger(String... args) {
 
+    assert args: "Please input logFile (optional logPath)"
 
+    logFile = args[0]
+    logPath = args.size() > 1 ? args[1] : tmpDir
 
     LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
 
@@ -76,11 +84,7 @@ def getDataLogger(String logFile, String logPath) {
     TimeBasedRollingPolicy rollingPolicy = new TimeBasedRollingPolicy();
     rollingPolicy.setContext(loggerContext);
     rollingPolicy.setParent(rfAppender);
-    if(logPath){
-        rollingPolicy.setFileNamePattern("${logPath}/${logFile}.%d{yyyy-MM-dd-HH}.log");
-    } else {
-        rollingPolicy.setFileNamePattern("${logFile}.%d{yyyy-MM-dd-HH}.log");
-    }
+    rollingPolicy.setFileNamePattern("${logPath}/${logFile}.%d{yyyy-MM-dd-HH}.log");
     rollingPolicy.start();
 
 
