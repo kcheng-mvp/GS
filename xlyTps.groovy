@@ -20,7 +20,7 @@ import org.apache.http.params.HttpParams
 
 
 
-def url = "http://advh.xiangley.com"
+def url = "http://120.78.27.91"
 //def url = "http://localhost/"
 
 def context = ['/adv/agg', '/event/adv', '/user/register']
