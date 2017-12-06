@@ -19,16 +19,18 @@ def hdfsRoot = properties.get("hdfsRoot")
 def logPath = properties.get("logPath")
 def log = logback.getLogger("hdfsSync", properties.get("logPath"))
 
-def backup = new File(localPath,"backup")
-if(!backup.exists()) backup.mkdirs()
+//def backup = new File(localPath,"backup")
+//if(!backup.exists()) backup.mkdirs()
 def dataSync = {
     def now = Calendar.getInstance().getTime();
     use(TimeCategory) {
         localPath.eachFile { f ->
-            if(f.name.indexOf("advagg") > -1) return 0
-            (1..5).find {
+//            if(f.name.indexOf("advagg") > -1) return 0
+            def isAgg = f.name.indexOf("advagg") > -1
+            (1..5).each {
                 def format = (now - it.hours).format("yyyy-MM-dd-HH")
                 def datePath = (now - it.hours).format("yyyy/MM/dd/HH")
+                if(isAgg) datePath = (now - it.hours).format("yyyy/MM/dd");
                 if (f.name =~ /.*\.$format\.log$/) {
 
                     def command = "sudo chown hadoop ${f.absolutePath}"
@@ -88,11 +90,13 @@ def dataSync = {
                         return true
                     }
                     //todo: backup files
+                    /*
                     if (f.renameTo(new File(backup, f.name))) {
                         log.info("Backup file ${f.absolutePath} successfully ......")
                     } else {
                         log.warn("Failed to backup the file ${f.absolutePath}")
                     }
+                    */
 
 
 
