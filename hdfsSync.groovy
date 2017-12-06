@@ -27,7 +27,7 @@ def dataSync = {
         localPath.eachFile { f ->
 //            if(f.name.indexOf("advagg") > -1) return 0
             def isAgg = f.name.indexOf("advagg") > -1
-            (1..5).each {
+            (1..5).find {
                 def format = (now - it.hours).format("yyyy-MM-dd-HH")
                 def datePath = (now - it.hours).format("yyyy/MM/dd/HH")
                 if(isAgg) datePath = (now - it.hours).format("yyyy/MM/dd");
