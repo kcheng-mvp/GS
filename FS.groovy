@@ -29,8 +29,9 @@ import java.text.SimpleDateFormat
 //bw.close();
 
 def sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-println "click:"+ sdf.format(1512086565 * 1000L)
-println "register:"+ sdf.format(1512057877 * 1000L)
+println "click:"+ sdf.format(1512172525 * 1000L)
+println "register:"+ sdf.format(1512143801 * 1000L)
+
 
 
 //1512057776

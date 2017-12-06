@@ -19,8 +19,8 @@ def hdfsRoot = properties.get("hdfsRoot")
 def logPath = properties.get("logPath")
 def log = logback.getLogger("hdfsSync", properties.get("logPath"))
 
-//def backup = new File(localPath,"backup")
-//if(!backup.exists()) backup.mkdirs()
+def backup = new File(localPath,"backup")
+if(!backup.exists()) backup.mkdirs()
 def dataSync = {
     def now = Calendar.getInstance().getTime();
     use(TimeCategory) {
@@ -90,13 +90,11 @@ def dataSync = {
                         return true
                     }
                     //todo: backup files
-                    /*
                     if (f.renameTo(new File(backup, f.name))) {
                         log.info("Backup file ${f.absolutePath} successfully ......")
                     } else {
                         log.warn("Failed to backup the file ${f.absolutePath}")
                     }
-                    */
 
 
 
