@@ -7,7 +7,7 @@ def cron4j = groovyShell.parse(new File(currentPath, "core/Cron4J.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "core/Logback.groovy"))
 def jarHome = "/home/hadoop/tools/MRJars"
 
-def logger = logback.getLogger("MRJob")
+def logger = logback.getLogger("MRJob","/home/hadoop/tools/log")
 
 
 
