@@ -128,11 +128,11 @@ def post = { it ->
 
 def threadPool = Executors.newFixedThreadPool(100)
 try {
-    List<Future> futures = (1..1000).collect {
+    List<Future> futures = Collections.synchronizedList((1..10000).collect {
         threadPool.submit({ ->
             post(it)
         } as Callable);
-    }
+    })
     // recommended to use following statement to ensure the execution of all tasks.
     futures.each { println it.get() }
 } finally {
