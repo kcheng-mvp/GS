@@ -29,7 +29,7 @@ crmr = { it ->
 }
 ccmr = { it ->
     def today = it ?: use(TimeCategory) {
-        sdf.format(Calendar.getInstance().getTime())
+        sdf.format(Calendar.getInstance().getTime() - 1.days)
     }
     println today
     return
