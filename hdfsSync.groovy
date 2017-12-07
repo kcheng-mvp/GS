@@ -69,7 +69,7 @@ def dataSync = {
                         }
                     }
                     //todo: put the file the hdfs
-                    command = "hadoop fs -put ${f.absolutePath} ${hdfsRoot}/${category}/${datePath}/input/${f.name}.${hostName}"
+                    command = "hadoop fs -put ${f.absolutePath} ${hdfsRoot}/${category}/${datePath}/input/${f.name}"
                     rt = shell.exec(command)
                     if (rt["code"] != 0) {
                         rt["msg"].each {
