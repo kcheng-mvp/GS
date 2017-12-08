@@ -70,8 +70,8 @@ def fetchDataFile = {
     def validDate = Calendar.getInstance().getTime();
     def monthFolder = new File("${localPath}/${monthFormat.format(validDate)}");
     if (monthFolder.exists()) monthFolder.deleteDir();
-    validDate = validDate - 1.days
     use(TimeCategory) {
+        validDate = validDate - 1.days
         while (first <= validDate) {
             def command = "hadoop fs -test -e ${hdfsRoot}/${pathFormat.format(first)}/p*"
             def rt = shell.exec(command)
