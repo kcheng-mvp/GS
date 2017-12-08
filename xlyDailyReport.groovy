@@ -29,7 +29,7 @@ def logger = logback.getLogger("xlyDailyReport");
 def localPath = config.get("config.localPath")
 def hdfsRoot = config.get("config.hdfsPath")
 def logPath = config.get("config.logPath")
-def cron =  config.get("config.cron")
+def cron = config.get("config.cron")
 
 def sql = db.h2mCon("xlyDailyReport")
 /*
@@ -62,7 +62,8 @@ def sdf = new SimpleDateFormat("yyyyMMdd");
 def pathFormat = new SimpleDateFormat("yyyy/MM/dd")
 def monthFormat = new SimpleDateFormat("yyyy/MM")
 
-def first = Calendar.getInstance().set(Calendar.DAY_OF_MONTH, 1);
+def first = Calendar.getInstance()
+first.set(Calendar.DAY_OF_MONTH, 1)
 first = first.getTime()
 
 def fetchDataFile = {
