@@ -1,10 +1,9 @@
 #! /usr/bin/env groovy
 
-@Grapes([
-        @Grab(group = 'javax.mail', module = 'mail', version = '1.4.7'),
-        @Grab(group = 'javax.activation', module = 'activation', version = '1.1.1')
-])
 
+@Grab(group = 'javax.mail', module = 'mail', version = '1.4.7')
+@GrabConfig(systemClassLoader=true, initContextClassLoader=true)
+@Grab(group = 'javax.activation', module = 'activation', version = '1.1.1')
 import javax.mail.internet.*;
 import javax.mail.*
 import javax.activation.*

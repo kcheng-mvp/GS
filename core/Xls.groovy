@@ -22,7 +22,7 @@ def FORMATTER_NUMBER = "###,##0.00";
 def FORMATTER_DATE = "yyyy-MM-dd";
 def FORMATTER_TIMESTAMP = "yyyy-MM-dd HH:mm:ss";
 
-
+def tmp = new File(System.getProperty("java.io.tmpdir"))
 def generateXls(Map dataMap, Closure... closures) {
     if (!dataMap) return
     def wb = new HSSFWorkbook();
@@ -65,7 +65,8 @@ def generateXls(Map dataMap, Closure... closures) {
     // Write the output to a file
     def sdf = new SimpleDateFormat("yyyyMMdd-HHmmss")
     def calendar = Calendar.getInstance();
-    def f = new File("${sdf.format(calendar.getTime())}.xls")
+    def f = new File(tmp,"${sdf.format(calendar.getTime())}.xls")
+    println "xls is generate at : ${f.absolutePath}"
     FileOutputStream fileOut = new FileOutputStream(f);
     wb.write(fileOut);
     fileOut.close();
