@@ -104,7 +104,7 @@ CLICK_TIME_LONG, CLICK_TIME,REGISTER_TIME_LONG,REGISTER_TIME) VALUES (?,?,?,?,?,
     sql.withTransaction {
         sql.withBatch(100, insert) { stmt ->
             monthFolder.eachFileRecurse { f ->
-                if (f.name.indexOf("part-")) {
+                if (f.name.indexOf("part-") > -1) {
                     f.eachLine { line ->
                         def segs = line.split("\t");
                         stmt.addBatch(
