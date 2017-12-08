@@ -22,14 +22,13 @@ def shell = groovyShell.parse(new File(currentPath, "core/Shell.groovy"))
 def xls = groovyShell.parse(new File(currentPath, "core/Xls.groovy"))
 def mailMan = groovyShell.parse(new File(currentPath, "core/Mailman.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "core/Logback.groovy"))
-def config = new ConfigSlurper().parse((new File(currentPath, 'xlyDailyReportCfg.groovy')).text).get("config").flatten();
-
+def config = new ConfigSlurper().parse((new File(currentPath, 'xlyDailyReportCfg.groovy')).text).get("config").flatten()
 def logger = logback.getLogger("xlyDailyReport");
 
-def localPath = config.get("config.localPath")
-def hdfsRoot = config.get("config.hdfsPath")
-def logPath = config.get("config.logPath")
-def cron = config.get("config.cron")
+def localPath = config.get("localPath")
+def hdfsRoot = config.get("hdfsPath")
+def logPath = config.get("logPath")
+def cron = config.get("cron")
 
 def sql = db.h2mCon("xlyDailyReport")
 /*
@@ -95,8 +94,8 @@ def loadData = { dir ->
     def insert = '''
 INSERT INTO CRMR(DAY_STR,APP_ID,UID,PLATFORM,ADV_APP_ID,
 CLICK_TIME_LONG, CLICK_TIME,REGISTER_TIME_LONG,REGISTER_TIME) VALUES (?,?,?,?,?,?,?,?,?)'''
-    sqlCon.withTransaction {
-        sqlCon.withBatch(100, insert) { stmt ->
+    sql.withTransaction {
+        sql.withBatch(100, insert) { stmt ->
             dir.eachFileRecurse { f ->
                 if (f.name.indexOf("part-")) {
                     f.eachLine { line ->
