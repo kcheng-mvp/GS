@@ -22,7 +22,8 @@ def shell = groovyShell.parse(new File(currentPath, "core/Shell.groovy"))
 def xls = groovyShell.parse(new File(currentPath, "core/Xls.groovy"))
 def mailMan = groovyShell.parse(new File(currentPath, "core/Mailman.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "core/Logback.groovy"))
-def config = new ConfigSlurper().parse((new File(currentPath, 'xlyDailyReportCfg.groovy')).text).get("config").flatten()
+def configFile = new File(currentPath, 'xlyDailyReportCfg.groovy')
+def config = new ConfigSlurper().parse(configFile.text).get("config").flatten()
 def logger = logback.getLogger("xlyDailyReport");
 
 def localPath = config.get("localPath")
@@ -162,7 +163,7 @@ ORDER BY APP_ID ASC,DAY_STR ASC
         total = total + last
 
     }
-    if (textDetail.toString()) {
+    if (textDetail.toString().length() > 0) {
         def client = new RESTClient(url)
         def simple = new SimpleTemplateEngine()
         def binding = [detail: textDetail.toString(), lastDay: lastDay]
@@ -186,7 +187,7 @@ FROM CRMR
     dataMap.put("advreport", rows)
     xls.generateXls(dataMap)
 
-    mailMan.sendMail("导量日报（${lastDay}）", "导量日报（${lastDay}）", config)
+    mailMan.sendMail("导量日报（${lastDay}）", "导量日报（${lastDay}）", configFile)
 }
 
 /*
