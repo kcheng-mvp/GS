@@ -65,21 +65,25 @@ def first = Calendar.getInstance()
 first.set(Calendar.DAY_OF_MONTH, 1)
 first = first.getTime()
 
+def validDate = Calendar.getInstance().getTime();
+def monthFolder = new File("${localPath}/${monthFormat.format(validDate)}");
+if (monthFolder.exists()) monthFolder.deleteDir();
+
 def fetchDataFile = {
-    def validDate = Calendar.getInstance().getTime();
-    def monthFolder = new File("${localPath}/${monthFormat.format(validDate)}");
-    if (monthFolder.exists()) monthFolder.deleteDir();
+//    def validDate = Calendar.getInstance().getTime();
+//    def monthFolder = new File("${localPath}/${monthFormat.format(validDate)}");
+//    if (monthFolder.exists()) monthFolder.deleteDir();
     use(TimeCategory) {
         validDate = validDate - 1.days
         while (first <= validDate) {
             def command = "hadoop fs -test -e ${hdfsRoot}/${pathFormat.format(first)}/_SUCCESS"
             def rt = shell.exec(command)
-            if (rt["code"].equals("0")) {
+            if (rt["code"] != 0) {
                 def f = new File("${localPath}/${pathFormat.format(first)}");
                 f.mkdirs()
                 command = "hadoop fs -get ${hdfsRoot}/${pathFormat.format(first)}/p*  ${localPath}/${pathFormat.format(first)}"
                 rt = shell.exec(command)
-                if (rt["code"] != "0") {
+                if (rt["code"] != 0) {
                     logger.warn("can not download file from ${hdfsRoot}/${pathFormat.format(first)}/p* ")
                 }
             } else {
@@ -93,13 +97,13 @@ def fetchDataFile = {
     }
 }
 
-def loadData = { dir ->
+def loadData = {
     def insert = '''
 INSERT INTO CRMR(DAY_STR,APP_ID,UID,PLATFORM,ADV_APP_ID,
 CLICK_TIME_LONG, CLICK_TIME,REGISTER_TIME_LONG,REGISTER_TIME) VALUES (?,?,?,?,?,?,?,?,?)'''
     sql.withTransaction {
         sql.withBatch(100, insert) { stmt ->
-            dir.eachFileRecurse { f ->
+            monthFolder.eachFileRecurse { f ->
                 if (f.name.indexOf("part-")) {
                     f.eachLine { line ->
                         def segs = line.split("\t");
