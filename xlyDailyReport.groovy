@@ -109,10 +109,10 @@ CLICK_TIME_LONG, CLICK_TIME,REGISTER_TIME_LONG,REGISTER_TIME) VALUES (?,?,?,?,?,
                     f.eachLine { line ->
                         def segs = line.split("\t");
                         stmt.addBatch(
-                                sdf.format(Long.parseLong(segs[4])),
+                                sdf.format(Long.parseLong(segs[4]) * 1000L),
                                 segs[0], segs[1], segs[2], segs[3],
-                                Long.parseLong(segs[4]), new Date(Long.parseLong(segs[4])),
-                                Long.parseLong(segs[6]), new Date(Long.parseLong(segs[6]))
+                                Long.parseLong(segs[4]), new Date(Long.parseLong(segs[4]) * 1000),
+                                Long.parseLong(segs[6]), new Date(Long.parseLong(segs[6]) * 1000)
                         );
                     }
                 }
@@ -180,14 +180,14 @@ FROM CRMR
 
     def rows = [] as List
     sql.eachRow(detailSql) { row ->
-        rows.add([row['DAY_STR'], row['APP_ID'], row['UID'], row['PLATFORM'], row['ADV_APP_ID'], row['CLICK_TIME'], row['REGISTER_TIME']])
+        rows.add([row['DAY_STR'], row['APP_ID'], row['UID'], row['PLATFORM'], row['ADV_APP_ID'], pathFormat.format(row['CLICK_TIME']), pathFormat.format(row['REGISTER_TIME'])])
     }
 
     def dataMap = new HashMap();
     dataMap.put("advreport", rows)
-    xls.generateXls(dataMap)
+    def xlsPath = xls.generateXls(dataMap)
 
-    mailMan.sendMail("导量日报（${lastDay}）", "导量日报（${lastDay}）", configFile)
+    mailMan.sendMail("导量日报（${lastDay}）", "导量日报（${lastDay}）", configFile, xlsPath)
 }
 
 /*
