@@ -72,7 +72,7 @@ def fetchDataFile = {
     use(TimeCategory) {
         validDate = validDate - 1.days
         while (first <= validDate) {
-            def command = "hadoop fs -test -e ${hdfsRoot}/${pathFormat.format(first)}/p*"
+            def command = "hadoop fs -test -e ${hdfsRoot}/${pathFormat.format(first)}/_SUCCESS"
             def rt = shell.exec(command)
             if (rt["code"].equals("0")) {
                 def f = new File("${localPath}/${pathFormat.format(first)}");
@@ -83,7 +83,10 @@ def fetchDataFile = {
                     logger.warn("can not download file from ${hdfsRoot}/${pathFormat.format(first)}/p* ")
                 }
             } else {
-                logger.error("File ${hdfsRoot}/${pathFormat.format(first)} is not ready")
+                logger.error("File ${hdfsRoot}/${pathFormat.format(first)} is not ready,code is:${rt['code']}")
+                rt['msg'].each {
+                    logger.error(it)
+                }
             }
             first = first + 1.days
         }
