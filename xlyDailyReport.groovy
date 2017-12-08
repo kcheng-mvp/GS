@@ -78,7 +78,7 @@ def fetchDataFile = {
         while (first <= validDate) {
             def command = "hadoop fs -test -e ${hdfsRoot}/${pathFormat.format(first)}/_SUCCESS"
             def rt = shell.exec(command)
-            if (rt["code"] != 0) {
+            if (rt["code"] == 0) {
                 def f = new File("${localPath}/${pathFormat.format(first)}");
                 f.mkdirs()
                 command = "hadoop fs -get ${hdfsRoot}/${pathFormat.format(first)}/p*  ${localPath}/${pathFormat.format(first)}"
