@@ -146,7 +146,7 @@ ORDER BY APP_ID ASC,DAY_STR ASC
     def lastDay = null;
     def previous = null;
     def textDetail = new StringBuffer();
-    sql.eachRow { row ->
+    sql.eachRow(summarySql) { row ->
         if (!row['APP_ID'].equals(previous)) {
 
             if (!previous) {
@@ -178,7 +178,7 @@ FROM CRMR
 '''
 
     def rows = [] as List
-    sql.eachRow { row ->
+    sql.eachRow(detailSql) { row ->
         rows.add([row['DAY_STR'], row['APP_ID'], row['UID'], row['PLATFORM'], row['ADV_APP_ID'], row['CLICK_TIME'], row['REGISTER_TIME']])
     }
 
