@@ -1,8 +1,8 @@
 #! /usr/bin/env groovy
 
 @Grapes([
-        @Grab(group='javax.mail', module='mail', version='1.4.7'),
-        @Grab(group='javax.activation', module='activation', version='1.1.1')
+        @Grab(group = 'javax.mail', module = 'mail', version = '1.4.7'),
+        @Grab(group = 'javax.activation', module = 'activation', version = '1.1.1')
 ])
 
 import javax.mail.internet.*;
@@ -10,25 +10,46 @@ import javax.mail.*
 import javax.activation.*
 
 
-def sendMail(subject, message, configFile){
+def sendMail(subject, message, configFile, attachment = null) {
 
     def configObject = new ConfigSlurper().parse(configFile.text)
 
-    def session = Session.getDefaultInstance(configObject.toProperties(),new javax.mail.Authenticator() {
+    def session = Session.getDefaultInstance(configObject.toProperties(), new javax.mail.Authenticator() {
         protected PasswordAuthentication getPasswordAuthentication() {
             return new PasswordAuthentication(configObject.toProperties().get("mail.smtp.user"), configObject.toProperties().get("mail.smtp.password"));
         }
     });
 
-    def msg = new MimeMessage(session);
-    msg.setFrom(new InternetAddress(configObject.toProperties().get("mail.smtp.user")));
+    def mimeMessage = new MimeMessage(session);
 
-    def sendTo = configObject.toProperties().get("mail.receiptor").split(";").collect{
+    mimeMessage.setFrom(new InternetAddress(configObject.toProperties().get("mail.smtp.user")));
+
+    def sendTo = configObject.toProperties().get("mail.receiptor").split(";").collect {
         new InternetAddress(it);
     } as InternetAddress[]
 
-    msg.setRecipients(MimeMessage.RecipientType.TO,sendTo);
-    msg.setSubject(subject);
-    msg.setText(message)
-    Transport.send(msg);
+    mimeMessage.setRecipients(MimeMessage.RecipientType.TO, sendTo);
+    mimeMessage.setSubject(subject);
+
+    // Create the message part
+    def messageBodyPart = new MimeBodyPart();
+    // Now set the actual message
+    messageBodyPart.setText(message);
+    // Create a multipar message
+    Multipart multipart = new MimeMultipart();
+    // Set text message part
+    multipart.addBodyPart(messageBodyPart);
+
+    if (attachment) {
+        // Part two is attachment
+        messageBodyPart = new MimeBodyPart();
+        DataSource source = new FileDataSource(attachment);
+        messageBodyPart.setDataHandler(new DataHandler(source));
+        messageBodyPart.setFileName(attachment);
+        multipart.addBodyPart(messageBodyPart);
+        // Send the complete message parts
+    }
+
+    mimeMessage.setContent(multipart);
+    Transport.send(mimeMessage);
 }

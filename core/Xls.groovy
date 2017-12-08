@@ -65,7 +65,9 @@ def generateXls(Map dataMap, Closure... closures) {
     // Write the output to a file
     def sdf = new SimpleDateFormat("yyyyMMdd-HHmmss")
     def calendar = Calendar.getInstance();
-    FileOutputStream fileOut = new FileOutputStream("${sdf.format(calendar.getTime())}.xls");
+    def f = new File("${sdf.format(calendar.getTime())}.xls")
+    FileOutputStream fileOut = new FileOutputStream(f);
     wb.write(fileOut);
     fileOut.close();
+    f.absolutePath;
 }

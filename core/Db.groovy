@@ -23,6 +23,6 @@ def h2Con(String dbName) {
 }
 
 def h2mCon(String dbName){
-    Sql.newInstance("jdbc:h2:~/.h2/${dbName}", "sa", "", h2Driver);
+    Sql.newInstance("jdbc:h2:mem:${dbName}", "sa", "", h2Driver);
 }
 
