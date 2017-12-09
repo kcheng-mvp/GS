@@ -25,12 +25,12 @@ def logback = groovyShell.parse(new File(currentPath, "core/Logback.groovy"))
 def configFile = new File(currentPath, 'xlyDailyReportCfg.groovy')
 //def config = new ConfigSlurper().parse(configFile.text).get("config").flatten()
 def config = new ConfigSlurper().parse(configFile.text)
-def logger = logback.getLogger("xlyDailyReport");
 
 def localPath = config.settings.localPath
 def hdfsRoot = config.settings.hdfsPath
 def logPath = config.settings.logPath
 def cron = config.settings.cron
+def logger = logback.getLogger("xlyDailyReport",logPath);
 
 def sql = db.h2mCon("xlyDailyReport")
 
@@ -182,7 +182,7 @@ FROM CRMR
 
     def rows = [] as List
     sql.eachRow(detailSql) { row ->
-        rows.add([row['DAY_STR'], row['APP_ID'], row['UID'], row['PLATFORM'], row['ADV_APP_ID'], timeFormat.format(row['CLICK_TIME']), timeFormat.format(row['REGISTER_TIME'])])
+        rows.add([row['DAY_STR'], row['APP_ID'], row['UID'], row['PLATFORM'], row['ADV_APP_ID'], timeFormat.format(row['CLICK_TIME_LONG'] * 1000L), timeFormat.format(row['REGISTER_TIME_LONG'] * 1000L)])
     }
 
     def dataMap = new HashMap();
