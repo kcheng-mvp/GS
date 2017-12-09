@@ -23,19 +23,26 @@ def xls = groovyShell.parse(new File(currentPath, "core/Xls.groovy"))
 def mailMan = groovyShell.parse(new File(currentPath, "core/Mailman.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "core/Logback.groovy"))
 def configFile = new File(currentPath, 'xlyDailyReportCfg.groovy')
-def config = new ConfigSlurper().parse(configFile.text).get("config").flatten()
+//def config = new ConfigSlurper().parse(configFile.text).get("config").flatten()
+def config = new ConfigSlurper().parse(configFile.text)
 def logger = logback.getLogger("xlyDailyReport");
 
-def localPath = config.get("localPath")
-def hdfsRoot = config.get("hdfsPath")
-def logPath = config.get("logPath")
-def cron = config.get("cron")
+def localPath = config.settings.localPath
+def hdfsRoot = config.settings.hdfsPath
+def logPath = config.settings.logPath
+def cron = config.settings.cron
 
 def sql = db.h2mCon("xlyDailyReport")
-/*
-2017090108502293 2088002409090466 ios 2017051207220849 1512553105 2017 / 12 / 06 17 : 38 : 25 1512553624 2017 / 12 / 06
-17 : 47 : 04
-*/
+
+
+def gameName = {
+    def name = config.settings.games.get(it);
+    return name ? (name.padRight(20 - name.length() * 2)) : it
+}
+
+
+
+
 sql.execute('''
 	CREATE TABLE IF NOT EXISTS CRMR (
 	ID INTEGER IDENTITY,
@@ -60,6 +67,7 @@ CREATE INDEX IF NOT EXISTS INFO_IDX2 ON CRMR(ADV_APP_ID);
 
 def sdf = new SimpleDateFormat("yyyyMMdd");
 def pathFormat = new SimpleDateFormat("yyyy/MM/dd")
+def timeFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 def monthFormat = new SimpleDateFormat("yyyy/MM")
 
 def first = Calendar.getInstance()
@@ -67,15 +75,14 @@ first.set(Calendar.DAY_OF_MONTH, 1)
 first = first.getTime()
 
 def validDate = Calendar.getInstance().getTime();
+use(TimeCategory) {
+    validDate = validDate - 1.days
+}
 def monthFolder = new File("${localPath}/${monthFormat.format(validDate)}");
 if (monthFolder.exists()) monthFolder.deleteDir();
 
 def fetchDataFile = {
-//    def validDate = Calendar.getInstance().getTime();
-//    def monthFolder = new File("${localPath}/${monthFormat.format(validDate)}");
-//    if (monthFolder.exists()) monthFolder.deleteDir();
     use(TimeCategory) {
-        validDate = validDate - 1.days
         while (first <= validDate) {
             def command = "hadoop fs -test -e ${hdfsRoot}/${pathFormat.format(first)}/_SUCCESS"
             def rt = shell.exec(command)
@@ -126,7 +133,7 @@ def template = '''
      "msgtype": "markdown",
      "markdown": {
          "title":"导量日报表 (${lastDay})",
-         "text": "${detail}\n" +
+         "text": "${detail}\n",
      },
     "at": {
         "isAtAll": true
@@ -146,28 +153,23 @@ ORDER BY APP_ID ASC,DAY_STR ASC
     def last = 0;
     def lastDay = null;
     def previous = null;
-    def textDetail = new StringBuffer();
+    def textDetail = new StringBuffer("### **导量日报：本月累计/当日（${pathFormat.format(validDate).padLeft(20)}）** \n");
     sql.eachRow(summarySql) { row ->
-        if (!row['APP_ID'].equals(previous)) {
-
-            if (!previous) {
-                textDetail.append("#### ")
-            } else {
-                textDetail.append("${row['APP_ID']}: ${total}（本月累计）,${last}（今日）").append("\n");
-                textDetail.append("> #### ")
-            }
+        if (previous && !row['APP_ID'].equals(previous)) {
+            textDetail.append("- ${gameName(row['APP_ID'])}: ${total.toString().padRight(20)}/${last.toString().padRight(20)}\n");
             total = 0;
         }
+        previous = row['APP_ID']
         last = row['CNT']
         lastDay = row['DAY_STR']
         total = total + last
-
     }
     if (textDetail.toString().length() > 0) {
         def client = new RESTClient(url)
         def simple = new SimpleTemplateEngine()
         def binding = [detail: textDetail.toString(), lastDay: lastDay]
         def msg = simple.createTemplate(template).make(binding).toString()
+        println msg
         def response = client.post(path: context, contentType: JSON, body: msg, query: [access_token: access_token], headers: [Accept: 'application/json'])
     }
 
@@ -180,20 +182,22 @@ FROM CRMR
 
     def rows = [] as List
     sql.eachRow(detailSql) { row ->
-        rows.add([row['DAY_STR'], row['APP_ID'], row['UID'], row['PLATFORM'], row['ADV_APP_ID'], pathFormat.format(row['CLICK_TIME']), pathFormat.format(row['REGISTER_TIME'])])
+        rows.add([row['DAY_STR'], row['APP_ID'], row['UID'], row['PLATFORM'], row['ADV_APP_ID'], timeFormat.format(row['CLICK_TIME']), timeFormat.format(row['REGISTER_TIME'])])
     }
 
     def dataMap = new HashMap();
-    dataMap.put("advreport", rows)
+    dataMap.put("AdvReport", rows)
     def xlsPath = xls.generateXls(dataMap)
 
     mailMan.sendMail("导量日报（${lastDay}）", "导量日报（${lastDay}）", configFile, xlsPath)
+
+    new  File(xlsPath).delete();
 }
 
-/*
 cron4j.start(cron,{
     fetchDataFile()
     loadData()
     genReport()
 })
-*/
+
+
