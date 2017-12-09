@@ -37,7 +37,7 @@ def sql = db.h2mCon("xlyDailyReport")
 
 def gameName = {
     def name = config.settings.games.get(it);
-    return name ? (name.padRight(20 - name.length() * 2)) : it
+    return name ? (name.padRight(8 - name.length() * 2)) : it
 }
 
 
@@ -153,10 +153,10 @@ ORDER BY APP_ID ASC,DAY_STR ASC
     def last = 0;
     def lastDay = null;
     def previous = null;
-    def textDetail = new StringBuffer("### **导量日报：本月累计/当日（${pathFormat.format(validDate).padLeft(20)}）** \n");
+    def textDetail = new StringBuffer("### **导量：本月/(${pathFormat.format(validDate)})**\n");
     sql.eachRow(summarySql) { row ->
         if (previous && !row['APP_ID'].equals(previous)) {
-            textDetail.append("- ${gameName(row['APP_ID'])}: ${total.toString().padRight(20)}/${last.toString().padRight(20)}\n");
+            textDetail.append("- ${gameName(row['APP_ID'])}: ${total.toString().padRight(6)}/${last.toString()}\n");
             total = 0;
         }
         previous = row['APP_ID']
