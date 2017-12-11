@@ -1,5 +1,7 @@
 #! /usr/bin/env groovy
 import java.text.SimpleDateFormat
+import groovy.time.TimeCategory
+
 //
 //
 //if(args.size() !=1){
@@ -29,10 +31,11 @@ import java.text.SimpleDateFormat
 //bw.close();
 
 def sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-println "click:"+ sdf.format(1512139695 * 1000L)
-println "register:"+ sdf.format(1512139730 * 1000L)
 
 
-
-//1512057776
-//1512057794
+def today = Calendar.getInstance().previous()
+def validDay = today.getTime()
+println sdf.format(today.getTime())
+today.set(Calendar.DAY_OF_MONTH, 1)
+println sdf.format(today.getTime())
+println sdf.format(validDay)

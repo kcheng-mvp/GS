@@ -30,7 +30,7 @@ def localPath = config.settings.localPath
 def hdfsRoot = config.settings.hdfsPath
 def logPath = config.settings.logPath
 def cron = config.settings.cron
-def logger = logback.getLogger("xlyDailyReport",logPath);
+def logger = logback.getLogger("xlyDailyReport", logPath);
 
 def sql = db.h2mCon("xlyDailyReport")
 
@@ -70,6 +70,7 @@ def pathFormat = new SimpleDateFormat("yyyy/MM/dd")
 def timeFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 def monthFormat = new SimpleDateFormat("yyyy/MM")
 
+/*
 def first = Calendar.getInstance()
 first.set(Calendar.DAY_OF_MONTH, 1)
 first = first.getTime()
@@ -80,10 +81,31 @@ use(TimeCategory) {
 }
 def monthFolder = new File("${localPath}/${monthFormat.format(validDate)}");
 if (monthFolder.exists()) monthFolder.deleteDir();
+*/
+
+def dateRange = {
+    def previous = Calendar.getInstance().previous()
+    def validDate = previous.getTime();
+    previous.set(Calendar.DAY_OF_MONTH, 1)
+    def first = previous.getTime()
+
+    logger.info("Valid Date is : ${validDate}")
+    logger.info("First Date is : ${first}")
+    ['first':first, 'validDate':validDate]
+}
 
 def fetchDataFile = {
+
+    def dates = dateRange();
+    def validDate = dates['validDate']
+    def first = dates['first']
+
+
+    def monthFolder = new File("${localPath}/${monthFormat.format(validDate)}");
+    if (monthFolder.exists()) monthFolder.deleteDir();
     use(TimeCategory) {
         while (first <= validDate) {
+            logger.info("Get Data for ${first} ...")
             def command = "hadoop fs -test -e ${hdfsRoot}/${pathFormat.format(first)}/_SUCCESS"
             def rt = shell.exec(command)
             if (rt["code"] == 0) {
@@ -106,6 +128,8 @@ def fetchDataFile = {
 }
 
 def loadData = {
+    logger.info("loadData ......")
+    def monthFolder = new File("${localPath}/${monthFormat.format(dateRange()['validDate'])}");
     def insert = '''
 INSERT INTO CRMR(DAY_STR,APP_ID,UID,PLATFORM,ADV_APP_ID,
 CLICK_TIME_LONG, CLICK_TIME,REGISTER_TIME_LONG,REGISTER_TIME) VALUES (?,?,?,?,?,?,?,?,?)'''
@@ -142,6 +166,7 @@ def template = '''
 ''';
 
 def genReport = {
+    logger.info("Generate Report ......")
     def summarySql = '''
 SELECT APP_ID,DAY_STR,COUNT(UID) AS CNT
 FROM CRMR 
@@ -153,6 +178,7 @@ ORDER BY APP_ID ASC,DAY_STR ASC
     def last = 0;
     def lastDay = null;
     def previous = null;
+    def validDate = Calendar.getInstance().previous().getTime();
     def textDetail = new StringBuffer("### **导量：(${pathFormat.format(validDate)})**\n");
     sql.eachRow(summarySql) { row ->
         if (previous && !row['APP_ID'].equals(previous)) {
@@ -169,7 +195,6 @@ ORDER BY APP_ID ASC,DAY_STR ASC
         def simple = new SimpleTemplateEngine()
         def binding = [detail: textDetail.toString(), lastDay: lastDay]
         def msg = simple.createTemplate(template).make(binding).toString()
-        println msg
         def response = client.post(path: context, contentType: JSON, body: msg, query: [access_token: access_token], headers: [Accept: 'application/json'])
     }
 
@@ -191,13 +216,24 @@ FROM CRMR
 
     mailMan.sendMail("导量日报（${lastDay}）", "导量日报（${lastDay}）", configFile, xlsPath)
 
-    new  File(xlsPath).delete();
+    new File(xlsPath).delete();
 }
 
-cron4j.start(cron,{
+def cleanup = {
+    logger.info("clean up database ...... ")
+    def delete = "DELETE FROM CRMR";
+    sql.execute(delete);
+    def check = "SELECT COUNT(1) as CNT FROM CRMR"
+    def rt = sql.firstRow(check)
+    logger.info("[cleanup]: There are ${rt.CNT} rows in db.")
+}
+
+cron4j.start(cron, {
+    cleanup()
     fetchDataFile()
     loadData()
     genReport()
+    cleanup()
 })
 
 
