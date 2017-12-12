@@ -6,7 +6,7 @@ def currentPath = new File(getClass().protectionDomain.codeSource.location.path)
 GroovyShell groovyShell = new GroovyShell()
 def cron4j = groovyShell.parse(new File(currentPath, "core/Cron4J.groovy"))
 def shell = groovyShell.parse(new File(currentPath, "core/Shell.groovy"))
-//def logback = groovyShell.parse(new File(currentPath, "core/Logback.groovy"))
+def logback = groovyShell.parse(new File(currentPath, "core/Logback.groovy"))
 
 
 
@@ -14,19 +14,19 @@ def hostName = InetAddress.getLocalHost().getHostName()
 // hadoop version get hadoop version
 def properties = new Properties()
 properties.load(getClass().getResourceAsStream('hdfsSync.properties'));
-def localPath = new File(properties.get("localPath"))
+def localPath = new File("/home/hadoop/sandbox/dts")
 def hdfsRoot = properties.get("hdfsRoot")
 //def logPath = properties.get("logPath")
-//def log = logback.getLogger("hdfsSync", properties.get("logPath"))
+def log = logback.getLogger("hdfsSync-bk-dts", properties.get("/home/hadoop/sandbox"))
 
-//def backup = new File(localPath,"backup")
-//if(!backup.exists()) backup.mkdirs()
+def backup = new File(localPath,"backup")
+if(!backup.exists()) backup.mkdirs()
 def dataSync = {
     def now = Calendar.getInstance().getTime();
     use(TimeCategory) {
         localPath.eachFile { f ->
-            if(f.name.indexOf("advagg") > -1) return 0
-            (1..240).find {
+            if (f.name.indexOf("advagg") > -1) return 0
+            (20..400).find {
                 def format = (now - it.hours).format("yyyy-MM-dd-HH")
                 def datePath = (now - it.hours).format("yyyy/MM/dd/HH")
                 if (f.name =~ /.*\.$format\.log$/) {
@@ -87,10 +87,15 @@ def dataSync = {
                         }
                         return true
                     }
+                    //todo: backup files
+                    if (f.renameTo(new File(backup, f.name))) {
+                        log.info("Backup file ${f.absolutePath} successfully ......")
+                    } else {
+                        log.warn("Failed to backup the file ${f.absolutePath}")
+                    }
 
 
-
-               }
+                }
             }
 
         }
@@ -98,7 +103,8 @@ def dataSync = {
 
 } as Runnable
 
-def cron = "25 * * * *"
-cron4j.start(cron, dataSync)
+dataSync()
+//def cron = "25 * * * *"
+//cron4j.start(cron, dataSync)
 
 

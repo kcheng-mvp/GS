@@ -48,6 +48,7 @@ def hourlyRegister = {
 
 
     log.info("fetch data for : [${sdf.format(new Date(start))}, ${sdf.format(new Date(end))}]");
+    log.info("url -> ${url}/api/xlygetpuid/?start_time=${(start / 1000) as Long}&end_time=${(end / 1000) as Long}&sign=${sign}")
 
     def http = new HTTPBuilder(url)
 
@@ -62,7 +63,6 @@ def hourlyRegister = {
 } as Runnable
 
 def cron = "05 * * * *"
-//cron4j.start(cron, hourlyRegister)
+cron4j.start(cron, hourlyRegister)
 
-hourlyRegister()
 
