@@ -52,9 +52,7 @@ sql.execute('''
 	PLATFORM VARCHAR(20),
 	ADV_APP_ID VARCHAR(20),
 	CLICK_TIME_LONG BIGINT,
-	CLICK_TIME DATE,
-	REGISTER_TIME_LONG BIGINT,
-	REGISTER_TIME DATE
+	REGISTER_TIME_LONG BIGINT
 )
 ''');
 sql.execute('''
@@ -132,18 +130,19 @@ def loadData = {
     def monthFolder = new File("${localPath}/${monthFormat.format(dateRange()['validDate'])}");
     def insert = '''
 INSERT INTO CRMR(DAY_STR,APP_ID,UID,PLATFORM,ADV_APP_ID,
-CLICK_TIME_LONG, CLICK_TIME,REGISTER_TIME_LONG,REGISTER_TIME) VALUES (?,?,?,?,?,?,?,?,?)'''
+CLICK_TIME_LONG, REGISTER_TIME_LONG) VALUES (?,?,?,?,?,?,?)'''
     sql.withTransaction {
         sql.withBatch(100, insert) { stmt ->
             monthFolder.eachFileRecurse { f ->
-                if (f.name.indexOf("part-") > -1) {
+                if (f.name.indexOf("part-") > -1 && f.isFile()) {
+                    logger.info("Process file ${f.absolutePath}")
                     f.eachLine { line ->
                         def segs = line.split("\t");
                         stmt.addBatch(
                                 sdf.format(Long.parseLong(segs[4]) * 1000L),
                                 segs[0], segs[1], segs[2], segs[3],
-                                Long.parseLong(segs[4]), new Date(Long.parseLong(segs[4]) * 1000),
-                                Long.parseLong(segs[6]), new Date(Long.parseLong(segs[6]) * 1000)
+                                Long.parseLong(segs[4]),
+                                Long.parseLong(segs[6])
                         );
                     }
                 }
@@ -182,14 +181,17 @@ ORDER BY APP_ID ASC,DAY_STR ASC
     def textDetail = new StringBuffer("### **导量：(${pathFormat.format(validDate)})**\n");
     sql.eachRow(summarySql) { row ->
         if (previous && !row['APP_ID'].equals(previous)) {
-            textDetail.append("- ${gameName(row['APP_ID'])}: ${total.toString().padRight(6)}/${last.toString()}\n");
+            textDetail.append("- ${gameName(previous)}: ${total.toString().padRight(5)}/${last.toString()}\n");
             total = 0;
         }
         previous = row['APP_ID']
         last = row['CNT']
         lastDay = row['DAY_STR']
         total = total + last
+        logger.info("[${gameName(previous)},${lastDay},${last},${total}]")
     }
+    textDetail.append("- ${gameName(previous)}: ${total.toString().padRight(5)}/${last.toString()}\n");
+    logger.info("MSG -> ${textDetail.toString()}");
     if (textDetail.toString().length() > 0) {
         def client = new RESTClient(url)
         def simple = new SimpleTemplateEngine()
@@ -197,6 +199,7 @@ ORDER BY APP_ID ASC,DAY_STR ASC
         def msg = simple.createTemplate(template).make(binding).toString()
         def response = client.post(path: context, contentType: JSON, body: msg, query: [access_token: access_token], headers: [Accept: 'application/json'])
     }
+
 
 
 
@@ -217,6 +220,7 @@ FROM CRMR
     mailMan.sendMail("导量日报（${lastDay}）", "导量日报（${lastDay}）", configFile, xlsPath)
 
     new File(xlsPath).delete();
+
 }
 
 def cleanup = {
