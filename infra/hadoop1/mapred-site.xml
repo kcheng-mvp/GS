@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+    <property>
+        <name>mapred.job.tracker</name>
+        <value>xly01:9001</value>
+    </property>
+    <property>
+        <name>mapred.job.tracker.http.address</name>
+        <value>0.0.0.0:50030</value>
+    </property>
+    <property>
+        <name>mapred.local.dir</name>
+        <value>/data0/hadoop1/mapred</value>
+    </property>
+    <property>
+        <name>mapred.system.dir</name>
+        <value>/data0/hadoop1/mapred/system</value>
+    </property>
+    <property>
+        <name>mapreduce.jobtracker.staging.root.dir</name>
+        <value>/data0/hadoop1/mapred/staging</value>
+    </property>
+    <property>
+        <name>mapred.job.tracker.handler.count</name>
+        <value>20</value>
+    </property>
+    <property>
+        <name>tasktracker.http.threads</name>
+        <value>80</value>
+    </property>
+    <property>
+        <name>mapred.acls.enabled</name>
+        <value>false</value>
+    </property>
+    <property>
+        <name>local.cache.size</name>
+        <value>2147483648L</value>
+    </property>
+    <property>
+        <name>mapreduce.tasktracker.local.cache.numberdirectories</name>
+        <value>3000</value>
+    </property>
+    <property>
+        <name>mapreduce.tasktracker.cache.local.keep.pct</name>
+        <value>0.75f</value>
+    </property>
+    <property>
+        <name>mapred.tasktracker.map.tasks.maximum</name>
+        <value>6</value>
+    </property>
+    <property>
+        <name>mapred.tasktracker.reduce.tasks.maximum</name>
+        <value>4</value>
+    </property>
+    <property>
+        <name>mapred.child.java.opts</name>
+        <value>-Xmx2048M -Xms512M</value>
+    </property>
+    <property>
+        <name>io.sort.mb</name>
+        <value>512</value>
+    </property>
+    <property>
+        <name>io.sort.factor</name>
+        <value>50</value>
+    </property>
+    <property>
+        <name>mapred.reduce.slowstart.completed.maps</name>
+        <value>0.80</value>
+    </property>
+    <property>
+        <name>dfs.datanode.failed.volumes.tolerated</name>
+        <value>1</value>
+    </property>
+    <property>
+        <name>mapred.hosts.exclude</name>
+        <value>/usr/local/hadoop/conf/exclude_hosts</value>
+    </property>
+    <property>
+        <name>mapred.task.timeout</name>
+        <value>3600000</value>
+    </property>
+</configuration>

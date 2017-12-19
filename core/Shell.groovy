@@ -18,7 +18,7 @@ def exec(shell, String... host) {
     def process = processBuilder.redirectErrorStream(true).start();
     def rt = [] as List;
     process.inputStream.eachLine {
-        println it
+//        println it
         rt << it
     }
     process.waitFor();
