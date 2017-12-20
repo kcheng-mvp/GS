@@ -6,15 +6,13 @@ nodes {
 
 
 hadoopenv {
-    root = "/data0/hadoop1"
+    paths = ["/data0/hadoop1", "/data1/hadoop1","/data2/hadoop1"] as List
     log {
-        dir = "${root}/logs"
+        dir = "${paths[0]}/logs"
     }
     pid {
-        dir = "${root}/pids"
+        dir = "${paths[0]}/pids"
     }
-
-
 }
 
 coreSite {
@@ -25,25 +23,26 @@ coreSite {
     }
     hadoop {
         tmp {
-            dir = "${hadoopenv.root}/tmp"
+            dir = "${hadoopenv.paths[0]}/tmp"
         }
     }
 }
+
 hdfsSite {
     dfs {
         name {
-            dir = "${hadoopenv.root}/dfs/name"
+            dir = "${hadoopenv.paths[0]}/dfs/name"
         }
     }
     //list, separated by comma
     dfs {
         data {
-            dir = "${hadoopenv.root}/dfs/data"
+            dir = hadoopenv.paths.collect{ "${it}/dfs/data"}.join(",")
         }
     }
     fs {
         checkpoint {
-            dir = "${hadoopenv.root}/dfs/namesecondary"
+            dir = "${hadoopenv.paths[0]}/dfs/namesecondary"
         }
     }
     dfs {
@@ -63,19 +62,19 @@ mapredSite {
     //list, separated by comma
     mapred {
         local {
-            dir = "${hadoopenv.root}/mapred/local"
+            dir = hadoopenv.paths.collect{ "${it}/mapred/local"}.join(",")
         }
     }
     mapred {
         system {
-            dir = "${hadoopenv.root}/mapred/system"
+            dir = "${hadoopenv.paths[0]}/mapred/system"
         }
     }
     mapreduce {
         jobtracker {
             staging {
                 root {
-                    dir = "${hadoopenv.root}/mapred/staging"
+                    dir = "${hadoopenv.paths[0]}/mapred/staging"
                 }
             }
         }
