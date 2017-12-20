@@ -18,9 +18,11 @@ config.flatten().each { k, v ->
 }
 logger.info("********************")
 
+def tmpDir = new File(System.getProperty("java.io.tmpdir"));
+
 def cfg = {
 
-    def generate = new File(currentPath, "generate")
+    def generate = new File(tmpDir, "hdfs-v1")
     if (generate.exists()) {
         generate.deleteDir()
     }
@@ -81,11 +83,13 @@ def cfg = {
             }
         }
     }
+
+    logger.info("Configurations are generated at {}", generate.absolutePath)
 }
 
 
 def apply = {
-    def generate = new File(currentPath, "generate")
+    def generate = new File(tmpDir, "hdfs-v1")
     def folder = new File(generate, "folder")
     if(!generate.exists() || !folder.exists()){
         logger.error("No configurations are found, please run 'cfg' first !")
@@ -100,5 +104,12 @@ def apply = {
 if (!args || args.size() !=1) {
     logger.error("Please run the command with parameter : cfg or apply")
     return -1
+} else {
+    if("cfg".equalsIgnoreCase(args[0])){
+        cfg()
+    } else {
+        apply()
+    }
+
 }
 
