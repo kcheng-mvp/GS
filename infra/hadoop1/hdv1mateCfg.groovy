@@ -1,11 +1,7 @@
-nodes {
-    master = "xly01"
-    second = "xly02"
-    data = ["xly03"] as List
-}
-
-
 hadoopenv {
+    masterNode = "xly01"
+    secondNode = "xly02"
+    dataNode = ["xly03"] as List
     paths = ["/data0/hadoop1", "/data1/hadoop1","/data2/hadoop1"] as List
     log {
         dir = "${paths[0]}/logs"
@@ -18,7 +14,7 @@ hadoopenv {
 coreSite {
     fs {
         'default' {
-            name = "hdfs://${nodes.master}:9000"
+            name = "hdfs://${hadoopenv.masterNode}:9000"
         }
     }
     hadoop {
@@ -48,7 +44,7 @@ hdfsSite {
     dfs {
         secondary {
             http {
-                address = "${nodes.second}:50090"
+                address = "${hadoopenv.secondNode}:50090"
             }
         }
     }
@@ -56,7 +52,7 @@ hdfsSite {
 mapredSite {
     mapred {
         job {
-            tracker = "${nodes.master}:9001"
+            tracker = "${hadoopenv.masterNode}:9001"
         }
     }
     //list, separated by comma
