@@ -6,11 +6,11 @@
 <configuration>
     <property>
         <name>fs.default.name</name>
-        <value>hdfs://xly01:9000</value>
+        <value>${coreSite.fs.default.name}</value>
     </property>
     <property>
         <name>hadoop.tmp.dir</name>
-        <value>/data0/hadoop1/tmp</value>
+        <value>${coreSite.hadoop.tmp.dir}</value>
     </property>
     <property>
         <name>io.file.buffer.size</name>

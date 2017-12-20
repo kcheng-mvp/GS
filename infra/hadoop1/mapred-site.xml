@@ -6,7 +6,7 @@
 <configuration>
     <property>
         <name>mapred.job.tracker</name>
-        <value>xly01:9001</value>
+        <value>${mapredSite.mapred.job.tracker}</value>
     </property>
     <property>
         <name>mapred.job.tracker.http.address</name>
@@ -14,15 +14,15 @@
     </property>
     <property>
         <name>mapred.local.dir</name>
-        <value>/data0/hadoop1/mapred</value>
+        <value>${mapredSite.mapred.local.dir}</value>
     </property>
     <property>
         <name>mapred.system.dir</name>
-        <value>/data0/hadoop1/mapred/system</value>
+        <value>${mapredSite.mapred.system.dir}</value>
     </property>
     <property>
         <name>mapreduce.jobtracker.staging.root.dir</name>
-        <value>/data0/hadoop1/mapred/staging</value>
+        <value>${mapredSite.mapreduce.jobtracker.staging.root.dir}</value>
     </property>
     <property>
         <name>mapred.job.tracker.handler.count</name>
