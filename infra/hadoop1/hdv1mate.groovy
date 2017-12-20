@@ -97,5 +97,8 @@ def apply = {
 }
 
 
-cfg()
+if (!args || args.size() !=1) {
+    logger.error("Please run the command with parameter : cfg or apply")
+    return -1
+}
 
