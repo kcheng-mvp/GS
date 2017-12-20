@@ -12,6 +12,11 @@ def config = new ConfigSlurper().parse(configFile.text)
 
 def logger = logback.getLogger("infra-hadoop1")
 
+logger.info("********************")
+config.flatten().each {k,v ->
+   logger.info("${k} : ${v}")
+}
+logger.info("********************")
 
 def generate = new File(currentPath,"generate")
 if(generate.exists()) {
