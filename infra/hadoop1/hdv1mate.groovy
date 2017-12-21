@@ -76,15 +76,15 @@ def cfg = {
     logger.info("Generate folder list ...")
 
     def folder = new File(generate, "folder").withWriter { w ->
-        config.hadoopenv.paths.each { rootPath ->
-            w.write(rootPath)
-            w.write("\n")
-        }
         config.flatten().each { k, v ->
             if (k.indexOf("dir") > -1) {
                 w.write(v)
                 w.write("\n")
             }
+        }
+        config.hadoopenv.paths.each { rootPath ->
+            w.write(rootPath)
+            w.write("\n")
         }
     }
 
@@ -120,28 +120,47 @@ def apply = { flag ->
         def user = rt.msg[0]
         rt = shell.exec("id -g -n", host)
         def group = rt.msg[0]
-        logger.info("All the folders will be created as user : ${user} and group :${group}")
-        folder.each { f ->
+        folder.eachLine { f ->
             if (f) {
                 f = f.replaceAll(",", " ")
-                rt = shell.exec("ls ${f}", host)
-                if("0".equalsIgnoreCase(flag) && rt.code){
+                rt = shell.exec("ls -l ${f}", host)
+                if ("0".equalsIgnoreCase(flag) && rt.code) {
                     exits = false
-                    rt.msg.each {msg ->
+                    rt.msg.each { msg ->
                         logger.info("[check][@${host}]:${msg}")
                     }
                 }
-                if ("1".equalsIgnoreCase(flag) && rt.code) {
-                    rt = shell.exec("sudo mkdir -p ${f}", host)
-                    rt.msg.each { msg ->
-                        logger.info("[@${host}]:${msg}")
+                if ("1".equalsIgnoreCase(flag)) {
+                    if (rt.code) {
+                        logger.info("** Creating folder ${f} [@${host}]")
+                        rt = shell.exec("sudo mkdir -p ${f}", host)
+                        rt.msg.each { msg ->
+                            logger.info("[@${host}]:${msg}")
+                        }
+                        f.split().each { p ->
+                            def pathEle = new StringBuffer()
+                            p.split(File.separator).each { ele ->
+                                if (ele) {
+                                    pathEle.append(File.separator).append(ele)
+                                    rt = shell.exec("stat  -c '%U' ${pathEle.toString()}")
+                                    if (!user.equals(rt.msg[0])) {
+                                        logger.info("**  Change owner and group for :${pathEle.toString()} [@${host}]")
+                                        rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
+                                    }
+                                }
+
+
+                            }
+                        }
+                    } else {
+                        logger.warn("********* Folder ${f} exists [@${host}] *********")
                     }
-                    rt = shell.exec("sudo chown ${user}:${group} ${f}", host)
                 }
             }
         }
-        if("0".equalsIgnoreCase(flag) && exits){
-            logger.info("All the folders exits on the [@${host}] ...")
+
+        if ("0".equalsIgnoreCase(flag) && exits) {
+            logger.info("** All the folders exits on the [@${host}] ...")
         }
     }
 
@@ -150,11 +169,17 @@ def apply = { flag ->
 
 if (!args) {
     logger.info("make sure your settings are correct and then run the command : cfg or apply")
+    "/data0/hadoop1/log".split(File.separator).each {
+        if (it) {
+            println "${it}, ${it.length()}"
+        }
+    }
+
 } else {
     if ("cfg".equalsIgnoreCase(args[0])) {
         cfg()
     } else if ("apply".equalsIgnoreCase(args[0])) {
-        def flag = args.length == 2 ? args[1]:"0";
+        def flag = args.length == 2 ? args[1] : null
         apply(flag)
     }
 }
