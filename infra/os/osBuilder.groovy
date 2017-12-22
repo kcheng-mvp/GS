@@ -10,6 +10,9 @@
 
 import java.text.SimpleDateFormat
 import groovy.time.TimeCategory
+import java.awt.datatransfer.StringSelection
+import java.awt.Toolkit
+import java.awt.datatransfer.*
 
 def currentPath = new File(getClass().protectionDomain.codeSource.location.path).parent
 GroovyShell groovyShell = new GroovyShell()
@@ -21,24 +24,26 @@ def logger = logback.getLogger("infra.os")
 
 
 def tmpDir = new File(System.getProperty("java.io.tmpdir"));
-def etcHosts = new File(tmpDir,"etcHosts");
+def etcHosts = new StringBuffer();
 def rt = null
-etcHosts.withWriter { w ->
-    cfg.os.hosts.each {
-        rt = shell.exec("hostname", it)
-        if (!it.equals(rt['msg'].get(0))) {
-            logger.error(">> local host name ${it},remote host name ${rt['msg'].get(0)} please fix it")
-        } else {
-            logger.info("** ${it}: local & remote matchs")
-        }
-        rt = shell.exec("hostname -I", it)
-        w.write("${rt['msg'].get(0).trim()} ${it.trim()}")
-        w.write("\n")
+cfg.os.hosts.each {host ->
+    rt = shell.exec("hostname", host)
+    if (!host.equals(rt['msg'].get(0))) {
+        logger.error(">> local host name ${host},remote host name ${rt['msg'].get(0)} please fix it")
+    }
+    rt = shell.exec("hostname -I", host)
+    etcHosts.append("${rt['msg'].get(0).trim()} ${host.trim()}").append("\n")
+    rt = shell.exec("ls ~/.ssh/id_rsa", host)
+    if(!rt.code){
+        logger.info("** ssh key ~/.ssh/id_rsa exists on ${host}")
+    } else {
+        logger.info("Generate ssh key for [@${host}]")
+        rt = shell.exec("ssh-keygen -b 4096 -q -N '' -C '${host}' -f ~/.ssh/id_rsa",host)
     }
 }
-
-logger.info("** /etc/hosts is generated at :${etcHosts.absolutePath}")
-
+def clipboard = Toolkit.getDefaultToolkit().getSystemClipboard()
+clipboard.setContents(new StringSelection(etcHosts.toString()), null)
+logger.info("Host info is in System Clipboard ...")
 
 
 
@@ -58,12 +63,10 @@ cfg.os.hosts.each {
     def proc = rt.msg[0]
     rt = shell.exec("cat /etc/security/limits.d/${proc}", it)
     rt.msg.each { msg ->
-        if(msg && !msg.startsWith("#")){
+        if (msg && !msg.startsWith("#")) {
             logger.info("/etc/security/limits.d/${proc}@[${it}]:${msg}")
         }
     }
 }
-
-
 
 
