@@ -14,7 +14,7 @@ def logger = logback.getLogger("infra-hadoop1")
 
 logger.info("********************")
 config.flatten().each { k, v ->
-    logger.info("${k} : ${v}")
+    logger.info("** ${k} : ${v}")
 }
 logger.info("********************")
 
@@ -29,7 +29,7 @@ def cfg = {
     generate.mkdirs()
 
     def stringEngine = new GStringTemplateEngine()
-    logger.info("Generate hadoop-env.sh ...")
+    logger.info("** Generate hadoop-env.sh ...")
     def tempEnv = new File(currentPath, "temp-env.sh")
     def envString = stringEngine.createTemplate(tempEnv).make(config).toString()
     def template = new File(currentPath, "hadoop-env.sh")
@@ -39,27 +39,27 @@ def cfg = {
 
 
 
-    logger.info("Generate core-site.xml ...")
+    logger.info("** Generate core-site.xml ...")
     def core = new File(currentPath, "core-site.xml")
     def coreString = stringEngine.createTemplate(core).make(config).toString()
     def coreSite = new File(generate, "core-site.xml")
     coreSite << coreString
 
 
-    logger.info("Generate hdfs-site.xml ...")
+    logger.info("** Generate hdfs-site.xml ...")
     def hdfs = new File(currentPath, "hdfs-site.xml")
     def hdfsString = stringEngine.createTemplate(hdfs).make(config).toString()
     def hdfsSite = new File(generate, "hdfs-site.xml")
     hdfsSite << hdfsString
 
 
-    logger.info("Generate mapred-site.xml ...")
+    logger.info("** Generate mapred-site.xml ...")
     def mapred = new File(currentPath, "mapred-site.xml")
     def mapredString = stringEngine.createTemplate(mapred).make(config).toString()
     def mapredSite = new File(generate, "mapred-site.xml")
     mapredSite << mapredString
 
-    logger.info("Generate masters & slaves ...")
+    logger.info("** Generate masters & slaves ...")
     def masters = new File(generate, "masters")
     masters << config.hadoopenv.secondNode << "\n"
     def slaves = new File(generate, "slaves")
@@ -73,7 +73,7 @@ def cfg = {
     }
 
 
-    logger.info("Generate folder list ...")
+    logger.info("** Generate folder list ...")
 
     def folder = new File(generate, "folder").withWriter { w ->
         config.flatten().each { k, v ->
@@ -88,51 +88,56 @@ def cfg = {
         }
     }
 
-    logger.info("Configurations are generated at {}", generate.absolutePath)
+    logger.info("** Configurations are generated at {}", generate.absolutePath)
 }
 
 
-def apply = { flag ->
+def apply = { host ->
     def generate = new File(tmpDir, "hdfs-v1")
-    logger.info("${"0".equalsIgnoreCase(flag) ? 'Check' : 'Create'} folders based on the configurations ${generate.absolutePath} ...")
+
     def folder = new File(generate, "folder")
     if (!generate.exists() || !folder.exists()) {
-        logger.error("No configurations are found, please run 'cfg' first !")
+        logger.error(">> No configurations are found, please run 'cfg' first !")
         return -1
     }
     if (System.currentTimeMillis() - generate.lastModified() > 1000 * 60 * 30) {
-        logger.error("Configurations are generated 30 minutes ago, please re-generate it")
+        logger.error(">> Configurations are generated 30 minutes ago, please re-generate it")
         return -1
     }
 
 
     def hosts = config.hadoopenv.dataNode << config.hadoopenv.masterNode << config.hadoopenv.secondNode
 
-    logger.info("There are total ${hosts.size()} nodes : ${hosts};" +
+    logger.info("** There are total ${hosts.size()} nodes : ${hosts};" +
             " master node is ${config.hadoopenv.masterNode}, second node is ${config.hadoopenv.secondNode}")
 
-
-    logger.info("******************* ${"0".equalsIgnoreCase(flag) ? 'Check' : 'Create'} folders *******************")
-    hosts.each { host ->
-        def rt = null
-        def exits = true
-        rt = shell.exec("id -u -n", host)
-        def user = rt.msg[0]
-        rt = shell.exec("id -g -n", host)
-        def group = rt.msg[0]
-        folder.eachLine { f ->
-            if (f) {
-                f = f.replaceAll(",", " ")
-                rt = shell.exec("ls -l ${f}", host)
-                if ("0".equalsIgnoreCase(flag) && rt.code) {
-                    exits = false
-                    rt.msg.each { msg ->
-                        logger.info("[check][@${host}]:${msg}")
+    if (!host) {
+        hosts.each { h ->
+            folder.eachLine { f ->
+                if (f) {
+                    f = f.replaceAll(",", " ")
+                    def rt = shell.exec("ls -l ${f}", h)
+                    if (rt.code) {
+                        rt.msg.each { msg ->
+                            logger.warn(">>[@{host}]: ${msg}")
+                        }
+                    } else {
+                        rt = shell.exec("stat -c '%n %U %G %y' ${pathEle.toString()}", h)
+                        rt.nsg.each { msg ->
+                            logger.info("**[@${h}]: ${msg}")
+                        }
                     }
                 }
-                if ("1".equalsIgnoreCase(flag)) {
+            }
+        }
+    } else {
+        hosts.contains(host) {
+            folder.eachLine { f ->
+                if (f) {
+                    f = f.replaceAll(",", " ")
+                    def rt = shell.exec("ls -l ${f}", host)
                     if (rt.code) {
-                        logger.info("** Creating folder ${f} [@${host}]")
+                        logger.info("**[@${host}]: Creating folder ${f} ... ")
                         rt = shell.exec("sudo mkdir -p ${f}", host)
                         rt.msg.each { msg ->
                             logger.info("[@${host}]:${msg}")
@@ -144,43 +149,30 @@ def apply = { flag ->
                                     pathEle.append(File.separator).append(ele)
                                     rt = shell.exec("stat  -c '%U' ${pathEle.toString()}")
                                     if (!user.equals(rt.msg[0])) {
-                                        logger.info("**  Change owner and group for :${pathEle.toString()} [@${host}]")
+                                        logger.info("**[@${host}]: Changing owner & group for :${pathEle.toString()}")
                                         rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
                                     }
                                 }
-
-
                             }
                         }
                     } else {
-                        logger.warn("********* Folder ${f} exists [@${host}] *********")
+                        logger.info("**[@${host}]: ${f} exists")
                     }
                 }
             }
         }
-
-        if ("0".equalsIgnoreCase(flag) && exits) {
-            logger.info("** All the folders exits on the [@${host}] ...")
-        }
     }
-
 
 }
 
 if (!args) {
-    logger.info("make sure your settings are correct and then run the command : cfg or apply")
-    "/data0/hadoop1/log".split(File.separator).each {
-        if (it) {
-            println "${it}, ${it.length()}"
-        }
-    }
+    logger.info("make sure your settings are correct and then run the command : cfg or apply 'host' ")
 
 } else {
     if ("cfg".equalsIgnoreCase(args[0])) {
         cfg()
     } else if ("apply".equalsIgnoreCase(args[0])) {
-        def flag = args.length == 2 ? args[1] : null
-        apply(flag)
+        apply(args.length == 2 ? args[1] : null)
     }
 }
 
