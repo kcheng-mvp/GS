@@ -119,11 +119,11 @@ def apply = { host ->
                     def rt = shell.exec("ls -l ${f}", h)
                     if (rt.code) {
                         rt.msg.each { msg ->
-                            logger.warn(">>[@{host}]: ${msg}")
+                            logger.warn(">>[@${h}]: ${msg}")
                         }
                     } else {
-                        rt = shell.exec("stat -c '%n %U %G %y' ${pathEle.toString()}", h)
-                        rt.nsg.each { msg ->
+                        rt = shell.exec("stat -c '%n %U %G %y' ${f}", h)
+                        rt.msg.each { msg ->
                             logger.info("**[@${h}]: ${msg}")
                         }
                     }
@@ -131,32 +131,37 @@ def apply = { host ->
             }
         }
     } else {
-        hosts.contains(host) {
+        if (hosts.contains(host)) {
+            def rt = shell.exec("id -u -n", host)
+            def user = rt.msg[0]
+            rt = shell.exec("id -g -n", host)
+            def group = rt.msg[0]
             folder.eachLine { f ->
                 if (f) {
                     f = f.replaceAll(",", " ")
-                    def rt = shell.exec("ls -l ${f}", host)
-                    if (rt.code) {
-                        logger.info("**[@${host}]: Creating folder ${f} ... ")
-                        rt = shell.exec("sudo mkdir -p ${f}", host)
-                        rt.msg.each { msg ->
-                            logger.info("[@${host}]:${msg}")
-                        }
-                        f.split().each { p ->
-                            def pathEle = new StringBuffer()
-                            p.split(File.separator).each { ele ->
-                                if (ele) {
-                                    pathEle.append(File.separator).append(ele)
-                                    rt = shell.exec("stat  -c '%U' ${pathEle.toString()}")
-                                    if (!user.equals(rt.msg[0])) {
-                                        logger.info("**[@${host}]: Changing owner & group for :${pathEle.toString()}")
-                                        rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
+                    f.split().each { p ->
+                        def pathEle = new StringBuffer()
+                        p.split(File.separator).each { ele ->
+                            if (ele) {
+                                pathEle.append(File.separator).append(ele)
+                                rt = shell.exec("ls -l ${pathEle.toString()}", host)
+                                if (rt.code) {
+                                    logger.info("**[@${host}]: Creating folder: ${pathEle.toString()} ... ")
+                                    rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
+                                    rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
+                                    logger.info("**[@${host}]: Changing owner: ${pathEle.toString()}")
+                                }
+                                 /*
+                                else {
+                                    rt = shell.exec("stat  -c '%U' ${pathEle.toString()}", host)
+                                    logger.info("**[@${host}]: ${pathEle.toString()} exists")
+                                    rt.msg.each{msg ->
+                                        logger.info("***[@${host}] ${msg}")
                                     }
                                 }
+                                */
                             }
                         }
-                    } else {
-                        logger.info("**[@${host}]: ${f} exists")
                     }
                 }
             }

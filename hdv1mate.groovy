@@ -1,1 +1,0 @@
-infra/hadoop1/hdv1mate.groovy
