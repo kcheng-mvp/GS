@@ -7,7 +7,7 @@ GroovyShell groovyShell = new GroovyShell()
 def cron4j = groovyShell.parse(new File(currentPath, "../../core/Cron4J.groovy"))
 def shell = groovyShell.parse(new File(currentPath, "../../core/Shell.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy"))
-def configFile = new File(currentPath, 'hdv1mateCfg.groovy')
+def configFile = new File(currentPath, 'hdv1InitCfg.groovy')
 def config = new ConfigSlurper().parse(configFile.text)
 
 def logger = logback.getLogger("infra-hadoop1")
