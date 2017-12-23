@@ -2,12 +2,12 @@ hadoopenv {
     masterNode = "xly01"
     secondNode = "xly02"
     dataNode = ["xly03"] as List
-    paths = ["/data0/hadoop1"] as List
+    dataVols = ["/data0/hadoop1"] as List
     log {
-        dir = "${paths[0]}/logs"
+        dir = "${dataVols[0]}/logs"
     }
     pid {
-        dir = "${paths[0]}/pids"
+        dir = "${dataVols[0]}/pids"
     }
 }
 
@@ -19,7 +19,7 @@ coreSite {
     }
     hadoop {
         tmp {
-            dir = "${hadoopenv.paths[0]}/tmp"
+            dir = "${hadoopenv.dataVols[0]}/tmp"
         }
     }
 }
@@ -27,18 +27,18 @@ coreSite {
 hdfsSite {
     dfs {
         name {
-            dir = "${hadoopenv.paths[0]}/dfs/name"
+            dir = "${hadoopenv.dataVols[0]}/dfs/name"
         }
     }
     //list, separated by comma
     dfs {
         data {
-            dir = hadoopenv.paths.collect{ "${it}/dfs/data"}.join(",")
+            dir = hadoopenv.dataVols.collect{ "${it}/dfs/data"}.join(",")
         }
     }
     fs {
         checkpoint {
-            dir = "${hadoopenv.paths[0]}/dfs/namesecondary"
+            dir = "${hadoopenv.dataVols[0]}/dfs/namesecondary"
         }
     }
     dfs {
@@ -58,19 +58,19 @@ mapredSite {
     //list, separated by comma
     mapred {
         local {
-            dir = hadoopenv.paths.collect{ "${it}/mapred/local"}.join(",")
+            dir = hadoopenv.dataVols.collect{ "${it}/mapred/local"}.join(",")
         }
     }
     mapred {
         system {
-            dir = "${hadoopenv.paths[0]}/mapred/system"
+            dir = "${hadoopenv.dataVols[0]}/mapred/system"
         }
     }
     mapreduce {
         jobtracker {
             staging {
                 root {
-                    dir = "${hadoopenv.paths[0]}/mapred/staging"
+                    dir = "${hadoopenv.dataVols[0]}/mapred/staging"
                 }
             }
         }

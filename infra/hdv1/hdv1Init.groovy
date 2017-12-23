@@ -82,7 +82,7 @@ def cfg = {
                 w.write("\n")
             }
         }
-        config.hadoopenv.paths.each { rootPath ->
+        config.hadoopenv.dataVols.each { rootPath ->
             w.write(rootPath)
             w.write("\n")
         }
