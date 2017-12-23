@@ -2,7 +2,7 @@ hadoopenv {
     masterNode = "xly01"
     secondNode = "xly02"
     dataNode = ["xly03"] as List
-    dataVols = ["/data0/hadoop1"] as List
+    dataVols = ["/data0/hadoop1","/data0/hadoop2"] as List
     log {
         dir = "${dataVols[0]}/logs"
     }

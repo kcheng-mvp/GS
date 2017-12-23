@@ -64,6 +64,8 @@ def cfg = {
     masters << config.hadoopenv.secondNode << "\n"
     def slaves = new File(generate, "slaves")
     slaves.withWriter { w ->
+        w.write(config.hadoopenv.masterNode)
+        w.write("\n")
         w.write(config.hadoopenv.secondNode)
         w.write("\n")
         config.hadoopenv.dataNode.each {
