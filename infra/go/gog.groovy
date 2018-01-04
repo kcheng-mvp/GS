@@ -1,6 +1,6 @@
 #! /usr/bin/env groovy
 
-if(args || args.length !=1){
+if(!args || args.length !=1){
     println "Create go project with command : gogo.groovy {projectName}"
     return -1
 }
