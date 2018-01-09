@@ -1,5 +1,5 @@
 settings {
-    hdfsPath = "hdfs://hbhadoop101:9000/advdata/userregister"
+    hdfsPath = "hdfs://hbhadoop101:9000/advdata/userlogin"
     localPath = "/tmp/apDataSync"
     logPath = "/tmp"
     games= ["2016": "测试1",

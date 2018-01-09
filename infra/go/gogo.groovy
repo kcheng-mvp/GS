@@ -24,6 +24,3 @@ env << "#!/bin/bash\n"
 env << "export GOPATH=\$PWD\n"
 env << "export PATH=\$PATH:\$GOPATH/bin"
 shell.exec("chmod +x ${env.absolutePath}")
-shell.exec("${env.absolutePath}")
-
-

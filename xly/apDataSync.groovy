@@ -23,7 +23,7 @@ def configFile = new File(currentPath, 'apDataSyncCfg.groovy')
 def config = new ConfigSlurper().parse(configFile.text)
 
 def logPath = config.settings.logPath
-def localPath = new File(config.settings.logPath)
+def localPath = new File(config.settings.localPath)
 def hdfsRoot = config.settings.hdfsPath
 
 def logger = logback.getLogger("apDataSync", logPath)
@@ -54,7 +54,7 @@ def fetchData = {
         localPath.deleteDir()
     }
     localPath.mkdirs()
-    def pathFormat = new SimpleDateFormat("yyyy/MM/dd")
+    def pathFormat = new SimpleDateFormat("yyyy/MM/dd/HH")
     def now = Calendar.getInstance().getTime();
     def jsonSlurper = new JsonSlurper()
     def insert = '''INSERT INTO APUL(APP_ID,APP_NAME,UID,PLATFORM,LOGIN_TIME) VALUES (?,?,?,?)'''
@@ -113,20 +113,21 @@ def dataSync = {
 }
 '''
     def query = "SELECT APP_ID, APP_NAME, UID, MAX(LOGIN_TIME) LAST_LOGIN FROM APUL GROUP BY APP_ID, APP_NAME,UID ORDER BY APP_ID"
+//    def client = new RESTClient(url)
     sql.eachRow(query) { row ->
-        def client = new RESTClient(url)
-        def simple = new SimpleTemplateEngine()
-        def binding = [uid: row['UID'], appId: row['APP_ID'], appName: row['APP_NAME'], lastLogin: row['LAST_LOGIN']]
-        def msg = simple.createTemplate(template).make(binding).toString()
-        logger.info("msg: ${msg}")
-        def response = client.post(path: context, contentType: JSON, body: msg, query: [access_token: access_token], headers: [Accept: 'application/json'])
-        logger.info("Response -> " + response)
+        logger.info(row)
+//        def simple = new SimpleTemplateEngine()
+//        def binding = [uid: row['UID'], appId: row['APP_ID'], appName: row['APP_NAME'], lastLogin: row['LAST_LOGIN']]
+//        def msg = simple.createTemplate(template).make(binding).toString()
+//        logger.info("msg: ${msg}")
+//        def response = client.post(path: context, contentType: JSON, body: msg, query: [access_token: access_token], headers: [Accept: 'application/json'])
+//        logger.info("Response -> " + response)
     }
 
     logger.info("clean up database ...... ")
     def delete = "DELETE FROM APUL";
     sql.execute(delete);
-    def check = "SELECT COUNT(1) as APUL FROM CRMR"
+    def check = "SELECT COUNT(1) as CNT FROM APUL"
     def rt = sql.firstRow(check)
     logger.info("[cleanup]: There are ${rt.CNT} rows in db.")
 }

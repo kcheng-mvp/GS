@@ -105,7 +105,7 @@ def genSchema = {
                         println "**Info**: ${prop.name} (${prop.type}) is not a simple Type"
 
                         column = column+"_ID"
-                        type = "INTEGER"
+                        type = "BIGINT"
                     }
                 }
                 type = columnTypeMap.get(column) ?: type;
