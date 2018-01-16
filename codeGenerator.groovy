@@ -145,7 +145,7 @@ def genSchema = {
     def h2sql = new File("${resources}/schema-h2.SQL");
     def mysql = new File("${resources}/schema-mysql.SQL");
     def cnt = 0;
-    schemaFolder.eachFileRecurse { f ->
+    schemaFolder.listFiles().sort{it.name}.each { f ->
         if (f.name.indexOf(".SQL") > -1) {
             cnt++;
             f.eachWithIndex { line, idx ->
