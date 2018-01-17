@@ -138,12 +138,12 @@ def genSchema = {
         w << sb.toString();
     }
 
-    println "**Info**: Generate ${resources}/schema-h2.SQL"
-    println "**Info**: Generate ${resources}/schema-msql.SQL"
+    println "**Info**: Generate ${resources}/schema-h2.sql"
+    println "**Info**: Generate ${resources}/schema-msql.sql"
     def h2sb = new StringBuffer();
     def mysb = new StringBuffer();
-    def h2sql = new File("${resources}/schema-h2.SQL");
-    def mysql = new File("${resources}/schema-mysql.SQL");
+    def h2sql = new File("${resources}/schema-h2.sql");
+    def mysql = new File("${resources}/schema-mysql.sql");
     def cnt = 0;
     schemaFolder.listFiles().sort{it.name}.each { f ->
         if (f.name.indexOf(".SQL") > -1) {
