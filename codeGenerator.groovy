@@ -187,8 +187,11 @@ def genInsert = {
             if (idx + 1 < size) {
                 insertBuffer.append(",");
             }
-
-            valueBuffer.append("#{").append("${prop.name}").append("}")
+            if(prop.name.equals("createdAt") || prop.name.equals("updatedAt")){
+                valueBuffer.append("CURRENT_TIMESTAMP()")
+            } else {
+                valueBuffer.append("#{").append("${prop.name}").append("}")
+            }
             if (idx + 1 < size) {
                 valueBuffer.append(",")
             }
