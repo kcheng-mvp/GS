@@ -10,4 +10,17 @@ def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy
 def configFile = new File(currentPath, 'zkInitCfg.groovy')
 def config = new ConfigSlurper().parse(configFile.text)
 
-def logger = logback.getLogger("infra-hadoop1")
+def logger = logback.getLogger("infra-zk")
+
+
+println "*****************"
+println "\n"
+
+println "tickTime=${config.settings.tickTime}"
+println "initLimit=${config.settings.initLimit}"
+println "syncLimit=${config.settings.syncLimit}"
+println "clientPort=${config.settings.clientPort}"
+println "dataDir=${config.settings.dataDir}"
+config.settings.server.eachWithIndex {s, idx ->
+    println "server.${idx+1}=${s}:${config.settings.serverPort}:${config.settings.leaderPort}"
+}
