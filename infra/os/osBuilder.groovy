@@ -1,5 +1,7 @@
 #! /usr/bin/env groovy
 
+import groovy.transform.Field
+
 /*
 1: hostname
 2: add new user and add user to the group wheel(manual)
@@ -7,61 +9,92 @@
 2: /etc/hosts
 3: max open files and max users process
 */
+
+@Field
 def currentPath = new File(getClass().protectionDomain.codeSource.location.path).parent
-GroovyShell groovyShell = new GroovyShell()
+@Field
+def groovyShell = new GroovyShell()
+@Field
 def shell = groovyShell.parse(new File(currentPath, "../../core/Shell.groovy"))
+@Field
 def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy"))
-def clipboard = groovyShell.parse(new File(currentPath, "../../core/Clipboard.groovy"))
-def cfg = new File(currentPath, 'osBuilderCfg.groovy')
-cfg = new ConfigSlurper().parse(cfg.text);
+@Field
 def logger = logback.getLogger("infra.os")
 
 
+def etcHost(hosts) {
 
+    logger.info("******************** Start building os ********************")
+    def hostMap = new TreeMap<String, String>();
+    def rt = null
+    hosts.find { host ->
+        logger.info("**** Checking hosts for {}", host)
+        rt = shell.exec("hostname", host)
+        if (!host.equals(rt['msg'].get(0))) {
+            logger.error(">> local host name ${host},remote host name ${rt['msg'].get(0)} please fix it")
+            logger.info("sudo hostnamectl")
+            logger.info("sudo hostnamectl set-hostname '{hostname}'")
+            return true
+        }
+        rt = shell.exec("hostname -I", host)
+        hostMap.put(rt['msg'].get(0).trim(), host.trim())
 
-def tmpDir = new File(System.getProperty("java.io.tmpdir"));
-def etcHosts = new StringBuffer();
-def rt = null
-cfg.os.hosts.each {host ->
-    rt = shell.exec("hostname", host)
-    if (!host.equals(rt['msg'].get(0))) {
-        logger.error(">> local host name ${host},remote host name ${rt['msg'].get(0)} please fix it")
+        logger.info("**** Checking ssh key for {}", host)
+        rt = shell.exec("ls ~/.ssh/id_rsa", host)
+        if (rt.code) {
+            logger.info("Generate ssh key for [@${host}]")
+            rt = shell.exec("ssh-keygen -b 4096 -q -N '' -C '${host}' -f ~/.ssh/id_rsa", host)
+        }
+
+        logger.info("**** Checking max open files for {}", host)
+        rt = shell.exec("cat /etc/security/limits.conf", host)
+        rt.msg.each { msg ->
+            if (msg.startsWith("*")) {
+                logger.info("/etc/security/limits.conf@[${host}]: ${msg}")
+            }
+        }
+
+        logger.info("**** Checking max processes for {}",host)
+        rt = shell.exec("ls /etc/security/limits.d", host)
+        def proc = rt.msg[0]
+        rt = shell.exec("cat /etc/security/limits.d/${proc}", host)
+        rt.msg.each { msg ->
+            if (msg && !msg.startsWith("#")) {
+                logger.info("/etc/security/limits.d/${proc}@[${host}]:${msg}")
+            }
+        }
+        return false
     }
-    rt = shell.exec("hostname -I", host)
-    etcHosts.append("${rt['msg'].get(0).trim()} ${host.trim()}").append("\n")
-    rt = shell.exec("ls ~/.ssh/id_rsa", host)
-    if(!rt.code){
-        logger.info("** ssh key ~/.ssh/id_rsa exists on ${host}")
-    } else {
-        logger.info("Generate ssh key for [@${host}]")
-        rt = shell.exec("ssh-keygen -b 4096 -q -N '' -C '${host}' -f ~/.ssh/id_rsa",host)
-    }
-}
-
-clipboard.copy(etcHosts.toString())
-
-
-
-logger.info("Checking max open files ....")
-cfg.os.hosts.each {
-    rt = shell.exec("cat /etc/security/limits.conf", it)
-    rt.msg.each { msg ->
-        if (msg.startsWith("*")) {
-            logger.info("/etc/security/limits.conf@[${it}]: ${msg}")
+    hosts.each { h ->
+        logger.info("**** Setting hosts for {}", h)
+        File file = File.createTempFile(h, ".etchosts");
+        file.deleteOnExit();
+        rt = shell.exec("cat /etc/hosts", h)
+        file.withWriter { writer ->
+            def w = new BufferedWriter(writer);
+            rt.msg.each { m ->
+                if (m.trim()) {
+                    def entries = m.split()
+                    if (entries.size() != 2) {
+                        w.write(m)
+                    } else {
+                        if (!hostMap.get(entries[0].trim()).equals(entries[1].trim())) {
+                            w.write(m)
+                        }
+                    }
+                    w.newLine()
+                }
+            }
+            hostMap.each { k, v ->
+                w.write("${k} ${v}")
+                w.newLine()
+            }
+            w.close()
+        }
+        rt = shell.exec("sudo mv /etc/hosts /etc/hosts.back", h)
+        file.eachLine { line ->
+            if(line.trim()) shell.exec("echo ${line} | sudo tee -a /etc/hosts >/dev/null", h)
         }
     }
 }
-
-logger.info("Checking max process ....")
-cfg.os.hosts.each {
-    rt = shell.exec("ls /etc/security/limits.d", it)
-    def proc = rt.msg[0]
-    rt = shell.exec("cat /etc/security/limits.d/${proc}", it)
-    rt.msg.each { msg ->
-        if (msg && !msg.startsWith("#")) {
-            logger.info("/etc/security/limits.d/${proc}@[${it}]:${msg}")
-        }
-    }
-}
-
 

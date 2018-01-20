@@ -4,10 +4,10 @@ import groovy.text.*
 
 def currentPath = new File(getClass().protectionDomain.codeSource.location.path).parent
 GroovyShell groovyShell = new GroovyShell()
-def cron4j = groovyShell.parse(new File(currentPath, "../../core/Cron4J.groovy"))
 def shell = groovyShell.parse(new File(currentPath, "../../core/Shell.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy"))
 def clipboard = groovyShell.parse(new File(currentPath, "../../core/Clipboard.groovy"))
+def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"))
 def configFile = new File(currentPath, 'zkInitCfg.groovy')
 def config = new ConfigSlurper().parse(configFile.text)
 
@@ -15,7 +15,10 @@ def logger = logback.getLogger("infra-zk")
 
 def cfg= {
 
+    osBuilder.etcHost(config.settings.server)
 
+
+    logger.info("******************** Start building zoo.cfg(clipboard) ********************")
     def sb = new StringBuilder();
     sb.append("tickTime=${config.settings.tickTime}\n")
     sb.append("initLimit=${config.settings.initLimit}\n")
@@ -25,22 +28,13 @@ def cfg= {
     config.settings.server.eachWithIndex { s, idx ->
         sb.append("server.${idx + 1}=${s}:${config.settings.serverPort}:${config.settings.leaderPort}\n")
     }
-
-
-    logger.info "**** zoo.cfg : ****\n" + sb.toString();
-
     clipboard.copy(sb.toString())
 
+    logger.info("******************** Start creating ${config.settings.dataDir} ********************")
     config.settings.server.eachWithIndex { s, idx ->
+        logger.info("**** Creating ${config.settings.dataDir} for {}",s)
         def ug = shell.sshug(s)
         def rt = shell.exec("ls -l ${config.settings.dataDir}", s);
-        rt.msg.each { m ->
-            if(rt.code){
-                logger.error("**{} -> {}", s, m)
-            } else {
-                logger.info("{} -> {}", s, m)
-            }
-        }
         if (rt.code) {
             def pathBuffer = new StringBuilder();
             config.settings.dataDir.split("/").each { p ->
@@ -53,14 +47,8 @@ def cfg= {
             }
         }
 
+        logger.info("**** Creating ${config.settings.dataDir}/myid for {}",s)
         rt = shell.exec("ls -l ${config.settings.dataDir}/myid", s);
-        rt.msg.each { m ->
-            if(rt.code){
-                logger.error("**{} -> {}", s, m)
-            } else {
-                logger.info("{} -> {}", s, m)
-            }
-        }
         if (rt.code) {
             rt = shell.exec("echo ${idx+1} > ${config.settings.dataDir}/myid",s)
             if (!rt.code) {
@@ -71,26 +59,21 @@ def cfg= {
 
     }
 
-    logger.info("****************************************")
-    logger.info("**** 1: Generated zoo.cfg file in clipboard")
-    logger.info("**** 2: Created zookeeper dataDir on all the hosts")
-    logger.info("****************************************")
-
 }
 
 def deploy = {host, deployable ->
     if (config.settings.server.contains(host)){
+
+        logger.info("**** Deploy ${deployable.name} on {}",host)
         def targetFolder = new File(deployable).getName().replace(".tar","")
         def rt = shell.exec("ls -l /usr/local/${targetFolder}",host)
         if(rt.code){
             rt = shell.exec("sudo tar -vxf  ${deployable} --no-same-owner -C /usr/local", host);
         }
-        rt.msg.each {m ->
-            logger.info m
-        }
+
         rt = shell.exec("type zkCli.sh", host);
         if(rt.code){
-            logger.info "ZK_HOME is not defined ..."
+            logger.info("**** Create ZK_HOME environment on {}",host)
             rt = shell.exec("cat ~/.bash_profile", host)
             File file = File.createTempFile(host, ".bash_profile");
             file.deleteOnExit();
@@ -129,6 +112,12 @@ if (!args) {
 } else {
     if ("cfg".equalsIgnoreCase(args[0])) {
         cfg()
+        logger.info("****************************************************************************")
+        logger.info("**** 1: Download zookeeper                                              ****")
+        logger.info("**** 2: Unzip zookeeper and create zoo.cfg from clipboard               ****")
+        logger.info("**** 3: Tar zookeeper                                                   ****")
+        logger.info("**** 4: Deploy zookeeper by zkInit.groovy deploy {zookeeper.tar}{host}  ****")
+        logger.info("****************************************************************************")
     } else if ("deploy".equalsIgnoreCase(args[0])) {
         deploy(args[1],args[2])
     }
