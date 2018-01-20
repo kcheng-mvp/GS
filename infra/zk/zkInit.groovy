@@ -15,7 +15,6 @@ def logger = logback.getLogger("infra-zk")
 
 def cfg= {
 
-    logger.info "Generate setting ......"
 
     def sb = new StringBuilder();
     sb.append("tickTime=${config.settings.tickTime}\n")
@@ -27,7 +26,8 @@ def cfg= {
         sb.append("server.${idx + 1}=${s}:${config.settings.serverPort}:${config.settings.leaderPort}\n")
     }
 
-    logger.info "\n" + sb.toString();
+
+    logger.info "**** zoo.cfg : ****\n" + sb.toString();
 
     clipboard.copy(sb.toString())
 
@@ -70,6 +70,11 @@ def cfg= {
         }
 
     }
+
+    logger.info("****************************************")
+    logger.info("**** 1: Generated zoo.cfg file in clipboard")
+    logger.info("**** 2: Created zookeeper dataDir on all the hosts")
+    logger.info("****************************************")
 
 }
 
@@ -120,7 +125,7 @@ def deploy = {host, deployable ->
 }
 
 if (!args) {
-    logger.info("make sure your settings are correct and then run the command : cfg or deploy 'host' ")
+    logger.info("make sure your settings are correct and then run the command : cfg or deploy {zookeeper.tar} {host} ")
 } else {
     if ("cfg".equalsIgnoreCase(args[0])) {
         cfg()
