@@ -8,7 +8,5 @@ settings {
     dataDir = "/data0/zookeeper/data"
     server=["xly01","xly02","xly03"] as List
 }
-/*
-server.1=zoo1:2888:3888
- */
+
 
