@@ -7,20 +7,16 @@
 2: /etc/hosts
 3: max open files and max users process
 */
-
-import java.text.SimpleDateFormat
-import groovy.time.TimeCategory
-import java.awt.datatransfer.StringSelection
-import java.awt.Toolkit
-import java.awt.datatransfer.*
-
 def currentPath = new File(getClass().protectionDomain.codeSource.location.path).parent
 GroovyShell groovyShell = new GroovyShell()
 def shell = groovyShell.parse(new File(currentPath, "../../core/Shell.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy"))
+def clipboard = groovyShell.parse(new File(currentPath, "../../core/Clipboard.groovy"))
 def cfg = new File(currentPath, 'osBuilderCfg.groovy')
 cfg = new ConfigSlurper().parse(cfg.text);
 def logger = logback.getLogger("infra.os")
+
+
 
 
 def tmpDir = new File(System.getProperty("java.io.tmpdir"));
@@ -41,9 +37,8 @@ cfg.os.hosts.each {host ->
         rt = shell.exec("ssh-keygen -b 4096 -q -N '' -C '${host}' -f ~/.ssh/id_rsa",host)
     }
 }
-def clipboard = Toolkit.getDefaultToolkit().getSystemClipboard()
-clipboard.setContents(new StringSelection(etcHosts.toString()), null)
-logger.info("Host info is in System Clipboard ...")
+
+clipboard.copy(etcHosts.toString())
 
 
 
