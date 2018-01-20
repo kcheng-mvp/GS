@@ -27,3 +27,10 @@ def exec(shell, String... host) {
 }
 
 
+def sshug(String host){
+    def rt = exec("id -u -n", host)
+    def user = rt.msg[0]
+    rt = exec("id -g -n", host)
+    def group = rt.msg[0]
+    ["u": user, "g":group]
+}
