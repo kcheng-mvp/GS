@@ -12,7 +12,6 @@ def configFile = new File(currentPath, 'zkInitCfg.groovy')
 def config = new ConfigSlurper().parse(configFile.text)
 
 def logger = logback.getLogger("infra-zk")
-def tmpDir = new File(System.getProperty("java.io.tmpdir"));
 
 def cfg= {
 
