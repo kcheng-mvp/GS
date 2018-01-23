@@ -4,13 +4,13 @@ import groovy.text.*
 
 def currentPath = new File(getClass().protectionDomain.codeSource.location.path).parent
 GroovyShell groovyShell = new GroovyShell()
-def cron4j = groovyShell.parse(new File(currentPath, "../../core/Cron4J.groovy"))
 def shell = groovyShell.parse(new File(currentPath, "../../core/Shell.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy"))
+def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"))
 def configFile = new File(currentPath, 'hdv1InitCfg.groovy')
 def config = new ConfigSlurper().parse(configFile.text)
 
-def logger = logback.getLogger("infra-hadoop1")
+def logger = logback.getLogger("infra-hd1")
 
 logger.info("********************")
 config.flatten().each { k, v ->
@@ -18,11 +18,17 @@ config.flatten().each { k, v ->
 }
 logger.info("********************")
 
+def hosts = config.hadoopenv.dataNode << config.hadoopenv.masterNode << config.hadoopenv.secondNode
 def tmpDir = new File(System.getProperty("java.io.tmpdir"));
+
+def generate = new File(tmpDir, "hdfs-v1")
 
 def cfg = {
 
-    def generate = new File(tmpDir, "hdfs-v1")
+    logger.info("** Check and set /etc/hosts for all servers ...")
+
+    osBuilder.etcHost(hosts)
+
     if (generate.exists()) {
         generate.deleteDir()
     }
@@ -74,10 +80,9 @@ def cfg = {
         }
     }
 
-
     logger.info("** Generate folder list ...")
 
-    def folder = new File(generate, "folder").withWriter { w ->
+    new File(generate, "folder").withWriter { w ->
         config.flatten().each { k, v ->
             if (k.indexOf("dir") > -1) {
                 w.write(v)
@@ -94,81 +99,66 @@ def cfg = {
 }
 
 
-def apply = { host ->
-    def generate = new File(tmpDir, "hdfs-v1")
 
-    def folder = new File(generate, "folder")
-    if (!generate.exists() || !folder.exists()) {
-        logger.error(">> No configurations are found, please run 'cfg' first !")
-        return -1
-    }
-    if (System.currentTimeMillis() - generate.lastModified() > 1000 * 60 * 30) {
-        logger.error(">> Configurations are generated 30 minutes ago, please re-generate it")
-        return -1
-    }
+def deploy = { host, deployable ->
 
+    if (hosts.contains(host)) {
+        def folder = new File(generate, "folder")
 
-    def hosts = config.hadoopenv.dataNode << config.hadoopenv.masterNode << config.hadoopenv.secondNode
-
-    logger.info("** There are total ${hosts.size()} nodes : ${hosts};" +
-            " master node is ${config.hadoopenv.masterNode}, second node is ${config.hadoopenv.secondNode}")
-
-    if (!host) {
-        hosts.each { h ->
-            folder.eachLine { f ->
-                if (f) {
-                    f = f.replaceAll(",", " ")
-                    def rt = shell.exec("ls -l ${f}", h)
-                    if (rt.code) {
-                        rt.msg.each { msg ->
-                            logger.warn(">>[@${h}]: ${msg}")
-                        }
-                    } else {
-                        rt = shell.exec("stat -c '%n %U %G %y' ${f}", h)
-                        rt.msg.each { msg ->
-                            logger.info("**[@${h}]: ${msg}")
-                        }
-                    }
-                }
-            }
+        if (!generate.exists() || !folder.exists()) {
+            logger.error(">> No configurations are found, please run 'cfg' first !")
+            return -1
         }
-    } else {
-        if (hosts.contains(host)) {
-            def rt = shell.exec("id -u -n", host)
-            def user = rt.msg[0]
-            rt = shell.exec("id -g -n", host)
-            def group = rt.msg[0]
-            folder.eachLine { f ->
-                if (f) {
-                    f = f.replaceAll(",", " ")
-                    f.split().each { p ->
-                        def pathEle = new StringBuffer()
-                        p.split(File.separator).each { ele ->
-                            if (ele) {
-                                pathEle.append(File.separator).append(ele)
-                                rt = shell.exec("ls -l ${pathEle.toString()}", host)
-                                if (rt.code) {
-                                    logger.info("**[@${host}]: Creating folder: ${pathEle.toString()} ... ")
-                                    rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
-                                    rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
-                                    logger.info("**[@${host}]: Changing owner: ${pathEle.toString()}")
-                                }
-                                 /*
-                                else {
-                                    rt = shell.exec("stat  -c '%U' ${pathEle.toString()}", host)
-                                    logger.info("**[@${host}]: ${pathEle.toString()} exists")
-                                    rt.msg.each{msg ->
-                                        logger.info("***[@${host}] ${msg}")
-                                    }
-                                }
-                                */
+        if (System.currentTimeMillis() - generate.lastModified() > 1000 * 60 * 30) {
+            logger.error(">> Configurations are generated 30 minutes ago, please re-generate it")
+            return -1
+        }
+
+
+        def rt = osBuilder.deploy(host, deployable, "hadoop", "HADOOP_HOME");
+
+        if(rt != 1) {
+            logger.error "Failed to deploy ${deployable} on ${host}"
+            return -1
+        }
+
+
+        logger.info "Create corresponding folders ...."
+
+        def ug = shell.sshug(host)
+        def group = ug.g
+        def user = ug.u
+        folder.eachLine { f ->
+            if (f) {
+                f = f.replaceAll(",", " ")
+                f.split().each { p ->
+                    def pathEle = new StringBuffer()
+                    p.split(File.separator).each { ele ->
+                        if (ele) {
+                            pathEle.append(File.separator).append(ele)
+                            rt = shell.exec("ls -l ${pathEle.toString()}", host)
+                            if (rt.code) {
+                                logger.info("**[@${host}]: Creating folder: ${pathEle.toString()} ... ")
+                                rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
+                                rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
+                                logger.info("**[@${host}]: Changing owner: ${pathEle.toString()}")
                             }
+                            /*
+                           else {
+                               rt = shell.exec("stat  -c '%U' ${pathEle.toString()}", host)
+                               logger.info("**[@${host}]: ${pathEle.toString()} exists")
+                               rt.msg.each{msg ->
+                                   logger.info("***[@${host}] ${msg}")
+                               }
+                           }
+                           */
                         }
                     }
                 }
             }
         }
     }
+
 
 }
 
@@ -178,8 +168,8 @@ if (!args) {
 } else {
     if ("cfg".equalsIgnoreCase(args[0])) {
         cfg()
-    } else if ("apply".equalsIgnoreCase(args[0])) {
-        apply(args.length == 2 ? args[1] : null)
+    } else if ("deploy".equalsIgnoreCase(args[0]) && args.length ==3) {
+        deploy(args[1],args[2])
     }
 }
 

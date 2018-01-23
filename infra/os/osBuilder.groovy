@@ -27,11 +27,12 @@ def etcHost(hosts) {
     logger.info("******************** Start building os ********************")
     def hostMap = new TreeMap<String, String>();
     def rt = null
-    hosts.find { host ->
+    def con = hosts.find { host ->
         logger.info("**** Checking hosts for {}", host)
         rt = shell.exec("hostname", host)
-        if (!host.equals(rt['msg'].get(0))) {
-            logger.error(">> local host name ${host},remote host name ${rt['msg'].get(0)} please fix it")
+        def remoteName = rt.msg.get(0)
+        if (!host.equals(remoteName)) {
+            logger.error(">> local host name ${host},remote host name ${remoteName} please fix it")
             logger.info("sudo hostnamectl")
             logger.info("sudo hostnamectl set-hostname '{hostname}'")
             return true
@@ -54,7 +55,7 @@ def etcHost(hosts) {
             }
         }
 
-        logger.info("**** Checking max processes for {}",host)
+        logger.info("**** Checking max processes for {}", host)
         rt = shell.exec("ls /etc/security/limits.d", host)
         def proc = rt.msg[0]
         rt = shell.exec("cat /etc/security/limits.d/${proc}", host)
@@ -64,6 +65,10 @@ def etcHost(hosts) {
             }
         }
         return false
+    }
+    if (con) {
+        logger.error "There are errors in host /etc/hosts"
+        return
     }
     hosts.each { h ->
         logger.info("**** Setting hosts for {}", h)
@@ -93,8 +98,58 @@ def etcHost(hosts) {
         }
         rt = shell.exec("sudo mv /etc/hosts /etc/hosts.back", h)
         file.eachLine { line ->
-            if(line.trim()) shell.exec("echo ${line} | sudo tee -a /etc/hosts >/dev/null", h)
+            if (line.trim()) shell.exec("echo ${line} | sudo tee -a /etc/hosts >/dev/null", h)
         }
     }
+}
+
+
+def deploy(host, deployable, command, homeVar) {
+
+    logger.info("**** Deploy ${deployable} on {}", host)
+    deployable = new File(deployable);
+    def targetFolder = deployable.name.replace(".tar", "")
+    def rt = shell.exec("ls -l /usr/local/${targetFolder}", host)
+    if (rt.code) {
+        logger.info "scp ${deployable.absolutePath} ${host} ......(This may take minutes)"
+        rt = shell.exec("scp ${deployable.absolutePath} ${host}:~/");
+        logger.info "unzip the file to target folder ..."
+        rt = shell.exec("sudo tar -vxf  ~/${deployable.name} --no-same-owner -C /usr/local", host);
+    }
+    if(rt.code) return -1
+
+    rt = shell.exec("type ${command}", host);
+    if (rt.code) {
+        logger.info("**** Create ${homeVar} environment on {}", host)
+        rt = shell.exec("cat ~/.bash_profile", host)
+        File file = File.createTempFile(host, ".bash_profile");
+        file.deleteOnExit();
+        file.withWriter { write ->
+            def w = new BufferedWriter(write);
+            rt.msg.eachWithIndex { m, idx ->
+                if(m.indexOf("export ${homeVar}") > -1)
+                    logger.error "Variable ${homeVar} has been definied ..."
+                if (idx + 1 == rt.msg.size) {
+                    w.newLine();
+                    w.write("export ${homeVar}=/usr/local/${targetFolder}")
+                    w.newLine();
+                    def sec = m.split("=");
+                    w.write("${sec[0]}=\$${homeVar}/bin:${sec[1]}")
+                } else {
+                    w.newLine()
+                    w.write(m)
+                }
+            }
+            w.close()
+        }
+        logger.info file.absolutePath
+        rt = shell.exec("mv ~/.bash_profile ~/.bash_profile.bak", host)
+        rt = shell.exec("scp ${file.absolutePath} ${host}:~/.bash_profile")
+        rt = shell.exec("cat ~/.bash_profile", host)
+        rt.msg.each {
+            logger.info it
+        }
+    }
+    return 1
 }
 
