@@ -71,6 +71,45 @@ def deploy = {host, deployable ->
             logger.error "Failed to deploy ${deployable} on ${host}"
             return -1
         }
+
+//        logger.info("**** Deploy ${deployable.name} on {}",host)
+//        def targetFolder = new File(deployable).getName().replace(".tar","")
+//        def rt = shell.exec("ls -l /usr/local/${targetFolder}",host)
+//        if(rt.code){
+//            rt = shell.exec("sudo tar -vxf  ${deployable} --no-same-owner -C /usr/local", host);
+//        }
+//
+//        rt = shell.exec("type zkCli.sh", host);
+//        if(rt.code){
+//            logger.info("**** Create ZK_HOME environment on {}",host)
+//            rt = shell.exec("cat ~/.bash_profile", host)
+//            File file = File.createTempFile(host, ".bash_profile");
+//            file.deleteOnExit();
+//            file.withWriter { write ->
+//                def w = new BufferedWriter(write);
+//                rt.msg.eachWithIndex { m, idx ->
+//                    if (idx + 1 == rt.msg.size) {
+//                        w.newLine();
+//                        w.write("export ZK_HOME=/usr/local/${targetFolder}")
+//                        w.newLine();
+//                        def sec = m.split("=");
+//                        w.write("${sec[0]}=\$ZK_HOME/bin:${sec[1]}")
+//                    } else {
+//                        w.newLine()
+//                        w.write(m)
+//                    }
+//                }
+//                w.close()
+//            }
+//            logger.info file.absolutePath
+//            rt = shell.exec("mv ~/.bash_profile ~/.bash_profile.bak", host)
+//            rt = shell.exec("scp ${file.absolutePath} ${host}:~/.bash_profile")
+//            rt = shell.exec("cat ~/.bash_profile", host)
+//            rt.msg.each{
+//               logger.info it
+//            }
+//        }
+
     } else {
         logger.error "${host} is not in the server list"
     }

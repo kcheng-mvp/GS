@@ -107,7 +107,7 @@ def etcHost(hosts) {
 def deploy(host, deployable, command, homeVar) {
 
     logger.info("**** Deploy ${deployable} on {}", host)
-    deployable = new File(deployable);
+//    deployable = new File(deployable);
     def targetFolder = deployable.name.replace(".tar", "")
     def rt = shell.exec("ls -l /usr/local/${targetFolder}", host)
     if (rt.code) {
@@ -134,7 +134,11 @@ def deploy(host, deployable, command, homeVar) {
                     w.write("export ${homeVar}=/usr/local/${targetFolder}")
                     w.newLine();
                     def sec = m.split("=");
-                    w.write("${sec[0]}=\$${homeVar}/bin:${sec[1]}")
+                    if(sec.length ==2){
+                        w.write("${sec[0]}=\$${homeVar}/bin:${sec[1]}")
+                    } else {
+                        w.write("export PATH=\$${homeVar}/bin:\$PATH")
+                    }
                 } else {
                     w.newLine()
                     w.write(m)
