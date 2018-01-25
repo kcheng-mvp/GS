@@ -45,6 +45,26 @@ def cfg= {
                     rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${pathBuffer.toString()}", s)
                 }
             }
+
+            logger.info("**** Creating ${config.settings.log4j} for {}",s)
+            config.settings.log4j.split("/").each { p ->
+                pathBuffer.append("/").append(p)
+                rt = shell.exec("ls -l ${pathBuffer.toString()}", s);
+                if (rt.code) {
+                    rt = shell.exec("sudo mkdir ${pathBuffer.toString()}", s)
+                    rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${pathBuffer.toString()}", s)
+                }
+            }
+
+            logger.info("**** Creating ${config.settings.traceLog} for {}",s)
+            config.settings.traceLog.split("/").each { p ->
+                pathBuffer.append("/").append(p)
+                rt = shell.exec("ls -l ${pathBuffer.toString()}", s);
+                if (rt.code) {
+                    rt = shell.exec("sudo mkdir ${pathBuffer.toString()}", s)
+                    rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${pathBuffer.toString()}", s)
+                }
+            }
         }
 
         logger.info("**** Creating ${config.settings.dataDir}/myid for {}",s)
@@ -56,6 +76,7 @@ def cfg= {
                 rt = shell.exec("stat -c '%n %U %G %y' ${config.settings.dataDir}/myid", s)
             }
         }
+
 
     }
 
@@ -81,12 +102,14 @@ if (!args) {
 } else {
     if ("cfg".equalsIgnoreCase(args[0])) {
         cfg()
-        logger.info("****************************************************************************")
-        logger.info("**** 1: Download zookeeper                                              ****")
-        logger.info("**** 2: Unzip zookeeper and create zoo.cfg from clipboard               ****")
-        logger.info("**** 3: Tar zookeeper                                                   ****")
-        logger.info("**** 4: Deploy zookeeper by zkInit.groovy deploy {zookeeper.tar}{host}  ****")
-        logger.info("****************************************************************************")
+        logger.info("********************************************************************************************")
+        logger.info("**** 1: Download zookeeper                                                              ****")
+        logger.info("**** 2: Unzip zookeeper and create zoo.cfg from clipboard                               ****")
+        logger.info("**** 3: Change log4j.properties zookeeper.log.dir to ${config.settings.log4j}           ****")
+        logger.info("**** 4: Change log4j.properties zookeeper.tracelog.dir to ${config.settings.traceLog}   ****")
+        logger.info("**** 5: Tar zookeeper                                                                   ****")
+        logger.info("**** 6: Deploy zookeeper by zkInit.groovy deploy {zookeeper.tar}{host}                  ****")
+        logger.info("********************************************************************************************")
     } else if ("deploy".equalsIgnoreCase(args[0])) {
         deploy(args[1],args[2])
     }
