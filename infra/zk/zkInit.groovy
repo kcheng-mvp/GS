@@ -6,6 +6,7 @@ def currentPath = new File(getClass().protectionDomain.codeSource.location.path)
 GroovyShell groovyShell = new GroovyShell()
 def shell = groovyShell.parse(new File(currentPath, "../../core/Shell.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy"))
+def zipUtils = groovyShell.parse(new File(currentPath, "../../core/zipUtils.groovy"))
 def clipboard = groovyShell.parse(new File(currentPath, "../../core/Clipboard.groovy"))
 def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"))
 def configFile = new File(currentPath, 'zkInitCfg.groovy')
@@ -13,7 +14,7 @@ def config = new ConfigSlurper().parse(configFile.text)
 
 def logger = logback.getLogger("infra-zk")
 
-def cfg= {
+def cfg = {
 
     osBuilder.etcHost(config.settings.server)
 
@@ -32,7 +33,7 @@ def cfg= {
 
     logger.info("******************** Start creating ${config.settings.dataDir} ********************")
     config.settings.server.eachWithIndex { s, idx ->
-        logger.info("**** Creating ${config.settings.dataDir} for {}",s)
+        logger.info("**** Creating ${config.settings.dataDir} for {}", s)
         def ug = shell.sshug(s)
         def rt = shell.exec("ls -l ${config.settings.dataDir}", s);
         if (rt.code) {
@@ -46,7 +47,7 @@ def cfg= {
                 }
             }
 
-            logger.info("**** Creating ${config.settings.log4j} for {}",s)
+            logger.info("**** Creating ${config.settings.log4j} for {}", s)
             config.settings.log4j.split("/").each { p ->
                 pathBuffer.append("/").append(p)
                 rt = shell.exec("ls -l ${pathBuffer.toString()}", s);
@@ -56,7 +57,7 @@ def cfg= {
                 }
             }
 
-            logger.info("**** Creating ${config.settings.traceLog} for {}",s)
+            logger.info("**** Creating ${config.settings.traceLog} for {}", s)
             config.settings.traceLog.split("/").each { p ->
                 pathBuffer.append("/").append(p)
                 rt = shell.exec("ls -l ${pathBuffer.toString()}", s);
@@ -67,10 +68,10 @@ def cfg= {
             }
         }
 
-        logger.info("**** Creating ${config.settings.dataDir}/myid for {}",s)
+        logger.info("**** Creating ${config.settings.dataDir}/myid for {}", s)
         rt = shell.exec("ls -l ${config.settings.dataDir}/myid", s);
         if (rt.code) {
-            rt = shell.exec("echo ${idx+1} > ${config.settings.dataDir}/myid",s)
+            rt = shell.exec("echo ${idx + 1} > ${config.settings.dataDir}/myid", s)
             if (!rt.code) {
                 rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${config.settings.dataDir}/myid", s)
                 rt = shell.exec("stat -c '%n %U %G %y' ${config.settings.dataDir}/myid", s)
@@ -82,13 +83,29 @@ def cfg= {
 
 }
 
-def deploy = {host, deployable ->
-    if (config.settings.server.contains(host)){
+def deploy = {deployable,host ->
+    if (config.settings.server.contains(host)) {
 
         deployable = new File(deployable)
-        if(!deployable.exists()) logger.error "Can't find the deployable ${deployable}"
-        def rt = osBuilder.deploy(host,deployable,"zkCli.sh","ZK_HOME")
-        if(rt != 1){
+        if (!deployable.exists()) logger.error "Can't find the deployable ${deployable}"
+        def rootName = deployable.name.replace(".tar", "").replace(".gz", "");
+        zipUtils.updateTarEntry(deployable, { it ->
+            if (it.isFile()) {
+                if (it.name.indexOf("${rootName}/conf/zoo_sample.cfg") > -1) {
+                    logger.info clipboard.paste()
+//                    return new File("/Users/kcheng/Downloads/data.txt");
+                } else if (it.name.indexOf("${rootName}/conf/log4j.properties") > -1) {
+//                    return new File("/Users/kcheng/Downloads/data.txt");
+
+                    logger.info clipboard.paste()
+                }
+            }
+        })
+        return
+
+
+        def rt = osBuilder.deploy(host, deployable, "zkCli.sh", "ZK_HOME")
+        if (rt != 1) {
             logger.error "Failed to deploy ${deployable} on ${host}"
             return -1
         }
@@ -111,6 +128,6 @@ if (!args) {
         logger.info("**** 6: Deploy zookeeper by zkInit.groovy deploy {zookeeper.tar}{host}                  ****")
         logger.info("********************************************************************************************")
     } else if ("deploy".equalsIgnoreCase(args[0])) {
-        deploy(args[1],args[2])
+        deploy(args[1], args[2])
     }
 }
