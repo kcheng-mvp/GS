@@ -35,3 +35,8 @@ def sshug(String host){
     def group = rt.msg[0]
     ["u": user, "g":group]
 }
+
+def sshh(String host){
+    def rt = exec('eval echo "~$hadoop"',host)
+    rt.msg[0]
+}

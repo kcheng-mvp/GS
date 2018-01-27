@@ -116,6 +116,7 @@ def deploy(host, deployable, command, homeVar) {
         logger.info "unzip the file to target folder ..."
         rt = shell.exec("sudo tar -vxf  ~/${deployable.name} --no-same-owner -C /usr/local", host);
     }
+
     if(rt.code) return -1
 
     rt = shell.exec("type ${command}", host);

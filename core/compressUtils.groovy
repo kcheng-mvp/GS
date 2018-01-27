@@ -21,7 +21,7 @@ def updateCompressedEntry(tar, Closure closure) {
     def outZipType = CompressorStreamFactory.GZIP.equals(zipType) ? ArchiveStreamFactory.TAR : zipType
 
     def asf = new ArchiveStreamFactory()
-    def tmp = File.createTempFile("temp_${System.nanoTime()}", ".${CompressorStreamFactory.GZIP.equals(zipType) ? "tar.gz" : zipType}")
+    def tmp = File.createTempFile("${tar.name}", ".${CompressorStreamFactory.GZIP.equals(zipType) ? "tar.gz" : zipType}")
 
     def fis = new FileInputStream(tar)
     def fos = new FileOutputStream(tmp);
@@ -57,12 +57,12 @@ def updateCompressedEntry(tar, Closure closure) {
             }
             nextEntry = outZipType.with {
                 if (it.equals(ArchiveStreamFactory.ZIP)) {
-                    new ZipArchiveEntry(entryName.toString())
+                    return new ZipArchiveEntry(entryName.toString())
                 } else if (it.equals(ArchiveStreamFactory.TAR)) {
-                    new TarArchiveEntry(entryName.toString())
+                    return new TarArchiveEntry(entryName.toString())
                 }
             }
-            entry.setSize(obj.length());
+            nextEntry.setSize(obj.length());
             aos.putArchiveEntry(nextEntry);
             aos << obj.bytes
         }

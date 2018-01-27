@@ -1,12 +1,13 @@
 #! /usr/bin/env groovy
 
 import groovy.text.*
+import org.codehaus.groovy.runtime.StringBufferWriter
 
 def currentPath = new File(getClass().protectionDomain.codeSource.location.path).parent
 GroovyShell groovyShell = new GroovyShell()
 def shell = groovyShell.parse(new File(currentPath, "../../core/Shell.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy"))
-def zipUtils = groovyShell.parse(new File(currentPath, "../../core/zipUtils.groovy"))
+def compressUtils = groovyShell.parse(new File(currentPath, "../../core/compressUtils.groovy"))
 def clipboard = groovyShell.parse(new File(currentPath, "../../core/Clipboard.groovy"))
 def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"))
 def configFile = new File(currentPath, 'zkInitCfg.groovy')
@@ -15,100 +16,107 @@ def config = new ConfigSlurper().parse(configFile.text)
 def logger = logback.getLogger("infra-zk")
 
 def cfg = {
-
     osBuilder.etcHost(config.settings.server)
-
-
-    logger.info("******************** Start building zoo.cfg(clipboard) ********************")
-    def sb = new StringBuilder();
-    sb.append("tickTime=${config.settings.tickTime}\n")
-    sb.append("initLimit=${config.settings.initLimit}\n")
-    sb.append("syncLimit=${config.settings.syncLimit}\n")
-    sb.append("clientPort=${config.settings.clientPort}\n")
-    sb.append("dataDir=${config.settings.dataDir}\n")
-    config.settings.server.eachWithIndex { s, idx ->
-        sb.append("server.${idx + 1}=${s}:${config.settings.serverPort}:${config.settings.leaderPort}\n")
-    }
-    clipboard.copy(sb.toString())
-
-    logger.info("******************** Start creating ${config.settings.dataDir} ********************")
-    config.settings.server.eachWithIndex { s, idx ->
-        logger.info("**** Creating ${config.settings.dataDir} for {}", s)
-        def ug = shell.sshug(s)
-        def rt = shell.exec("ls -l ${config.settings.dataDir}", s);
-        if (rt.code) {
-            def pathBuffer = new StringBuilder();
-            config.settings.dataDir.split("/").each { p ->
-                pathBuffer.append("/").append(p)
-                rt = shell.exec("ls -l ${pathBuffer.toString()}", s);
-                if (rt.code) {
-                    rt = shell.exec("sudo mkdir ${pathBuffer.toString()}", s)
-                    rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${pathBuffer.toString()}", s)
-                }
-            }
-
-            logger.info("**** Creating ${config.settings.log4j} for {}", s)
-            config.settings.log4j.split("/").each { p ->
-                pathBuffer.append("/").append(p)
-                rt = shell.exec("ls -l ${pathBuffer.toString()}", s);
-                if (rt.code) {
-                    rt = shell.exec("sudo mkdir ${pathBuffer.toString()}", s)
-                    rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${pathBuffer.toString()}", s)
-                }
-            }
-
-            logger.info("**** Creating ${config.settings.traceLog} for {}", s)
-            config.settings.traceLog.split("/").each { p ->
-                pathBuffer.append("/").append(p)
-                rt = shell.exec("ls -l ${pathBuffer.toString()}", s);
-                if (rt.code) {
-                    rt = shell.exec("sudo mkdir ${pathBuffer.toString()}", s)
-                    rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${pathBuffer.toString()}", s)
-                }
-            }
-        }
-
-        logger.info("**** Creating ${config.settings.dataDir}/myid for {}", s)
-        rt = shell.exec("ls -l ${config.settings.dataDir}/myid", s);
-        if (rt.code) {
-            rt = shell.exec("echo ${idx + 1} > ${config.settings.dataDir}/myid", s)
-            if (!rt.code) {
-                rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${config.settings.dataDir}/myid", s)
-                rt = shell.exec("stat -c '%n %U %G %y' ${config.settings.dataDir}/myid", s)
-            }
-        }
-
-
-    }
-
 }
 
-def deploy = {deployable,host ->
+def deploy = { deployable, host ->
     if (config.settings.server.contains(host)) {
 
         deployable = new File(deployable)
         if (!deployable.exists()) logger.error "Can't find the deployable ${deployable}"
         def rootName = deployable.name.replace(".tar", "").replace(".gz", "");
-        zipUtils.updateTarEntry(deployable, { it ->
-            if (it.isFile()) {
-                if (it.name.indexOf("${rootName}/conf/zoo_sample.cfg") > -1) {
-                    logger.info clipboard.paste()
-//                    return new File("/Users/kcheng/Downloads/data.txt");
-                } else if (it.name.indexOf("${rootName}/conf/log4j.properties") > -1) {
-//                    return new File("/Users/kcheng/Downloads/data.txt");
+        def tmpDir = File.createTempDir()
 
-                    logger.info clipboard.paste()
+        def rt = shell.exec("tar -vxf ${deployable.absolutePath} -C ${tmpDir.absolutePath}")
+
+
+        logger.info("******************** Start building zoo.cfg(clipboard) ********************")
+        def sb = new StringBuilder();
+        sb.append("tickTime=${config.settings.tickTime}\n")
+        sb.append("initLimit=${config.settings.initLimit}\n")
+        sb.append("syncLimit=${config.settings.syncLimit}\n")
+        sb.append("clientPort=${config.settings.clientPort}\n")
+        sb.append("dataDir=${config.settings.dataDir}\n")
+        config.settings.server.eachWithIndex { s, idx ->
+            sb.append("server.${idx + 1}=${s}:${config.settings.serverPort}:${config.settings.leaderPort}\n")
+        }
+        clipboard.copy(sb.toString())
+
+        def zooCfg = new File("${tmpDir.absolutePath}/${rootName}/conf/zoo.cfg")
+        zooCfg << clipboard.paste()
+        def log4j = new File("${tmpDir.absolutePath}/${rootName}/conf/log4j.properties")
+
+
+        def lines = log4j.readLines();
+        log4j.withWriter { w ->
+            def bw = new BufferedWriter(w)
+            lines.each { line ->
+                if (line.startsWith("zookeeper.log.dir")) {
+                    line = "#${line}${System.getProperty("line.separator")}zookeeper.log.dir=${config.settings.log4j}"
+                } else if (line.startsWith("zookeeper.tracelog.dir")) {
+                    line = "#${line}${System.getProperty("line.separator")}zookeeper.tracelog.dir=${config.settings.traceLog}"
                 }
+                bw << line
+                bw.newLine()
             }
-        })
-        return
+            bw.close()
+        }
+        rt = shell.exec("tar -cvzf  ${tmpDir.absolutePath}/${rootName}.tar -C ${tmpDir.absolutePath} ./${rootName}")
 
+        rt = osBuilder.deploy(host, new File("${tmpDir.absolutePath}/${rootName}.tar"), "zkCli.sh", "ZK_HOME")
+        tmpDir.deleteDir()
 
-        def rt = osBuilder.deploy(host, deployable, "zkCli.sh", "ZK_HOME")
         if (rt != 1) {
             logger.error "Failed to deploy ${deployable} on ${host}"
             return -1
         }
+
+        logger.info("**** Creating ${config.settings.dataDir} for {}", host)
+        def ug = shell.sshug(host)
+        rt = shell.exec("ls -l ${config.settings.dataDir}", host);
+        if (rt.code) {
+            def pathBuffer = new StringBuilder();
+            config.settings.dataDir.split("/").each { p ->
+                pathBuffer.append("/").append(p)
+                rt = shell.exec("ls -l ${pathBuffer.toString()}", host);
+                if (rt.code) {
+                    rt = shell.exec("sudo mkdir ${pathBuffer.toString()}", host)
+                    rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${pathBuffer.toString()}", host)
+                }
+            }
+
+            logger.info("**** Creating ${config.settings.log4j} for {}", host)
+            config.settings.log4j.split("/").each { p ->
+                pathBuffer.append("/").append(p)
+                rt = shell.exec("ls -l ${pathBuffer.toString()}", host);
+                if (rt.code) {
+                    rt = shell.exec("sudo mkdir ${pathBuffer.toString()}", host)
+                    rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${pathBuffer.toString()}", host)
+                }
+            }
+
+            logger.info("**** Creating ${config.settings.traceLog} for {}", host)
+            config.settings.traceLog.split("/").each { p ->
+                pathBuffer.append("/").append(p)
+                rt = shell.exec("ls -l ${pathBuffer.toString()}", host);
+                if (rt.code) {
+                    rt = shell.exec("sudo mkdir ${pathBuffer.toString()}", host)
+                    rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${pathBuffer.toString()}", host)
+                }
+            }
+        }
+
+        logger.info("**** Creating ${config.settings.dataDir}/myid for {}", host)
+        rt = shell.exec("ls -l ${config.settings.dataDir}/myid", host);
+        if (rt.code) {
+            rt = shell.exec("echo ${config.settings.server.indexOf(host) + 1} > ${config.settings.dataDir}/myid", host)
+            if (!rt.code) {
+                rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${config.settings.dataDir}/myid", host)
+                rt = shell.exec("stat -c '%n %U %G %y' ${config.settings.dataDir}/myid", host)
+            }
+        }
+
+
     } else {
         logger.error "${host} is not in the server list"
     }
