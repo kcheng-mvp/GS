@@ -208,18 +208,26 @@ SELECT *
 FROM CRMR
 '''
 
-    def rows = [] as List
-    sql.eachRow(detailSql) { row ->
-        rows.add([row['DAY_STR'], row['APP_ID'], row['UID'], row['PLATFORM'], row['ADV_APP_ID'], timeFormat.format(row['CLICK_TIME_LONG'] * 1000L), timeFormat.format(row['REGISTER_TIME_LONG'] * 1000L)])
+    def csv = File.createTempFile("ADV",".CSV")
+    csv.deleteOnExit()
+//    def rows = [] as List
+    csv.withWriter { w ->
+        def bw = new BufferedWriter(w)
+        sql.eachRow(detailSql) { row ->
+//            rows.add([row['DAY_STR'], row['APP_ID'], row['UID'], row['PLATFORM'], row['ADV_APP_ID'], timeFormat.format(row['CLICK_TIME_LONG'] * 1000L), timeFormat.format(row['REGISTER_TIME_LONG'] * 1000L)])
+            bw << "${row['DAY_STR']}, '${row['APP_ID']}', '${row['UID']}', ${row['PLATFORM']}, '${row['ADV_APP_ID']}', ${timeFormat.format(row['CLICK_TIME_LONG'] * 1000L)}, ${timeFormat.format(row['REGISTER_TIME_LONG'] * 1000L)}"
+            bw.newLine()
+        }
+        bw.close()
     }
 
-    def dataMap = new HashMap();
-    dataMap.put("AdvReport", rows)
-    def xlsPath = xls.generateXls(dataMap)
+//    def dataMap = new HashMap();
+//    dataMap.put("AdvReport", rows)
+//    def xlsPath = xls.generateXls(dataMap)
 
-    mailMan.sendMail("导量日报（${lastDay}）", "导量日报（${lastDay}）", configFile, xlsPath)
+    mailMan.sendMail("导量日报（${lastDay}）", "导量日报（${lastDay}）", configFile, csv.absolutePath)
 
-    new File(xlsPath).delete();
+//    new File(csv.absolutePath).delete();
 
 }
 
