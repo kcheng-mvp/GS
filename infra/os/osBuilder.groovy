@@ -99,7 +99,10 @@ def etcHost(hosts) {
         }
         rt = shell.exec("sudo mv /etc/hosts /etc/hosts.back", h)
         file.eachLine { line ->
-            if (line.trim()) shell.exec("echo ${line} | sudo tee -a /etc/hosts >/dev/null", h)
+            if (line.trim()) {
+                logger.info "${h}: ${line}"
+                shell.exec("echo ${line} | sudo tee -a /etc/hosts >/dev/null", h)
+            }
         }
     }
 }
