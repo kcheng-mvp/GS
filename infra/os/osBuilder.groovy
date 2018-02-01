@@ -39,7 +39,10 @@ def etcHost(hosts) {
         }
         //hostname -I // returns all ips
         rt = shell.exec("hostname -i", host)
-        hostMap.put(rt['msg'].get(0).trim(), host.trim())
+        def publicIp = shell.exec("curl ipecho.net/plain",host)
+        publicIp = rt.msg.get(0).trim()
+        logger.info("**** Public IP of ${host} is :${publicIp}")
+        hostMap.put(rt['msg'].get(0).trim().replace(publicIp,""), host.trim())
 
         logger.info("**** Checking ssh key for {}", host)
         rt = shell.exec("ls ~/.ssh/id_rsa", host)
@@ -100,7 +103,6 @@ def etcHost(hosts) {
         rt = shell.exec("sudo mv /etc/hosts /etc/hosts.back", h)
         file.eachLine { line ->
             if (line.trim()) {
-                logger.info "${h}: ${line}"
                 shell.exec("echo ${line} | sudo tee -a /etc/hosts >/dev/null", h)
             }
         }
