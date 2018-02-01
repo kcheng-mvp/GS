@@ -8,10 +8,15 @@ def shell = groovyShell.parse(new File(currentPath, "../../core/Shell.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy"))
 def clipboard = groovyShell.parse(new File(currentPath, "../../core/Clipboard.groovy"))
 def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"))
-def configFile = new File(currentPath, 'kaInitCfg.groovy')
-def config = new ConfigSlurper().parse(configFile.text)
 
 def logger = logback.getLogger("infra-ka")
+def configFile = new File( 'kaInitCfg.groovy')
+if(!configFile.exists()){
+    logger.info "Loading file from ${configFile.absolutePath} ......"
+    configFile = new File(currentPath, 'kaInitCfg.groovy')
+}
+def config = new ConfigSlurper().parse(configFile.text)
+
 
 def cfg = {
 
