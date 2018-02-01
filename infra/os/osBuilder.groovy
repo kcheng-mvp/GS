@@ -37,7 +37,8 @@ def etcHost(hosts) {
             logger.info("sudo hostnamectl set-hostname '{hostname}'")
             return true
         }
-        rt = shell.exec("hostname -I", host)
+        //hostname -I // returns all ips
+        rt = shell.exec("hostname -i", host)
         hostMap.put(rt['msg'].get(0).trim(), host.trim())
 
         logger.info("**** Checking ssh key for {}", host)
