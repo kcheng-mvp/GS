@@ -13,7 +13,8 @@ def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"
 def logger = logback.getLogger("infra-zk")
 def configFile = new File( 'zkInitCfg.groovy')
 if(!configFile.exists()){
-    logger.info "Loading file from ${configFile.absolutePath} ..."
+    logger.error "Can not find the ${configFile.absolutePath} ..."
+    return -1
     configFile = new File(currentPath, 'zkInitCfg.groovy')
 }
 def config = new ConfigSlurper().parse(configFile.text)
