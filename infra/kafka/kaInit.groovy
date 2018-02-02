@@ -14,7 +14,6 @@ def configFile = new File( 'kaInitCfg.groovy')
 if(!configFile.exists()){
     logger.error "Can not find the ${configFile.absolutePath} ..."
     return -1
-    configFile = new File(currentPath, 'kaInitCfg.groovy')
 }
 def config = new ConfigSlurper().parse(configFile.text)
 
