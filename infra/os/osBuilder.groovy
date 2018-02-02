@@ -33,7 +33,7 @@ def etcHost(hosts, boolean onRemote) {
             ips.add(line.split()[1].trim())
         }
     }
-    def hostMap = new TreeMap<String, String>();
+    def hostMap = [:];
     def rt = null
     def con = hosts.find { host ->
         logger.info("**** Checking hosts for {}", host)
@@ -85,6 +85,8 @@ def etcHost(hosts, boolean onRemote) {
         logger.error "There are errors in host /etc/hosts"
         return
     }
+    // sort the map
+    hostMap.sort({a,b -> a.value <=> b.value})
     hosts.each { h ->
         logger.info("**** Setting hosts for {}", h)
         File file = File.createTempFile(h, ".etchosts");
