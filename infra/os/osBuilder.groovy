@@ -22,9 +22,17 @@ def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy
 def logger = logback.getLogger("infra.os")
 
 
-def etcHost(hosts) {
+@Field
+def home = System.getProperty("user.home")
 
+def etcHost(hosts, boolean onRemote) {
     logger.info("******************** Start building os ********************")
+    def ips = [] as List
+    new File("${home}/.ssh/config").eachLine { line ->
+        if(line.trim().startsWith("HostName")){
+            ips.add(line.split()[1].trim())
+        }
+    }
     def hostMap = new TreeMap<String, String>();
     def rt = null
     def con = hosts.find { host ->
@@ -37,12 +45,15 @@ def etcHost(hosts) {
             logger.info("sudo hostnamectl set-hostname '{hostname}'")
             return true
         }
-        //hostname -I // returns all ips
         rt = shell.exec("hostname -i", host)
-        def publicIp = shell.exec("curl ipecho.net/plain",host)
-        publicIp = rt.msg.get(0).trim()
-        logger.info("**** Public IP of ${host} is :${publicIp}")
-        hostMap.put(rt['msg'].get(0).trim().replace(publicIp,""), host.trim())
+        def hostIps = new ArrayList()
+        hostIps.addAll(rt.msg.get(0).split())
+        if(onRemote){
+           hostIps.retainAll(ips)
+        } else {
+           hostIps.removeAll(ips)
+        }
+        hostMap.put(hostIps[0], host.trim())
 
         logger.info("**** Checking ssh key for {}", host)
         rt = shell.exec("ls ~/.ssh/id_rsa", host)

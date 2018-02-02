@@ -20,8 +20,8 @@ def config = new ConfigSlurper().parse(configFile.text)
 
 
 
-def cfg = {
-    osBuilder.etcHost(config.settings.server)
+def cfg = {onRemote ->
+    osBuilder.etcHost(config.settings.server,onRemote)
 }
 
 def deploy = { deployable, host ->
@@ -131,7 +131,7 @@ if (!args) {
     logger.info("make sure your settings are correct and then run the command : cfg or deploy {zookeeper.tar} {host} ")
 } else {
     if ("cfg".equalsIgnoreCase(args[0])) {
-        cfg()
+        cfg(args.length > 1 ? true:false)
         logger.info("********************************************************************************************")
         logger.info("**** 1: Download zookeeper                                                              ****")
         logger.info("**** 2: Unzip zookeeper and create zoo.cfg from clipboard                               ****")

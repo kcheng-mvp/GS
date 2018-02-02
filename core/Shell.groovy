@@ -18,7 +18,7 @@ def exec(shell,String... host) {
     def rt = [] as List;
     process.inputStream.eachLine {
         if(it){
-            rt << it
+            rt << it.trim()
         }
     }
     process.waitFor();
@@ -36,7 +36,3 @@ def sshug(String host){
     ["u": user, "g":group]
 }
 
-def sshh(String host){
-    def rt = exec('eval echo "~$hadoop"',host)
-    rt.msg[0]
-}

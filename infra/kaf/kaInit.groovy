@@ -18,54 +18,13 @@ if(!configFile.exists()){
 def config = new ConfigSlurper().parse(configFile.text)
 
 
-def cfg = {
+def cfg = { onRemote ->
 
     def hosts = new ArrayList();
     hosts.addAll(config.settings.ka.server)
     hosts.addAll(config.settings.zk.server)
 
-
-    osBuilder.etcHost(hosts)
-
-    /*
-    logger.info("******************** Start creating ${config.settings.ka.log.dirs} ********************")
-    config.settings.ka.server.eachWithIndex { s, idx ->
-        logger.info("**** Creating ${config.settings.ka.log.dirs} for {}",s)
-        def ug = shell.sshug(s)
-        def rt = shell.exec("ls -l ${config.settings.ka.log.dirs}", s);
-        if (rt.code) {
-            def pathBuffer = new StringBuilder();
-            config.settings.ka.log.dirs.split("/").each { p ->
-                pathBuffer.append("/").append(p)
-                rt = shell.exec("ls -l ${pathBuffer.toString()}", s);
-                if (rt.code) {
-                    rt = shell.exec("sudo mkdir ${pathBuffer.toString()}", s)
-                    rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${pathBuffer.toString()}", s)
-                }
-            }
-        }
-    }
-    def sb = new StringBuilder("zookeeper.connect=")
-    config.settings.zk.server.eachWithIndex{server,index ->
-        sb.append("${server}:${config.settings.zk.clientPort}")
-        if(index +1 < config.settings.zk.server.size()){
-           sb.append(",")
-        } else {
-            sb.append("/kafka")
-        }
-    }
-    sb.append("\n")
-    sb.append("metadata.broker.list=")
-    config.settings.ka.server.eachWithIndex{server,index ->
-        sb.append("${server}:${config.settings.ka.port}")
-        if(index +1 < config.settings.ka.server.size()){
-           sb.append(",")
-        }
-    }
-    clipboard.copy(sb.toString())
-
-*/
-
+    osBuilder.etcHost(hosts, onRemote)
 
 }
 
@@ -212,7 +171,7 @@ if (!args) {
     logger.info("make sure your settings are correct and then run the command : cfg or deploy {zookeeper.tar} {host} ")
 } else {
     if ("cfg".equalsIgnoreCase(args[0])) {
-        cfg()
+        cfg(args.length > 1 ? true:false)
     } else if ("deploy".equalsIgnoreCase(args[0])) {
         def deployable = new File(args[1])
         if (!deployable.exists()) {
