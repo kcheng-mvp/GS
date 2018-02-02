@@ -5,7 +5,7 @@ hadoopenv {
     dataVols = ["/data0/hadoop1","/data0/hadoop2"] as List
 }
 
-core-site {
+coreSite {
     fs {
         'default' {
             name = "hdfs://${hadoopenv.masterNode}:9000"
@@ -18,7 +18,7 @@ core-site {
     }
 }
 
-hdfs-site {
+hdfsSite {
     dfs {
         name {
             dir = "${hadoopenv.dataVols[0]}/dfs/name"
@@ -43,7 +43,7 @@ hdfs-site {
         }
     }
 }
-mapred-site {
+mapredSite {
     mapred {
         job {
             tracker = "${hadoopenv.masterNode}:9001"

@@ -1,6 +1,12 @@
 #! /usr/bin/env groovy
 
+@Grapes([
+        @Grab(group = 'com.google.guava', module = 'guava', version = '18.0')
+])
 import groovy.text.*
+import groovy.xml.*
+import groovy.xml.MarkupBuilder
+import com.google.common.base.CaseFormat
 
 def currentPath = new File(getClass().protectionDomain.codeSource.location.path).parent
 GroovyShell groovyShell = new GroovyShell()
@@ -8,54 +14,70 @@ def shell = groovyShell.parse(new File(currentPath, "../../core/Shell.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy"))
 def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"))
 def logger = logback.getLogger("infra-hd")
-def configFile = new File('hdInitCfg.groovy')
-if(!configFile.exists()){
-    logger.error "Can not find the ${configFile.absolutePath} ..."
-    return -1
+
+
+def validate = {
+    def configFile = new File('hdInitCfg.groovy')
+
+    if (!configFile.exists()) {
+        logger.error "Can not find the ${configFile.absolutePath}, please init first"
+        return -1
+    }
+    def config = new ConfigSlurper().parse(configFile.text)
+    def hosts = config.hadoopenv.dataNode << config.hadoopenv.masterNode << config.hadoopenv.secondNode
+
+    [config: config, hosts: hosts]
+
 }
-def config = new ConfigSlurper().parse(configFile.text)
 
 
-def hosts = config.hadoopenv.dataNode << config.hadoopenv.masterNode << config.hadoopenv.secondNode
 
-def generate = new File( "hdfs")
-
-def cfg = {
-
+def buildOs = { onRemote ->
+    def env = validate()
     logger.info("** Check and set /etc/hosts for all servers ...")
+    osBuilder.etcHost(evn.hosts, onRemote)
+}
 
-    osBuilder.etcHost(hosts)
+
+def cfg = { onRemote ->
+
+
+    def env = validate()
+    logger.info("** Generate configurations ...")
+    def generate = new File("hdfs")
 
     if (generate.exists()) {
         generate.deleteDir()
     }
     generate.mkdirs()
 
-
-
     logger.info("** Generate core-site.xml ...")
-    def core = new File(generate, "core-site.xml")
-    core.withWriter { w ->
-        def bw = new BufferedWriter(w)
-        config.core-site.flatten().each{
-            logger.info  "key=${it.key},value = ${it.value}"
+
+    ["coreSite","hdfsSite","mapredSite"].each{prop ->
+
+        def fileName = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, prop)
+
+        logger.info "** Generate ${fileName}.xml ..."
+        def file = new File(generate,"${fileName}.xml");
+        def writer = new FileWriter(file)
+        def xml = new MarkupBuilder(writer)
+
+        xml.mkp.xmlDeclaration([version: '1.0', encoding: 'UTF-8'])
+        xml.mkp.pi("xml-stylesheet": [type: "text/xsl", href: "configuration.xsl"])
+
+        xml.configuration {
+            env.config.get(prop).flatten().each { sec ->
+                property {
+                    name(sec.key)
+                    value(sec.value)
+                }
+
+            }
         }
-        bw.close()
+        writer.close()
     }
 
 
-    logger.info("** Generate hdfs-site.xml ...")
-//    def hdfs = new File(currentPath, "hdfs-site.xml")
-//    def hdfsString = stringEngine.createTemplate(hdfs).make(config).toString()
-//    def hdfsSite = new File(generate, "hdfs-site.xml")
-//    hdfsSite << hdfsString
-
-
-    logger.info("** Generate mapred-site.xml ...")
-//    def mapred = new File(currentPath, "mapred-site.xml")
-//    def mapredString = stringEngine.createTemplate(mapred).make(config).toString()
-//    def mapredSite = new File(generate, "mapred-site.xml")
-//    mapredSite << mapredString
 
     logger.info("** Generate masters & slaves ...")
 //    def masters = new File(generate, "masters")
@@ -91,7 +113,6 @@ def cfg = {
 }
 
 
-
 def deploy = { host, deployable ->
 
     if (hosts.contains(host)) {
@@ -109,7 +130,7 @@ def deploy = { host, deployable ->
 
         def rt = osBuilder.deploy(host, deployable, "hadoop", "HADOOP_HOME");
 
-        if(rt != 1) {
+        if (rt != 1) {
             logger.error "Failed to deploy ${deployable} on ${host}"
             return -1
         }
@@ -150,18 +171,23 @@ def deploy = { host, deployable ->
             }
         }
     }
-
-
 }
 
 if (!args) {
-    logger.info("make sure your settings are correct and then run the command : cfg or apply 'host' ")
-
+    logger.info("make sure your settings are correct and then run the command : [init], [build], [cfg] or [deploy]")
 } else {
-    if ("cfg".equalsIgnoreCase(args[0])) {
+    if ("init".equalsIgnoreCase(args[0])) {
+        def configuration = new File("hdInitCfg.groovy")
+        configuration << new File(currentPath, "hdInitCfg.groovy").bytes
+        logger.info "*** Please do the changes according to your environments in ${configuration.absolutePath}"
+    } else if ('build'.equalsIgnoreCase(args[0])) {
+        buildOs(args.length > 1 ? true : false)
+    } else if ("cfg".equalsIgnoreCase(args[0])) {
         cfg()
-    } else if ("deploy".equalsIgnoreCase(args[0]) && args.length ==3) {
-        deploy(args[1],args[2])
+    } else if ("deploy".equalsIgnoreCase(args[0]) && args.length == 3) {
+        deploy(args[1], args[2])
+    } else {
+        logger.error("Can not find the command ${args[0]} ...")
     }
 }
 
