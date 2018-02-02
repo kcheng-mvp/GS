@@ -1,1 +1,1 @@
-infra/kaf/kaInit.groovy
+infra/kafka/kaInit.groovy

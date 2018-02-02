@@ -1,1 +1,1 @@
-infra/zk/zkInit.groovy
+infra/zookeeper/zkInit.groovy

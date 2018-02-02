@@ -16,16 +16,9 @@ if(!configFile.exists()){
 def config = new ConfigSlurper().parse(configFile.text)
 
 
-logger.info("********************")
-config.flatten().each { k, v ->
-    logger.info("** ${k} : ${v}")
-}
-logger.info("********************")
-
 def hosts = config.hadoopenv.dataNode << config.hadoopenv.masterNode << config.hadoopenv.secondNode
-def tmpDir = new File(System.getProperty("java.io.tmpdir"));
 
-def generate = new File(tmpDir, "hdfs-v1")
+def generate = new File( "hdfs")
 
 def cfg = {
 
@@ -38,66 +31,61 @@ def cfg = {
     }
     generate.mkdirs()
 
-    def stringEngine = new GStringTemplateEngine()
-    logger.info("** Generate hadoop-env.sh ...")
-    def tempEnv = new File(currentPath, "temp-env.sh")
-    def envString = stringEngine.createTemplate(tempEnv).make(config).toString()
-    def template = new File(currentPath, "hadoop-env.sh")
-    def env = new File(generate, "hadoop-env.sh")
-    env << template.text
-    env.append(envString)
-
 
 
     logger.info("** Generate core-site.xml ...")
-    def core = new File(currentPath, "core-site.xml")
-    def coreString = stringEngine.createTemplate(core).make(config).toString()
-    def coreSite = new File(generate, "core-site.xml")
-    coreSite << coreString
+    def core = new File(generate, "core-site.xml")
+    core.withWriter { w ->
+        def bw = new BufferedWriter(w)
+        config.core-site.flatten().each{
+            logger.info  "key=${it.key},value = ${it.value}"
+        }
+        bw.close()
+    }
 
 
     logger.info("** Generate hdfs-site.xml ...")
-    def hdfs = new File(currentPath, "hdfs-site.xml")
-    def hdfsString = stringEngine.createTemplate(hdfs).make(config).toString()
-    def hdfsSite = new File(generate, "hdfs-site.xml")
-    hdfsSite << hdfsString
+//    def hdfs = new File(currentPath, "hdfs-site.xml")
+//    def hdfsString = stringEngine.createTemplate(hdfs).make(config).toString()
+//    def hdfsSite = new File(generate, "hdfs-site.xml")
+//    hdfsSite << hdfsString
 
 
     logger.info("** Generate mapred-site.xml ...")
-    def mapred = new File(currentPath, "mapred-site.xml")
-    def mapredString = stringEngine.createTemplate(mapred).make(config).toString()
-    def mapredSite = new File(generate, "mapred-site.xml")
-    mapredSite << mapredString
+//    def mapred = new File(currentPath, "mapred-site.xml")
+//    def mapredString = stringEngine.createTemplate(mapred).make(config).toString()
+//    def mapredSite = new File(generate, "mapred-site.xml")
+//    mapredSite << mapredString
 
     logger.info("** Generate masters & slaves ...")
-    def masters = new File(generate, "masters")
-    masters << config.hadoopenv.secondNode << "\n"
-    def slaves = new File(generate, "slaves")
-    slaves.withWriter { w ->
-        w.write(config.hadoopenv.masterNode)
-        w.write("\n")
-        w.write(config.hadoopenv.secondNode)
-        w.write("\n")
-        config.hadoopenv.dataNode.each {
-            w.write(it)
-            w.write("\n")
-        }
-    }
+//    def masters = new File(generate, "masters")
+//    masters << config.hadoopenv.secondNode << "\n"
+//    def slaves = new File(generate, "slaves")
+//    slaves.withWriter { w ->
+//        w.write(config.hadoopenv.masterNode)
+//        w.write("\n")
+//        w.write(config.hadoopenv.secondNode)
+//        w.write("\n")
+//        config.hadoopenv.dataNode.each {
+//            w.write(it)
+//            w.write("\n")
+//        }
+//    }
 
     logger.info("** Generate folder list ...")
 
-    new File(generate, "folder").withWriter { w ->
-        config.flatten().each { k, v ->
-            if (k.indexOf("dir") > -1) {
-                w.write(v)
-                w.write("\n")
-            }
-        }
-        config.hadoopenv.dataVols.each { rootPath ->
-            w.write(rootPath)
-            w.write("\n")
-        }
-    }
+//    new File(generate, "folder").withWriter { w ->
+//        config.flatten().each { k, v ->
+//            if (k.indexOf("dir") > -1) {
+//                w.write(v)
+//                w.write("\n")
+//            }
+//        }
+//        config.hadoopenv.dataVols.each { rootPath ->
+//            w.write(rootPath)
+//            w.write("\n")
+//        }
+//    }
 
     logger.info("** Configurations are generated at {}", generate.absolutePath)
 }
