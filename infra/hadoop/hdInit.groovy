@@ -25,105 +25,84 @@ if (configFile.exists()) {
 
 
 
-
-
 def buildOs = { onRemote ->
     logger.info("** Check and set /etc/hosts for all servers ...")
     osBuilder.etcHost(hosts, onRemote)
 }
 
 
-def cfg = { onRemote ->
-
-
-    logger.info("** Generate configurations ...")
-    def generate = new File("hdfs")
-
-    if (generate.exists()) {
-        generate.deleteDir()
-    }
-    generate.mkdirs()
-
-    logger.info("** Generate core-site.xml ...")
-
-    ["coreSite", "hdfsSite", "mapredSite"].each { prop ->
-
-        def fileName = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, prop)
-
-        logger.info "** Generate ${fileName}.xml ..."
-        def file = new File(generate, "${fileName}.xml");
-        def writer = new FileWriter(file)
-        def xml = new MarkupBuilder(writer)
-
-        xml.mkp.xmlDeclaration([version: '1.0', encoding: 'UTF-8'])
-        xml.mkp.pi("xml-stylesheet": [type: "text/xsl", href: "configuration.xsl"])
-
-        xml.configuration {
-            config.get(prop).flatten().each { sec ->
-                property {
-                    name(sec.key)
-                    value(sec.value)
-                }
-
-            }
-        }
-        writer.close()
-    }
-
-
-
-    logger.info("** Generate masters & slaves ...")
-    def masters = new File(generate, "masters")
-    masters << config.setting.secondNode << "\n"
-    def slaves = new File(generate, "slaves")
-    slaves.withWriter { w ->
-        w.write(config.setting.masterNode)
-        w.write("\n")
-        w.write(config.setting.secondNode)
-        w.write("\n")
-        config.setting.dataNode.each {
-            w.write(it)
-            w.write("\n")
-        }
-    }
-
-    logger.info("** Generate folder list ...")
-
-    new File(generate, "folder").withWriter { w ->
-        config.flatten().each { k, v ->
-            if (k.indexOf("dir") > -1 || k.indexOf("DIR") > -1) {
-                w.write(v)
-                w.write("\n")
-            }
-        }
-        config.setting.dataVols.each { rootPath ->
-            w.write(rootPath)
-            w.write("\n")
-        }
-    }
-
-    logger.info("** Configurations are generated at {}", generate.absolutePath)
-}
-
-
 def deploy = { deployable, host ->
 
     if (hosts.contains(host)) {
-        def generate = new File("hdfs")
-        def allFiles = []
-        if (generate.exists())
-            generate.eachFileRecurse(FileType.FILES) { it ->
-                allFiles << it.name
-            }
 
-        if (!allFiles.containsAll(["core-site.xml", "hdfs-site.xml", "mapred-site.xml", "folder", "masters", "slaves"])) {
-            logger.error "** Missed necessary configuration, please check it again"
-            return -1
+        def tmpDir = File.createTempDir()
+
+        logger.info("** Generate configurations ...")
+        def generate = new File(tmpDir,"hdfs")
+
+
+        logger.info("** Generate core-site.xml ...")
+
+        ["coreSite", "hdfsSite", "mapredSite"].each { prop ->
+
+            def fileName = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, prop)
+
+            logger.info "** Generate ${fileName}.xml ..."
+            def file = new File(generate, "${fileName}.xml");
+            def writer = new FileWriter(file)
+            def xml = new MarkupBuilder(writer)
+
+            xml.mkp.xmlDeclaration([version: '1.0', encoding: 'UTF-8'])
+            xml.mkp.pi("xml-stylesheet": [type: "text/xsl", href: "configuration.xsl"])
+
+            xml.configuration {
+                config.get(prop).flatten().each { sec ->
+                    property {
+                        name(sec.key)
+                        value(sec.value)
+                    }
+
+                }
+            }
+            writer.close()
         }
 
 
+
+        logger.info("** Generate masters & slaves ...")
+        def masters = new File(generate, "masters")
+        masters << config.setting.secondNode << "\n"
+        def slaves = new File(generate, "slaves")
+        slaves.withWriter { w ->
+            w.write(config.setting.masterNode)
+            w.write("\n")
+            w.write(config.setting.secondNode)
+            w.write("\n")
+            config.setting.dataNode.each {
+                w.write(it)
+                w.write("\n")
+            }
+        }
+
+        logger.info("** Generate folder list ...")
+
+        new File(generate, "folder").withWriter { w ->
+            config.flatten().each { k, v ->
+                if (k.indexOf("dir") > -1 || k.indexOf("DIR") > -1) {
+                    w.write(v)
+                    w.write("\n")
+                }
+            }
+            config.setting.dataVols.each { rootPath ->
+                w.write(rootPath)
+                w.write("\n")
+            }
+        }
+
+        logger.info("** Configurations are generated at {}", generate.absolutePath)
+
+
         def rootName = deployable.name.replace(".tar", "").replace(".gz", "").replace(".tgz", "");
-        def tmpDir = File.createTempDir()
         logger.info("** unzipping ${deployable.absolutePath} at ${tmpDir.absolutePath} ......")
         def rt = shell.exec("tar -vxf ${deployable.absolutePath} -C ${tmpDir.absolutePath}")
         if (!rt.code) {
@@ -137,7 +116,7 @@ def deploy = { deployable, host ->
 
         logger.info("** Generate hadoop-env.sh ......")
         def hadoopenv = new File("${tmpDir.absolutePath}/${rootName}/conf/hadoop-env.sh")
-        config.hadoopenv.flatten().each {entry ->
+        config.hadoopenv.flatten().each { entry ->
             logger.info "** Add ${entry.key}=${entry.value}"
             hadoopenv.append("${System.getProperty("line.separator")}${entry.key}=${entry.value}")
         }
@@ -148,10 +127,10 @@ def deploy = { deployable, host ->
 
         logger.info("** Deploy ${rootName}.tar ......")
 
-        rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"),host, "hadoop", "HADOOP_HOME");
-        tmpDir.deleteDir()
+        rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host, "hadoop", "HADOOP_HOME");
         if (rt != 1) {
             logger.error "Failed to deploy ${deployable} on ${host}"
+            tmpDir.deleteDir()
             return -1
         }
 
@@ -161,7 +140,7 @@ def deploy = { deployable, host ->
         def ug = shell.sshug(host)
         def group = ug.g
         def user = ug.u
-        new File(generate,"folder").eachLine { f ->
+        new File(generate, "folder").eachLine { f ->
             if (f) {
                 f = f.replaceAll(",", " ")
                 f.split().each { p ->
@@ -182,6 +161,7 @@ def deploy = { deployable, host ->
                 }
             }
         }
+        tmpDir.deleteDir()
     }
 }
 
@@ -199,8 +179,6 @@ if (!args) {
         }
         if ('build'.equalsIgnoreCase(args[0])) {
             buildOs(args.length > 1 ? true : false)
-        } else if ("cfg".equalsIgnoreCase(args[0])) {
-            cfg()
         } else if ("deploy".equalsIgnoreCase(args[0]) && args.length == 3) {
             def deployable = new File(args[1])
             if (!deployable.exists()) {

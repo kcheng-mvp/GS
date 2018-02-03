@@ -10,15 +10,14 @@ def clipboard = groovyShell.parse(new File(currentPath, "../../core/Clipboard.gr
 def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"))
 
 def logger = logback.getLogger("infra-ka")
-def configFile = new File( 'kaInitCfg.groovy')
-if(!configFile.exists()){
-    logger.error "Can not find the ${configFile.absolutePath} ..."
-    return -1
+def configFile = new File('kaInitCfg.groovy')
+def config = null
+if (configFile.exists()) {
+    config = new ConfigSlurper().parse(configFile.text)
 }
-def config = new ConfigSlurper().parse(configFile.text)
 
 
-def cfg = { onRemote ->
+def buildOs = { onRemote ->
 
     def hosts = new ArrayList();
     hosts.addAll(config.settings.ka.server)
@@ -30,23 +29,6 @@ def cfg = { onRemote ->
 
 def deploy = { deployable, host ->
     if (config.settings.ka.server.contains(host)) {
-        def dirs = config.flatten().findAll { it -> it.key.indexOf("dir") > -1 }.collect { it.value }
-        logger.info "Creating dirs : ${dirs}"
-        def ug = shell.sshug(host)
-        dirs.each { dir ->
-            def rt = shell.exec("ls -l ${dir}", host);
-            if (rt.code) {
-                def pathBuffer = new StringBuilder();
-                dir.split("/").each { p ->
-                    pathBuffer.append("/").append(p)
-                    rt = shell.exec("ls -l ${pathBuffer.toString()}", host);
-                    if (rt.code) {
-                        rt = shell.exec("sudo mkdir ${pathBuffer.toString()}", host)
-                        rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${pathBuffer.toString()}", host)
-                    }
-                }
-            }
-        }
 
         logger.info("unzip ${deployable.absolutePath}")
 
@@ -153,12 +135,29 @@ def deploy = { deployable, host ->
         }
         rt = shell.exec("tar -cvzf  ${tmpDir.absolutePath}/${rootName}.tar -C ${tmpDir.absolutePath} ./${rootName}")
 
-        rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host,"kafka-configs.sh", "KA_HOME")
+        rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host, "kafka-configs.sh", "KA_HOME")
 
         tmpDir.deleteDir()
         if (rt != 1) {
             logger.error "Failed to deploy ${deployable} on ${host}"
             return -1
+        }
+        def dirs = config.flatten().findAll { it -> it.key.indexOf("dir") > -1 }.collect { it.value }
+        logger.info "Creating dirs : ${dirs}"
+        def ug = shell.sshug(host)
+        dirs.each { dir ->
+            def rt = shell.exec("ls -l ${dir}", host);
+            if (rt.code) {
+                def pathBuffer = new StringBuilder();
+                dir.split("/").each { p ->
+                    pathBuffer.append("/").append(p)
+                    rt = shell.exec("ls -l ${pathBuffer.toString()}", host);
+                    if (rt.code) {
+                        rt = shell.exec("sudo mkdir ${pathBuffer.toString()}", host)
+                        rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${pathBuffer.toString()}", host)
+                    }
+                }
+            }
         }
 
     } else {
@@ -167,17 +166,27 @@ def deploy = { deployable, host ->
 }
 
 if (!args) {
-    logger.info("make sure your settings are correct and then run the command : cfg or deploy {zookeeper.tar} {host} ")
+    logger.info("make sure your settings are correct and then run the command : build or deploy {zookeeper.tar} {host} ")
 } else {
-    if ("cfg".equalsIgnoreCase(args[0])) {
-        cfg(args.length > 1 ? true:false)
-    } else if ("deploy".equalsIgnoreCase(args[0])) {
-        def deployable = new File(args[1])
-        if (!deployable.exists()) {
-            logger.error "Can't not find the file : {}", deployable.absolutePath
+    if("init".equalsIgnoreCase(args[0])){
+        def configuration = new File("kaInitCfg.groovy")
+        configuration << new File(currentPath, "kaInitCfg.groovy").bytes
+        logger.info "** Please do the changes according to your environments in ${configuration.absolutePath}"
+    } else {
+        if(!configFile.exists()){
+            logger.error "Can't find the file ${configFile.absolutePath}, please init project first"
             return -1
         }
-        deploy(deployable, args[2])
+        if ("build".equalsIgnoreCase(args[0])) {
+            buildOs(args.length > 1 ? true : false)
+        } else if ("deploy".equalsIgnoreCase(args[0])) {
+            def deployable = new File(args[1])
+            if (!deployable.exists()) {
+                logger.error "Can't not find the file : {}", deployable.absolutePath
+                return -1
+            }
+            deploy(deployable, args[2])
+        }
     }
 }
 

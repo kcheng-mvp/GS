@@ -12,15 +12,14 @@ def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"
 
 def logger = logback.getLogger("infra-zk")
 def configFile = new File( 'zkInitCfg.groovy')
-if(!configFile.exists()){
-    logger.error "Can not find the ${configFile.absolutePath} ..."
-    return -1
+def config = null
+if(configFile.exists()){
+    config = new ConfigSlurper().parse(configFile.text)
 }
-def config = new ConfigSlurper().parse(configFile.text)
 
 
 
-def cfg = {onRemote ->
+def buildOs = {onRemote ->
     osBuilder.etcHost(config.settings.server,onRemote)
 }
 
@@ -128,19 +127,22 @@ def deploy = { deployable, host ->
 }
 
 if (!args) {
-    logger.info("make sure your settings are correct and then run the command : cfg or deploy {zookeeper.tar} {host} ")
+    logger.info("make sure your settings are correct and then run the command : build or deploy {zookeeper.tar} {host} ")
 } else {
-    if ("cfg".equalsIgnoreCase(args[0])) {
-        cfg(args.length > 1 ? true:false)
-        logger.info("********************************************************************************************")
-        logger.info("**** 1: Download zookeeper                                                              ****")
-        logger.info("**** 2: Unzip zookeeper and create zoo.cfg from clipboard                               ****")
-        logger.info("**** 3: Change log4j.properties zookeeper.log.dir to ${config.settings.log4j}           ****")
-        logger.info("**** 4: Change log4j.properties zookeeper.tracelog.dir to ${config.settings.traceLog}   ****")
-        logger.info("**** 5: Tar zookeeper                                                                   ****")
-        logger.info("**** 6: Deploy zookeeper by zkInit.groovy deploy {zookeeper.tar}{host}                  ****")
-        logger.info("********************************************************************************************")
-    } else if ("deploy".equalsIgnoreCase(args[0])) {
-        deploy(args[1], args[2])
+    if("init".equalsIgnoreCase(args[0])){
+        def configuration = new File("zkInitCfg.groovy")
+        configuration << new File(currentPath, "zkInitCfg.groovy").bytes
+        logger.info "** Please do the changes according to your environments in ${configuration.absolutePath}"
+
+    } else {
+        if(!configFile.exists()){
+            logger.error "Can't find ${configFile.absolutePath}, please init project first"
+            return -1
+        }
+        if ("build".equalsIgnoreCase(args[0])) {
+            buildOs(args.length > 1 ? true:false)
+        } else if ("deploy".equalsIgnoreCase(args[0])) {
+            deploy(args[1], args[2])
+        }
     }
 }
