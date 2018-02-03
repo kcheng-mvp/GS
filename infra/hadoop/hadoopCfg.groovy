@@ -1,14 +1,12 @@
 setting {
-    masterNode = "xly01"
-    secondNode = "xly02"
-    dataNode = ["xly03"] as List
+    hosts = ["xly01","xly02","xly03"] as List
     dataVols = ["/data0/hadoop1","/data0/hadoop2"] as List
 }
 
 coreSite {
     fs {
         'default' {
-            name = "hdfs://${setting.masterNode}:9000"
+            name = "hdfs://${setting.hosts[0]}:9000"
         }
     }
     hadoop {
@@ -38,7 +36,7 @@ hdfsSite {
     dfs {
         secondary {
             http {
-                address = "${setting.secondNode}:50090"
+                address = "${setting.hosts[1]}:50090"
             }
         }
     }
@@ -46,7 +44,7 @@ hdfsSite {
 mapredSite {
     mapred {
         job {
-            tracker = "${setting.masterNode}:9001"
+            tracker = "${setting.hosts[0]}:9001"
         }
     }
     //list, separated by comma

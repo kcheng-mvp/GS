@@ -8,7 +8,7 @@ settings {
     dataDir = "/data0/zookeeper/data"
     log4j = "/data0/zookeeper/log"
     traceLog= "/data0/zookeeper/trace"
-    server=["xly01","xly02","xly03"] as List
+    hosts=["xly01","xly02","xly03"] as List
 }
 
 

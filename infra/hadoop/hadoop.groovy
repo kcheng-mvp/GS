@@ -1,12 +1,10 @@
 #! /usr/bin/env groovy
-import groovy.io.FileType
 @Grapes([
         @Grab(group = 'com.google.guava', module = 'guava', version = '18.0')
 ])
-import groovy.text.*
-import groovy.xml.*
-import groovy.xml.MarkupBuilder
 import com.google.common.base.CaseFormat
+import groovy.io.FileType
+import groovy.xml.MarkupBuilder
 
 def currentPath = new File(getClass().protectionDomain.codeSource.location.path).parent
 GroovyShell groovyShell = new GroovyShell()
@@ -17,23 +15,20 @@ def logger = logback.getLogger("infra-hd")
 
 def configFile = new File('hadoopCfg.groovy')
 def config = null
-def hosts = null
 if (configFile.exists()) {
     config = new ConfigSlurper().parse(configFile.text)
-    hosts = config.setting.dataNode << config.setting.masterNode << config.setting.secondNode
 }
 
 
 
 def buildOs = { onRemote ->
     logger.info("** Check and set /etc/hosts for all servers ...")
-    osBuilder.etcHost(hosts, onRemote)
+    osBuilder.etcHost(config.setting.hosts, onRemote)
 }
-
 
 def deploy = { deployable, host ->
 
-    if (hosts.contains(host)) {
+    if (config.setting.hosts.contains(host)) {
 
         def tmpDir = File.createTempDir()
 
@@ -71,16 +66,13 @@ def deploy = { deployable, host ->
 
         logger.info("** Generate masters & slaves ...")
         def masters = new File(generate, "masters")
-        masters << config.setting.secondNode << "\n"
+        masters << config.setting.hosts[1] << "\n"
         def slaves = new File(generate, "slaves")
         slaves.withWriter { w ->
-            w.write(config.setting.masterNode)
-            w.write("\n")
-            w.write(config.setting.secondNode)
-            w.write("\n")
-            config.setting.dataNode.each {
-                w.write(it)
-                w.write("\n")
+            def bw = new BufferedWriter(w)
+            config.setting.hosts.each {h ->
+                bw.write(h)
+                bw.newLine()
             }
         }
 
@@ -173,7 +165,7 @@ if (!args) {
         configuration << new File(currentPath, "hadoopCfg.groovy").bytes
         logger.info "** Please do the changes according to your environments in ${configuration.absolutePath}"
     } else {
-        if (!hosts) {
+        if (!configFile.exists()) {
             logger.error "** hosts is null, please run init first ......"
             return -1
         }

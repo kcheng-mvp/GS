@@ -20,11 +20,11 @@ if(configFile.exists()){
 
 
 def buildOs = {onRemote ->
-    osBuilder.etcHost(config.settings.server,onRemote)
+    osBuilder.etcHost(config.settings.hosts,onRemote)
 }
 
 def deploy = { deployable, host ->
-    if (config.settings.server.contains(host)) {
+    if (config.settings.hosts.contains(host)) {
 
         deployable = new File(deployable)
         if (!deployable.exists()) logger.error "Can't find the deployable ${deployable}"
@@ -41,7 +41,7 @@ def deploy = { deployable, host ->
         sb.append("syncLimit=${config.settings.syncLimit}\n")
         sb.append("clientPort=${config.settings.clientPort}\n")
         sb.append("dataDir=${config.settings.dataDir}\n")
-        config.settings.server.eachWithIndex { s, idx ->
+        config.settings.hosts.eachWithIndex { s, idx ->
             sb.append("server.${idx + 1}=${s}:${config.settings.serverPort}:${config.settings.leaderPort}\n")
         }
         clipboard.copy(sb.toString())
@@ -113,7 +113,7 @@ def deploy = { deployable, host ->
         logger.info("**** Creating ${config.settings.dataDir}/myid for {}", host)
         rt = shell.exec("ls -l ${config.settings.dataDir}/myid", host);
         if (rt.code) {
-            rt = shell.exec("echo ${config.settings.server.indexOf(host) + 1} > ${config.settings.dataDir}/myid", host)
+            rt = shell.exec("echo ${config.settings.hosts.indexOf(host) + 1} > ${config.settings.dataDir}/myid", host)
             if (!rt.code) {
                 rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${config.settings.dataDir}/myid", host)
                 rt = shell.exec("stat -c '%n %U %G %y' ${config.settings.dataDir}/myid", host)

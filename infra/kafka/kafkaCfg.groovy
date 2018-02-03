@@ -1,6 +1,6 @@
 settings {
-    ka.server=["xly04","xly05"] as List
-    zk.server=["xly01","xly02","xly03"] as List
+    ka.hosts=["xly04","xly05"] as List
+    zk.hosts=["xly01","xly02","xly03"] as List
     server.port = "9092"
     server.listeners="PLAINTEXT://:${server.port}"
     server.log.dirs="/data0/kafka/data"

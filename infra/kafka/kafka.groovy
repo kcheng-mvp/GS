@@ -20,15 +20,15 @@ if (configFile.exists()) {
 def buildOs = { onRemote ->
 
     def hosts = new ArrayList();
-    hosts.addAll(config.settings.ka.server)
-    hosts.addAll(config.settings.zk.server)
+    hosts.addAll(config.settings.ka.hosts)
+    hosts.addAll(config.settings.zk.hosts)
 
     osBuilder.etcHost(hosts, onRemote)
 
 }
 
 def deploy = { deployable, host ->
-    if (config.settings.ka.server.contains(host)) {
+    if (config.settings.ka.hosts.contains(host)) {
 
         logger.info("unzip ${deployable.absolutePath}")
 
@@ -52,7 +52,7 @@ def deploy = { deployable, host ->
                         bw.newLine()
                         bw << find.first()
                     } else if (line.startsWith("broker.id=")) {
-                        bw << "broker.id=${config.settings.ka.server.indexOf(host)}"
+                        bw << "broker.id=${config.settings.ka.hosts.indexOf(host)}"
                     } else {
                         bw << line
                     }
