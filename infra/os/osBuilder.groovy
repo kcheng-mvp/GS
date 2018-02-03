@@ -54,6 +54,10 @@ def etcHost(hosts, boolean onRemote) {
         } else {
            hostIps.removeAll(ips)
         }
+        if(hostIps.size() !=1){
+            logger.error "** Runs into error when try to get host's IP address:${hostIps.toString()} ..."
+            return -1
+        }
         hostMap.put(hostIps[0], host.trim())
 
         logger.info("** Checking ssh key for {}", host)
