@@ -1,7 +1,7 @@
 #! /usr/bin/env groovy
 
 import groovy.transform.Field
-
+import java.text.SimpleDateFormat
 /*
 1: hostname
 2: add new user and add user to the group wheel(manual)
@@ -27,6 +27,7 @@ def home = System.getProperty("user.home")
 
 def etcHost(hosts, boolean onRemote) {
     logger.info("******************** Start building os ********************")
+    hosts.sort()
     def ips = [] as List
     new File("${home}/.ssh/config").eachLine { line ->
         if(line.trim().startsWith("HostName")){
@@ -36,13 +37,13 @@ def etcHost(hosts, boolean onRemote) {
     def hostMap = [:];
     def rt = null
     def con = hosts.find { host ->
-        logger.info("**** Checking hosts for {}", host)
+        logger.info("** Checking hosts for {}", host)
         rt = shell.exec("hostname", host)
         def remoteName = rt.msg.get(0)
         if (!host.equals(remoteName)) {
             logger.error(">> local host name ${host},remote host name ${remoteName} please fix it")
-            logger.info("sudo hostnamectl")
-            logger.info("sudo hostnamectl set-hostname '{hostname}'")
+            logger.info("** sudo hostnamectl")
+            logger.info("** sudo hostnamectl set-hostname '{hostname}'")
             return true
         }
         rt = shell.exec("hostname -i", host)
@@ -55,28 +56,28 @@ def etcHost(hosts, boolean onRemote) {
         }
         hostMap.put(hostIps[0], host.trim())
 
-        logger.info("**** Checking ssh key for {}", host)
+        logger.info("** Checking ssh key for {}", host)
         rt = shell.exec("ls ~/.ssh/id_rsa", host)
         if (rt.code) {
-            logger.info("Generate ssh key for [@${host}]")
+            logger.info("** Generate ssh key for [@${host}]")
             rt = shell.exec("ssh-keygen -b 4096 -q -N '' -C '${host}' -f ~/.ssh/id_rsa", host)
         }
 
-        logger.info("**** Checking max open files for {}", host)
+        logger.info("** Checking max open files for {}", host)
         rt = shell.exec("cat /etc/security/limits.conf", host)
         rt.msg.each { msg ->
             if (msg.startsWith("*")) {
-                logger.info("/etc/security/limits.conf@[${host}]: ${msg}")
+                logger.info("** /etc/security/limits.conf@[${host}]: ${msg}")
             }
         }
 
-        logger.info("**** Checking max processes for {}", host)
+        logger.info("** Checking max processes for {}", host)
         rt = shell.exec("ls /etc/security/limits.d", host)
         def proc = rt.msg[0]
         rt = shell.exec("cat /etc/security/limits.d/${proc}", host)
         rt.msg.each { msg ->
             if (msg && !msg.startsWith("#")) {
-                logger.info("/etc/security/limits.d/${proc}@[${host}]:${msg}")
+                logger.info("** /etc/security/limits.d/${proc}@[${host}]:${msg}")
             }
         }
         return false
@@ -126,14 +127,18 @@ def etcHost(hosts, boolean onRemote) {
 def deploy(deployable,host, command, homeVar) {
 
     logger.info("** Deploy ${deployable} on {}", host)
-//    deployable = new File(deployable);
     def targetFolder = deployable.name.replace(".tar", "")
     def rt = shell.exec("ls -l /usr/local/${targetFolder}", host)
     if (rt.code) {
+        def sdf = new SimpleDateFormat("yyyyMMddHHmmss")
         logger.info "** scp ${deployable.absolutePath} ${host} ......(This may take minutes)"
-        rt = shell.exec("scp ${deployable.absolutePath} ${host}:~/");
+        def targetName = "${targetFolder}.${sdf.format(Calendar.getInstance().getTime())}.tar"
+        rt = shell.exec("scp ${deployable.absolutePath} ${host}:~/${targetName}");
         logger.info "** unzip the file to target folder ..."
-        rt = shell.exec("sudo tar -vxf  ~/${deployable.name} --no-same-owner -C /usr/local", host);
+        rt = shell.exec("sudo tar -vxf  ~/${targetName} --no-same-owner -C /usr/local", host);
+    } else {
+        logger.error "** Folder /usr/local/${targetFolder} already exists on ${host}, please delete it first"
+        return -1
     }
 
     if(rt.code) return -1
@@ -143,12 +148,12 @@ def deploy(deployable,host, command, homeVar) {
         logger.info("** Create ${homeVar} environment on {}", host)
         rt = shell.exec("cat ~/.bash_profile", host)
         File file = File.createTempFile(host, ".bash_profile");
-        file.deleteOnExit();
+        file.deleteOnExit()
         file.withWriter { write ->
             def w = new BufferedWriter(write);
             rt.msg.eachWithIndex { m, idx ->
                 if(m.indexOf("export ${homeVar}") > -1)
-                    logger.error "Variable ${homeVar} has been definied ..."
+                    logger.warn "** Variable ${homeVar} has been definied ..."
                 if (idx + 1 == rt.msg.size) {
                     w.newLine();
                     w.write("export ${homeVar}=/usr/local/${targetFolder}")
@@ -166,13 +171,10 @@ def deploy(deployable,host, command, homeVar) {
             }
             w.close()
         }
-        logger.info file.absolutePath
         rt = shell.exec("mv ~/.bash_profile ~/.bash_profile.bak", host)
         rt = shell.exec("scp ${file.absolutePath} ${host}:~/.bash_profile")
         rt = shell.exec("cat ~/.bash_profile", host)
-        rt.msg.each {
-            logger.info it
-        }
+
     }
     return 1
 }

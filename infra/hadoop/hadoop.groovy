@@ -33,7 +33,7 @@ def deploy = { deployable, host ->
         def tmpDir = File.createTempDir()
 
         logger.info("** Generate configurations ...")
-        def generate = new File(tmpDir,"hdfs")
+        def generate = new File(tmpDir, "hdfs")
 
 
         logger.info("** Generate core-site.xml ...")
@@ -70,7 +70,7 @@ def deploy = { deployable, host ->
         def slaves = new File(generate, "slaves")
         slaves.withWriter { w ->
             def bw = new BufferedWriter(w)
-            config.setting.hosts.each {h ->
+            config.setting.hosts.each { h ->
                 bw.write(h)
                 bw.newLine()
             }
@@ -154,6 +154,8 @@ def deploy = { deployable, host ->
             }
         }
         tmpDir.deleteDir()
+    } else {
+        logger.error "${host} is not in the server list: ${config.setting.hosts.toString()}"
     }
 }
 
@@ -161,9 +163,10 @@ if (!args) {
     logger.info("make sure your settings are correct and then run the command : init, build or [deploy]")
 } else {
     if ("init".equalsIgnoreCase(args[0])) {
-        def configuration = new File("hadoopCfg.groovy")
-        configuration << new File(currentPath, "hadoopCfg.groovy").bytes
-        logger.info "** Please do the changes according to your environments in ${configuration.absolutePath}"
+        new File("hadoopCfg.groovy").withWriter {w ->
+            w << new File(currentPath, "hadoopCfg.groovy").text
+        }
+        logger.info "** Please do the changes according to your environments in hadoopCfg.groovy"
     } else {
         if (!configFile.exists()) {
             logger.error "** hosts is null, please run init first ......"
