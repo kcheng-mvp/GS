@@ -31,12 +31,14 @@ def deploy = { deployable, host ->
     if (config.setting.hosts.contains(host)) {
 
         def tmpDir = File.createTempDir()
+        tmpDir.deleteOnExit()
 
         logger.info("** Generate configurations ...")
         def generate = new File(tmpDir, "hdfs")
+        generate.mkdir()
 
 
-        logger.info("** Generate core-site.xml ...")
+        logger.info("** Generate configurations ...")
 
         ["coreSite", "hdfsSite", "mapredSite"].each { prop ->
 
@@ -110,7 +112,7 @@ def deploy = { deployable, host ->
         def hadoopenv = new File("${tmpDir.absolutePath}/${rootName}/conf/hadoop-env.sh")
         config.hadoopenv.flatten().each { entry ->
             logger.info "** Add ${entry.key}=${entry.value}"
-            hadoopenv.append("${System.getProperty("line.separator")}${entry.key}=${entry.value}")
+            hadoopenv.append("${System.getProperty("line.separator")}export ${entry.key}=${entry.value}")
         }
 
 
@@ -122,7 +124,6 @@ def deploy = { deployable, host ->
         rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host, "hadoop", "HADOOP_HOME");
         if (rt != 1) {
             logger.error "Failed to deploy ${deployable} on ${host}"
-            tmpDir.deleteDir()
             return -1
         }
 
@@ -153,7 +154,6 @@ def deploy = { deployable, host ->
                 }
             }
         }
-        tmpDir.deleteDir()
     } else {
         logger.error "${host} is not in the server list: ${config.setting.hosts.toString()}"
     }

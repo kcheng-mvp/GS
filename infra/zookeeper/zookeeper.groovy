@@ -30,6 +30,7 @@ def deploy = { deployable, host ->
         if (!deployable.exists()) logger.error "Can't find the deployable ${deployable}"
         def rootName = deployable.name.replace(".tar", "").replace(".gz", "");
         def tmpDir = File.createTempDir()
+        tmpDir.deleteOnExit()
 
         def rt = shell.exec("tar -vxf ${deployable.absolutePath} -C ${tmpDir.absolutePath}")
 
@@ -69,7 +70,6 @@ def deploy = { deployable, host ->
         rt = shell.exec("tar -cvzf  ${tmpDir.absolutePath}/${rootName}.tar -C ${tmpDir.absolutePath} ./${rootName}")
 
         rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host,"zkCli.sh", "ZK_HOME")
-        tmpDir.deleteDir()
 
         if (rt != 1) {
             logger.error "Failed to deploy ${deployable} on ${host}"
