@@ -88,7 +88,7 @@ def etcHost(hosts, boolean onRemote) {
     // sort the map
     hostMap.sort({a,b -> a.value <=> b.value})
     hosts.each { h ->
-        logger.info("**** Setting hosts for {}", h)
+        logger.info("** Setting hosts for {}", h)
         File file = File.createTempFile(h, ".etchosts");
         file.deleteOnExit();
         rt = shell.exec("cat /etc/hosts", h)
@@ -123,16 +123,16 @@ def etcHost(hosts, boolean onRemote) {
 }
 
 
-def deploy(host, deployable, command, homeVar) {
+def deploy(deployable,host, command, homeVar) {
 
-    logger.info("**** Deploy ${deployable} on {}", host)
+    logger.info("** Deploy ${deployable} on {}", host)
 //    deployable = new File(deployable);
     def targetFolder = deployable.name.replace(".tar", "")
     def rt = shell.exec("ls -l /usr/local/${targetFolder}", host)
     if (rt.code) {
-        logger.info "scp ${deployable.absolutePath} ${host} ......(This may take minutes)"
+        logger.info "** scp ${deployable.absolutePath} ${host} ......(This may take minutes)"
         rt = shell.exec("scp ${deployable.absolutePath} ${host}:~/");
-        logger.info "unzip the file to target folder ..."
+        logger.info "** unzip the file to target folder ..."
         rt = shell.exec("sudo tar -vxf  ~/${deployable.name} --no-same-owner -C /usr/local", host);
     }
 
@@ -140,7 +140,7 @@ def deploy(host, deployable, command, homeVar) {
 
     rt = shell.exec("type ${command}", host);
     if (rt.code) {
-        logger.info("**** Create ${homeVar} environment on {}", host)
+        logger.info("** Create ${homeVar} environment on {}", host)
         rt = shell.exec("cat ~/.bash_profile", host)
         File file = File.createTempFile(host, ".bash_profile");
         file.deleteOnExit();

@@ -1,5 +1,5 @@
 #! /usr/bin/env groovy
-
+import groovy.io.FileType
 @Grapes([
         @Grab(group = 'com.google.guava', module = 'guava', version = '18.0')
 ])
@@ -15,34 +15,27 @@ def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy
 def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"))
 def logger = logback.getLogger("infra-hd")
 
-
-def validate = {
-    def configFile = new File('hdInitCfg.groovy')
-
-    if (!configFile.exists()) {
-        logger.error "Can not find the ${configFile.absolutePath}, please init first"
-        return -1
-    }
-    def config = new ConfigSlurper().parse(configFile.text)
-    def hosts = config.hadoopenv.dataNode << config.hadoopenv.masterNode << config.hadoopenv.secondNode
-
-    [config: config, hosts: hosts]
-
+def configFile = new File('hdInitCfg.groovy')
+def config = null
+def hosts = null
+if (configFile.exists()) {
+    config = new ConfigSlurper().parse(configFile.text)
+    hosts = config.setting.dataNode << config.setting.masterNode << config.setting.secondNode
 }
 
 
 
+
+
 def buildOs = { onRemote ->
-    def env = validate()
     logger.info("** Check and set /etc/hosts for all servers ...")
-    osBuilder.etcHost(evn.hosts, onRemote)
+    osBuilder.etcHost(hosts, onRemote)
 }
 
 
 def cfg = { onRemote ->
 
 
-    def env = validate()
     logger.info("** Generate configurations ...")
     def generate = new File("hdfs")
 
@@ -53,12 +46,12 @@ def cfg = { onRemote ->
 
     logger.info("** Generate core-site.xml ...")
 
-    ["coreSite","hdfsSite","mapredSite"].each{prop ->
+    ["coreSite", "hdfsSite", "mapredSite"].each { prop ->
 
         def fileName = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, prop)
 
         logger.info "** Generate ${fileName}.xml ..."
-        def file = new File(generate,"${fileName}.xml");
+        def file = new File(generate, "${fileName}.xml");
         def writer = new FileWriter(file)
         def xml = new MarkupBuilder(writer)
 
@@ -66,7 +59,7 @@ def cfg = { onRemote ->
         xml.mkp.pi("xml-stylesheet": [type: "text/xsl", href: "configuration.xsl"])
 
         xml.configuration {
-            env.config.get(prop).flatten().each { sec ->
+            config.get(prop).flatten().each { sec ->
                 property {
                     name(sec.key)
                     value(sec.value)
@@ -80,68 +73,95 @@ def cfg = { onRemote ->
 
 
     logger.info("** Generate masters & slaves ...")
-//    def masters = new File(generate, "masters")
-//    masters << config.hadoopenv.secondNode << "\n"
-//    def slaves = new File(generate, "slaves")
-//    slaves.withWriter { w ->
-//        w.write(config.hadoopenv.masterNode)
-//        w.write("\n")
-//        w.write(config.hadoopenv.secondNode)
-//        w.write("\n")
-//        config.hadoopenv.dataNode.each {
-//            w.write(it)
-//            w.write("\n")
-//        }
-//    }
+    def masters = new File(generate, "masters")
+    masters << config.setting.secondNode << "\n"
+    def slaves = new File(generate, "slaves")
+    slaves.withWriter { w ->
+        w.write(config.setting.masterNode)
+        w.write("\n")
+        w.write(config.setting.secondNode)
+        w.write("\n")
+        config.setting.dataNode.each {
+            w.write(it)
+            w.write("\n")
+        }
+    }
 
     logger.info("** Generate folder list ...")
 
-//    new File(generate, "folder").withWriter { w ->
-//        config.flatten().each { k, v ->
-//            if (k.indexOf("dir") > -1) {
-//                w.write(v)
-//                w.write("\n")
-//            }
-//        }
-//        config.hadoopenv.dataVols.each { rootPath ->
-//            w.write(rootPath)
-//            w.write("\n")
-//        }
-//    }
+    new File(generate, "folder").withWriter { w ->
+        config.flatten().each { k, v ->
+            if (k.indexOf("dir") > -1 || k.indexOf("DIR") > -1) {
+                w.write(v)
+                w.write("\n")
+            }
+        }
+        config.setting.dataVols.each { rootPath ->
+            w.write(rootPath)
+            w.write("\n")
+        }
+    }
 
     logger.info("** Configurations are generated at {}", generate.absolutePath)
 }
 
 
-def deploy = { host, deployable ->
+def deploy = { deployable, host ->
 
     if (hosts.contains(host)) {
-        def folder = new File(generate, "folder")
+        def generate = new File("hdfs")
+        def allFiles = []
+        if (generate.exists())
+            generate.eachFileRecurse(FileType.FILES) { it ->
+                allFiles << it.name
+            }
 
-        if (!generate.exists() || !folder.exists()) {
-            logger.error(">> No configurations are found, please run 'cfg' first !")
+        if (!allFiles.containsAll(["core-site.xml", "hdfs-site.xml", "mapred-site.xml", "folder", "masters", "slaves"])) {
+            logger.error "** Missed necessary configuration, please check it again"
             return -1
         }
-        if (System.currentTimeMillis() - generate.lastModified() > 1000 * 60 * 30) {
-            logger.error(">> Configurations are generated 30 minutes ago, please re-generate it")
-            return -1
+
+
+        def rootName = deployable.name.replace(".tar", "").replace(".gz", "").replace(".tgz", "");
+        def tmpDir = File.createTempDir()
+        logger.info("** unzipping ${deployable.absolutePath} at ${tmpDir.absolutePath} ......")
+        def rt = shell.exec("tar -vxf ${deployable.absolutePath} -C ${tmpDir.absolutePath}")
+        if (!rt.code) {
+            generate.eachFileRecurse(FileType.FILES) { f ->
+                if (!f.name.equalsIgnoreCase("folder")) {
+                    logger.info("** copy ${f.absolutePath}......")
+                    shell.exec("cp ${f.absolutePath} ${tmpDir.absolutePath}/${rootName}/conf")
+                }
+            }
+        }
+
+        logger.info("** Generate hadoop-env.sh ......")
+        def hadoopenv = new File("${tmpDir.absolutePath}/${rootName}/conf/hadoop-env.sh")
+        config.hadoopenv.flatten().each {entry ->
+            logger.info "** Add ${entry.key}=${entry.value}"
+            hadoopenv.append("${System.getProperty("line.separator")}${entry.key}=${entry.value}")
         }
 
 
-        def rt = osBuilder.deploy(host, deployable, "hadoop", "HADOOP_HOME");
+        logger.info("** Re-generate ${rootName}.tar ......")
+        rt = shell.exec("tar -cvzf  ${tmpDir.absolutePath}/${rootName}.tar -C ${tmpDir.absolutePath} ./${rootName}")
 
+        logger.info("** Deploy ${rootName}.tar ......")
+
+        rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"),host, "hadoop", "HADOOP_HOME");
+        tmpDir.deleteDir()
         if (rt != 1) {
             logger.error "Failed to deploy ${deployable} on ${host}"
             return -1
         }
 
 
-        logger.info "Create corresponding folders ...."
+        logger.info "** Create corresponding folders on ${host} ...."
 
         def ug = shell.sshug(host)
         def group = ug.g
         def user = ug.u
-        folder.eachLine { f ->
+        new File(generate,"folder").eachLine { f ->
             if (f) {
                 f = f.replaceAll(",", " ")
                 f.split().each { p ->
@@ -156,15 +176,7 @@ def deploy = { host, deployable ->
                                 rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
                                 logger.info("**[@${host}]: Changing owner: ${pathEle.toString()}")
                             }
-                            /*
-                           else {
-                               rt = shell.exec("stat  -c '%U' ${pathEle.toString()}", host)
-                               logger.info("**[@${host}]: ${pathEle.toString()} exists")
-                               rt.msg.each{msg ->
-                                   logger.info("***[@${host}] ${msg}")
-                               }
-                           }
-                           */
+
                         }
                     }
                 }
@@ -179,15 +191,26 @@ if (!args) {
     if ("init".equalsIgnoreCase(args[0])) {
         def configuration = new File("hdInitCfg.groovy")
         configuration << new File(currentPath, "hdInitCfg.groovy").bytes
-        logger.info "*** Please do the changes according to your environments in ${configuration.absolutePath}"
-    } else if ('build'.equalsIgnoreCase(args[0])) {
-        buildOs(args.length > 1 ? true : false)
-    } else if ("cfg".equalsIgnoreCase(args[0])) {
-        cfg()
-    } else if ("deploy".equalsIgnoreCase(args[0]) && args.length == 3) {
-        deploy(args[1], args[2])
+        logger.info "** Please do the changes according to your environments in ${configuration.absolutePath}"
     } else {
-        logger.error("Can not find the command ${args[0]} ...")
+        if (!hosts) {
+            logger.error "** hosts is null, please run init first ......"
+            return -1
+        }
+        if ('build'.equalsIgnoreCase(args[0])) {
+            buildOs(args.length > 1 ? true : false)
+        } else if ("cfg".equalsIgnoreCase(args[0])) {
+            cfg()
+        } else if ("deploy".equalsIgnoreCase(args[0]) && args.length == 3) {
+            def deployable = new File(args[1])
+            if (!deployable.exists()) {
+                logger.error "Can't find the file ${deployable.absolutePath} ......"
+                return -1
+            }
+            deploy(deployable, args[2])
+        } else {
+            logger.error("Can not find the command ${args[0]} ...")
+        }
     }
 }
 

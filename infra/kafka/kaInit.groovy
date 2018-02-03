@@ -153,14 +153,13 @@ def deploy = { deployable, host ->
         }
         rt = shell.exec("tar -cvzf  ${tmpDir.absolutePath}/${rootName}.tar -C ${tmpDir.absolutePath} ./${rootName}")
 
-        rt = osBuilder.deploy(host, new File("${tmpDir.absolutePath}/${rootName}.tar"), "kafka-configs.sh", "KA_HOME")
-        tmpDir.deleteDir()
+        rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host,"kafka-configs.sh", "KA_HOME")
 
+        tmpDir.deleteDir()
         if (rt != 1) {
             logger.error "Failed to deploy ${deployable} on ${host}"
             return -1
         }
-        tmpDir.deleteDir()
 
     } else {
         logger.error "${host} is not in the server list"

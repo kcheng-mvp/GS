@@ -68,7 +68,7 @@ def deploy = { deployable, host ->
         }
         rt = shell.exec("tar -cvzf  ${tmpDir.absolutePath}/${rootName}.tar -C ${tmpDir.absolutePath} ./${rootName}")
 
-        rt = osBuilder.deploy(host, new File("${tmpDir.absolutePath}/${rootName}.tar"), "zkCli.sh", "ZK_HOME")
+        rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host,"zkCli.sh", "ZK_HOME")
         tmpDir.deleteDir()
 
         if (rt != 1) {
