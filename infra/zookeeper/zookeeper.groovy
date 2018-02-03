@@ -11,7 +11,7 @@ def clipboard = groovyShell.parse(new File(currentPath, "../../core/Clipboard.gr
 def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"))
 
 def logger = logback.getLogger("infra-zk")
-def configFile = new File( 'zkInitCfg.groovy')
+def configFile = new File( 'zookeeperCfg.groovy')
 def config = null
 if(configFile.exists()){
     config = new ConfigSlurper().parse(configFile.text)
@@ -130,8 +130,8 @@ if (!args) {
     logger.info("make sure your settings are correct and then run the command : build or deploy {zookeeper.tar} {host} ")
 } else {
     if("init".equalsIgnoreCase(args[0])){
-        def configuration = new File("zkInitCfg.groovy")
-        configuration << new File(currentPath, "zkInitCfg.groovy").bytes
+        def configuration = new File("zookeeperCfg.groovy")
+        configuration << new File(currentPath, "zookeeperCfg.groovy").bytes
         logger.info "** Please do the changes according to your environments in ${configuration.absolutePath}"
 
     } else {

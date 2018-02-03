@@ -15,7 +15,7 @@ def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy
 def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"))
 def logger = logback.getLogger("infra-hd")
 
-def configFile = new File('hdInitCfg.groovy')
+def configFile = new File('hadoopCfg.groovy')
 def config = null
 def hosts = null
 if (configFile.exists()) {
@@ -166,11 +166,11 @@ def deploy = { deployable, host ->
 }
 
 if (!args) {
-    logger.info("make sure your settings are correct and then run the command : [init], [build], [cfg] or [deploy]")
+    logger.info("make sure your settings are correct and then run the command : init, build or [deploy]")
 } else {
     if ("init".equalsIgnoreCase(args[0])) {
-        def configuration = new File("hdInitCfg.groovy")
-        configuration << new File(currentPath, "hdInitCfg.groovy").bytes
+        def configuration = new File("hadoopCfg.groovy")
+        configuration << new File(currentPath, "hadoopCfg.groovy").bytes
         logger.info "** Please do the changes according to your environments in ${configuration.absolutePath}"
     } else {
         if (!hosts) {
