@@ -19,7 +19,7 @@ if (configFile.exists()) {
 
 def buildOs = { onRemote ->
 
-    def hosts = new ArrayList();
+    def hosts = new HashSet();
     hosts.addAll(config.setting.ka.hosts)
     hosts.addAll(config.setting.zk.hosts)
 
