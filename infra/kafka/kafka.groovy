@@ -30,107 +30,47 @@ def buildOs = { onRemote ->
 def deploy = { deployable, host ->
     if (config.setting.ka.hosts.contains(host)) {
 
+
+        config = new ConfigSlurper().with {
+            it
+            it.setBinding(currentHost: host)
+            it.parse(configFile.text)
+        }
+
+
         logger.info("** unzip ${deployable.absolutePath}")
 
         def rootName = deployable.name.replace(".tar", "").replace(".gz", "").replace(".tgz", "");
         def tmpDir = File.createTempDir()
         rt = shell.exec("tar -vxf ${deployable.absolutePath} -C ${tmpDir.absolutePath}")
-        if (!rt.code) {
-            logger.info "** Process config/server.properties ......";
-            def settings = config.setting.server.flatten()
-            def original = new File("${tmpDir.absolutePath}/${rootName}/config/server.properties")
-            def bak = new File("${tmpDir.absolutePath}/${rootName}/config/server.properties.bak")
+        ["server", "producer", "consumer","log4j"].each { fileName ->
+            logger.info "** Process ${fileName}.properties ..."
+            def original = new File("${tmpDir.absolutePath}/${rootName}/config/${fileName}.properties")
+            def bak = new File("${tmpDir.absolutePath}/${rootName}/config/${fileName}.properties.bak")
             bak << original.bytes
+            def propsMap = config.setting.get(fileName).flatten()
             original.withWriter { w ->
                 def bw = new BufferedWriter(w)
                 bak.eachLine { line ->
-                    def find = settings.find { it ->
-                        return line.startsWith("#${it.key}=") || line.startsWith("${it.key}=")
-                    }.collect { it -> "${it.key}=${it.value}" }
+                    def find = propsMap.find { entry -> line.startsWith(entry.key) || line.startsWith("#${entry.key}") }
                     if (find) {
                         bw << "#${line}"
                         bw.newLine()
-                        bw << find.first()
-                    } else if (line.startsWith("broker.id=")) {
-                        bw << "broker.id=${config.setting.ka.hosts.indexOf(host)}"
-                    } else {
-                        bw << line
-                    }
-
-                    bw.newLine()
-                }
-                bw.close()
-            }
-            logger.info "** Process config/log4j.properties ......";
-            settings = config.setting.log4j.flatten()
-            original = new File("${tmpDir.absolutePath}/${rootName}/config/log4j.properties")
-            bak = new File("${tmpDir.absolutePath}/${rootName}/config/log4j.properties.bak")
-            bak << original.bytes
-
-            def processed = false
-            original.withWriter { w ->
-                def bw = new BufferedWriter(w)
-                bak.eachLine { line ->
-                    if (!processed && !line.startsWith('#')) {
-                        settings.each { it ->
-                            bw << "${it.key}=${it.value}"
-                            bw.newLine()
-                        }
-                        processed = true
-                    }
-                    bw << line
-                    bw.newLine()
-                }
-                bw.close()
-            }
-
-            logger.info "** Process config/producer.properties ......";
-            settings = config.setting.producer.flatten()
-            original = new File("${tmpDir.absolutePath}/${rootName}/config/producer.properties")
-            bak = new File("${tmpDir.absolutePath}/${rootName}/config/producer.properties.bak")
-            bak << original.bytes
-            original.withWriter { w ->
-                def bw = new BufferedWriter(w)
-                bak.eachLine { line ->
-                    def find = settings.find { it ->
-                        return line.startsWith("#${it.key}=") || line.startsWith("${it.key}=")
-                    }.collect { it -> "${it.key}=${it.value}" }
-                    if (find) {
-                        bw << "#${line}"
-                        bw.newLine()
-                        bw << find.first()
+                        bw << "${find.key}=${find.value}"
+                        propsMap.remove(find.key)
                     } else {
                         bw << line
                     }
                     bw.newLine()
                 }
-                bw.close()
-            }
-            logger.info "** Process config/consumer.properties ......";
-            settings = config.setting.consumer.flatten()
-            original = new File("${tmpDir.absolutePath}/${rootName}/config/consumer.properties")
-            bak = new File("${tmpDir.absolutePath}/${rootName}/config/consumer.properties.bak")
-            bak << original.bytes
-            //bootstrap.servers=
-            original.withWriter { w ->
-                def bw = new BufferedWriter(w)
-                bak.eachLine { line ->
-                    def find = settings.find { it ->
-                        return line.startsWith("#${it.key}=") || line.startsWith("${it.key}=")
-                    }.collect { it -> "${it.key}=${it.value}" }
-                    if (find) {
-                        bw << "#${line}"
-                        bw.newLine()
-                        bw << find.first()
-                    } else {
-                        bw << line
-                    }
+                propsMap.each { entry ->
+                    bw << "${entry.key}=${entry.value}"
                     bw.newLine()
                 }
                 bw.close()
             }
-
         }
+
         rt = shell.exec("tar -cvzf  ${tmpDir.absolutePath}/${rootName}.tar -C ${tmpDir.absolutePath} ./${rootName}")
 
         rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host, "kafka-configs.sh", "KA_HOME")
@@ -166,13 +106,13 @@ def deploy = { deployable, host ->
 if (!args) {
     logger.info("** make sure your settings are correct and then run the command : build or deploy {zookeeper.tar} {host} ")
 } else {
-    if("init".equalsIgnoreCase(args[0])){
+    if ("init".equalsIgnoreCase(args[0])) {
         new File("kafkaCfg.groovy").withWriter { w ->
             w << new File(currentPath, "kafkaCfg.groovy").text
         }
         logger.info "** Please do the changes according to your environments in kafkaCfg.groovy "
     } else {
-        if(!configFile.exists()){
+        if (!configFile.exists()) {
             logger.error "** Can't find the file ${configFile.absolutePath}, please init project first"
             return -1
         }
