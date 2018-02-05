@@ -1,6 +1,12 @@
 #! /usr/bin/env groovy
-import groovy.json.StringEscapeUtils
-import groovy.text.*
+@Grapes([
+        @Grab(group = 'com.google.guava', module = 'guava', version = '18.0')
+])
+import com.google.common.base.CaseFormat
+@Grapes([
+        @Grab(group = 'com.google.guava', module = 'guava', version = '18.0')
+])
+import com.google.common.base.CaseFormat
 
 def currentPath = new File(getClass().protectionDomain.codeSource.location.path).parent
 GroovyShell groovyShell = new GroovyShell()
@@ -31,24 +37,30 @@ def deploy = { deployable, host ->
     if (config.setting.ka.hosts.contains(host)) {
 
 
-        config = new ConfigSlurper().with {
-            it
+        config = new ConfigSlurper().with { it ->
             it.setBinding(currentHost: host)
             it.parse(configFile.text)
         }
-
 
         logger.info("** unzip ${deployable.absolutePath}")
 
         def rootName = deployable.name.replace(".tar", "").replace(".gz", "").replace(".tgz", "");
         def tmpDir = File.createTempDir()
         rt = shell.exec("tar -vxf ${deployable.absolutePath} -C ${tmpDir.absolutePath}")
-        ["server", "producer", "consumer","log4j"].each { fileName ->
-            logger.info "** Process ${fileName}.properties ..."
+
+        logger.info("** Generate configurations ...")
+        def found = config.setting.findAll{entry -> entry.key.length() > 2}.collect{it.key.trim()}.find { prop ->
+            def fileName = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, prop)
             def original = new File("${tmpDir.absolutePath}/${rootName}/config/${fileName}.properties")
+            if(!original.exists()) {
+                logger.error "** Can't find the file ${fileName} ..."
+                return true
+            }
+
+            logger.info "** Generate ${fileName}.properties ..."
             def bak = new File("${tmpDir.absolutePath}/${rootName}/config/${fileName}.properties.bak")
             bak << original.bytes
-            def propsMap = config.setting.get(fileName).flatten()
+            def propsMap = config.setting.get(prop).flatten()
             original.withWriter { w ->
                 def bw = new BufferedWriter(w)
                 bak.eachLine { line ->
@@ -69,18 +81,26 @@ def deploy = { deployable, host ->
                 }
                 bw.close()
             }
+            new File("kafka/${host}").with{d ->
+                if(!d.exists()) d.mkdirs()
+                new File(d, "${fileName}.properties").withWriter {w ->
+                    w << original.text
+                }
+            }
+            return false
         }
+        if(found) return -1
 
         rt = shell.exec("tar -cvzf  ${tmpDir.absolutePath}/${rootName}.tar -C ${tmpDir.absolutePath} ./${rootName}")
 
-        rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host, "kafka-configs.sh", "KA_HOME")
+        rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host, "kafka-server-start.sh", "KA_HOME")
 
         tmpDir.deleteDir()
         if (rt != 1) {
             logger.error "** Failed to deploy ${deployable} on ${host}"
             return -1
         }
-        def dirs = config.flatten().findAll { it -> it.key.indexOf("dir") > -1 }.collect { it.value }
+        def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 }.collect { it.value }
         logger.info "** Creating dirs : ${dirs}"
         def ug = shell.sshug(host)
         dirs.each { dir ->

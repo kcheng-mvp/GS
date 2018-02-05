@@ -35,19 +35,20 @@ def deploy = { deployable, host ->
 
 
         logger.info("** Building zoo.cfg")
-        def sb = new StringBuilder();
-        sb.append("tickTime=${config.setting.tickTime}\n")
-        sb.append("initLimit=${config.setting.initLimit}\n")
-        sb.append("syncLimit=${config.setting.syncLimit}\n")
-        sb.append("clientPort=${config.setting.clientPort}\n")
-        sb.append("dataDir=${config.setting.data.dir}\n")
-        config.setting.hosts.eachWithIndex { s, idx ->
-            sb.append("server.${idx + 1}=${s}:${config.setting.serverPort}:${config.setting.leaderPort}\n")
+
+        new File("${tmpDir.absolutePath}/${rootName}/conf/zoo.cfg").withWriter { w ->
+            def bw = new BufferedWriter(w)
+            config.setting.zooCfg.flatten().each { entry ->
+                bw << "${entry.key}=${entry.value}"
+                bw.newLine()
+            }
+            config.setting.hosts.eachWithIndex { s, idx ->
+                bw << "server.${idx + 1}=${s}:${config.setting.serverPort}:${config.setting.leaderPort}"
+                bw.newLine()
+            }
+            bw.close()
+
         }
-
-        def zooCfg = new File("${tmpDir.absolutePath}/${rootName}/conf/zoo.cfg")
-        zooCfg << sb.toString().bytes
-
         logger.info "** Generate conf/zookeeper-env.sh"
         new File("${tmpDir.absolutePath}/${rootName}/conf/zookeeper-env.sh").withWriter { w ->
             def bw = new BufferedWriter(w)
@@ -60,7 +61,7 @@ def deploy = { deployable, host ->
 
 
         logger.info "** Set log4j.properties"
-        new File("${tmpDir.absolutePath}/${rootName}/conf/log4j.properties").withWriterAppend{w ->
+        new File("${tmpDir.absolutePath}/${rootName}/conf/log4j.properties").withWriterAppend { w ->
             config.setting.log4j.flatten().each {
                 w << ("${it.key}=${it.value}")
             }
@@ -100,7 +101,7 @@ def deploy = { deployable, host ->
             }
         }
 
-        logger.info("** Creating ${config.setting.data.dir}/myid for {}", host)
+        logger.info("** Creating ${config.setting.zooCfg.dataDir}/myid for {}", host)
         rt = shell.exec("ls -l ${config.setting.data.dir}/myid", host);
         if (rt.code) {
             rt = shell.exec("echo ${config.setting.hosts.indexOf(host) + 1} > ${config.setting.data.dir}/myid", host)

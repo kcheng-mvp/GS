@@ -31,10 +31,9 @@ def deploy = { deployable, host ->
     if (config.setting.hosts.contains(host)) {
 
         def tmpDir = File.createTempDir()
-        tmpDir.deleteOnExit()
 
         logger.info("** Generate configurations ...")
-        def generate = new File(tmpDir, "hdfs")
+        def generate = new File("hdfs")
         generate.mkdir()
 
 
@@ -81,16 +80,29 @@ def deploy = { deployable, host ->
         logger.info("** Generate folder list ...")
 
         new File(generate, "folder").withWriter { w ->
+            def bw = new BufferedWriter(w)
             config.flatten().each { k, v ->
-                if (k.indexOf("dir") > -1 || k.indexOf("DIR") > -1) {
-                    w.write(v)
-                    w.write("\n")
+                if (k.toUpperCase().indexOf("DIR") > -1) {
+                    bw << v
+                    bw.newLine()
                 }
             }
             config.setting.dataVols.each { rootPath ->
-                w.write(rootPath)
-                w.write("\n")
+                bw << rootPath
+                bw.newLine()
             }
+            bw.close()
+        }
+
+        logger.info("** Generate hadoop-env.sh ......")
+        new File(generate, "hadoop-env.sh").withWriter { w ->
+            def bw = new BufferedWriter(w)
+            config.hadoopenv.flatten().each { entry ->
+                logger.info "** export ${entry.key}=${entry.value} to hadoop-env.sh"
+                bw << "export ${entry.key}=${entry.value}"
+                bw.newLine()
+            }
+            bw.close()
         }
 
         logger.info("** Configurations are generated at {}", generate.absolutePath)
@@ -108,12 +120,7 @@ def deploy = { deployable, host ->
             }
         }
 
-        logger.info("** Generate hadoop-env.sh ......")
-        def hadoopenv = new File("${tmpDir.absolutePath}/${rootName}/conf/hadoop-env.sh")
-        config.hadoopenv.flatten().each { entry ->
-            logger.info "** Add ${entry.key}=${entry.value}"
-            hadoopenv.append("${System.getProperty("line.separator")}export ${entry.key}=${entry.value}")
-        }
+
 
 
         logger.info("** Re-generate ${rootName}.tar ......")
@@ -122,6 +129,7 @@ def deploy = { deployable, host ->
         logger.info("** Deploy ${rootName}.tar ......")
 
         rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host, "hadoop", "HADOOP_HOME");
+        tmpDir.deleteDir()
         if (rt != 1) {
             logger.error "Failed to deploy ${deployable} on ${host}"
             return -1
@@ -163,7 +171,7 @@ if (!args) {
     logger.info("make sure your settings are correct and then run the command : init, build or [deploy]")
 } else {
     if ("init".equalsIgnoreCase(args[0])) {
-        new File("hadoopCfg.groovy").withWriter {w ->
+        new File("hadoopCfg.groovy").withWriter { w ->
             w << new File(currentPath, "hadoopCfg.groovy").text
         }
         logger.info "** Please do the changes according to your environments in hadoopCfg.groovy"
