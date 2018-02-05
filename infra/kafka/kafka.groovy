@@ -34,7 +34,6 @@ def deploy = { deployable, host ->
 
         def rootName = deployable.name.replace(".tar", "").replace(".gz", "").replace(".tgz", "");
         def tmpDir = File.createTempDir()
-        tmpDir.deleteOnExit()
         rt = shell.exec("tar -vxf ${deployable.absolutePath} -C ${tmpDir.absolutePath}")
         if (!rt.code) {
             logger.info "** Process config/server.properties ......";
@@ -136,6 +135,7 @@ def deploy = { deployable, host ->
 
         rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host, "kafka-configs.sh", "KA_HOME")
 
+        tmpDir.deleteDir()
         if (rt != 1) {
             logger.error "** Failed to deploy ${deployable} on ${host}"
             return -1

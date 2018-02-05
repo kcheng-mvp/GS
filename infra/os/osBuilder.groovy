@@ -139,7 +139,9 @@ def deploy(deployable,host, command, homeVar) {
         def targetName = "${targetFolder}.${sdf.format(Calendar.getInstance().getTime())}.tar"
         rt = shell.exec("scp ${deployable.absolutePath} ${host}:~/${targetName}");
         logger.info "** unzip the file to target folder ..."
-        rt = shell.exec("sudo tar -vxf  ~/${targetName} --no-same-owner -C /usr/local", host);
+        rt = shell.exec("sudo tar -vxf  ~/${targetName} --no-same-owner -C /usr/local", host)
+        rt = shell.sshug(host)
+        rt = shell.exec("sudo chown -R ${rt.u}:${rt.g} /usr/local/${targetFolder}", host)
     } else {
         logger.error "** Folder /usr/local/${targetFolder} already exists on ${host}, please delete it first"
         return -1
