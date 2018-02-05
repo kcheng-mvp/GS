@@ -81,9 +81,9 @@ def deploy = { deployable, host ->
                 }
                 bw.close()
             }
-            new File("kafka/${host}").with{d ->
+            new File("kafka").with{d ->
                 if(!d.exists()) d.mkdirs()
-                new File(d, "${fileName}.properties").withWriter {w ->
+                new File(d, "${fileName}.properties.${host}").withWriter {w ->
                     w << original.text
                 }
             }
