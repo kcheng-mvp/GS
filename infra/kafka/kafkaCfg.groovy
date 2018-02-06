@@ -7,7 +7,7 @@ setting {
     server.log.dirs="/data0/kafka/data"
     server.num.partitions=2
     server.broker.id=ka.hosts.indexOf(currentHost)+1
-    server.zookeeper.connect=zk.hosts.collect{"${it}:${ka.client.port}"}.join(",")
+    server.zookeeper.connect=zk.hosts.collect{"${it}:${zk.client.port}"}.join(",")
     producer.bootstrap.servers=ka.hosts.collect{"${it}:${ka.client.port}"}.join(",")
     // v < 1.0
     //produce.metadata.broker.list=nodes.collect{"${it}:${server.port}"}.join(",")
