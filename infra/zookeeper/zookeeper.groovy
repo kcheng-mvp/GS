@@ -99,7 +99,7 @@ def deploy = { deployable, host ->
 
 
 
-        def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 }.collect { it.value }
+        def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 && it.value.indexOf("\$") < 0 }.collect { it.value }
 
         def ug = shell.sshug(host)
         logger.info "** Creating dirs : ${dirs}"
