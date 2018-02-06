@@ -121,12 +121,12 @@ def deploy = { deployable, host ->
         }
 
         logger.info("** Creating ${config.setting.zooCfg.dataDir}/myid for {}", host)
-        rt = shell.exec("ls -l ${config.setting.data.dir}/myid", host);
+        rt = shell.exec("ls -l ${config.setting.zooCfg.dataDir}/myid", host);
         if (rt.code) {
-            rt = shell.exec("echo ${config.setting.hosts.indexOf(host) + 1} > ${config.setting.data.dir}/myid", host)
+            rt = shell.exec("echo ${config.setting.hosts.indexOf(host) + 1} > ${config.setting.zooCfg.dataDir}/myid", host)
             if (!rt.code) {
-                rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${config.setting.data.dir}/myid", host)
-                rt = shell.exec("stat -c '%n %U %G %y' ${config.setting.data.dir}/myid", host)
+                rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${config.setting.zooCfg.dataDir}/myid", host)
+                rt = shell.exec("stat -c '%n %U %G %y' ${config.setting.zooCfg.dataDir}/myid", host)
             }
         }
 
