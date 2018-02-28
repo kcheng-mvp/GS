@@ -24,4 +24,4 @@ hbaseSite{
         }
     }
 }
-regionservers = ""
+regionservers = "hbase001,hbase002,hbase003,hbase004"

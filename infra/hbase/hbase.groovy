@@ -33,7 +33,6 @@ def cfg = {
     def generate = new File("hbase")
     generate.mkdir()
 
-    logger.info("** Generate configurations ...")
 
     ["hbaseSite"].each { prop ->
 
@@ -60,12 +59,14 @@ def cfg = {
     }
 
     logger.info("** Generate regionservers ...")
+    println config.regionservers
     def regionservers = new File(generate, "regionservers").withWriter { w ->
         def bw = new BufferedWriter(w)
-        config.regionservers.each { h ->
+        config.regionservers.split(",").each { h ->
             bw.write(h)
             bw.newLine()
         }
+        bw.close()
     }
     logger.info("** Configurations are generated at {}", generate.absolutePath)
 }
