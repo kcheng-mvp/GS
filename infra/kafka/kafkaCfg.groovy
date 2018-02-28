@@ -14,15 +14,15 @@ setting {
     consumer.bootstrap.servers=ka.hosts.collect{"${it}:${ka.client.port}"}.join(",")
     //log4j.kafka.logs.dir="/data0/kafka/log"
     log4j.log4j.appender.kafkaAppender.MaxBackupIndex=3
-    log4j.log4j.appender.kafkaAppender.MaxFileSize=10MB
+    log4j.log4j.appender.kafkaAppender.MaxFileSize="10MB"
     log4j.log4j.appender.stateChangeAppender.MaxBackupIndex=3
-    log4j.log4j.appender.stateChangeAppender.MaxFileSize=10MB
+    log4j.log4j.appender.stateChangeAppender.MaxFileSize="10MB"
     log4j.log4j.appender.requestAppender.MaxBackupIndex=3
-    log4j.log4j.appender.requestAppender.MaxFileSize=10MB
+    log4j.log4j.appender.requestAppender.MaxFileSize="10MB"
     log4j.log4j.appender.cleanerAppender.MaxBackupIndex=3
-    log4j.log4j.appender.cleanerAppender.MaxFileSize=10MB
+    log4j.log4j.appender.cleanerAppender.MaxFileSize="10MB"
     log4j.log4j.appender.controllerAppender.MaxBackupIndex=3
-    log4j.log4j.appender.controllerAppender.MaxFileSize=10MB
+    log4j.log4j.appender.controllerAppender.MaxFileSize="10MB"
     log4j.log4j.appender.authorizerAppender.MaxBackupIndex=3
-    log4j.log4j.appender.authorizerAppender.MaxFileSize=10MB
+    log4j.log4j.appender.authorizerAppender.MaxFileSize="10MB"
 }
