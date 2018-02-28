@@ -2,7 +2,7 @@
 
 //ssh dev1 'grep `hostname` /etc/hosts'
 
-def exec(shell,String... host) {
+def exec(shell, String... host) {
 
     def commands = shell.split() as List;
 
@@ -17,22 +17,36 @@ def exec(shell,String... host) {
     def process = processBuilder.redirectErrorStream(true).start();
     def rt = [] as List;
     process.inputStream.eachLine {
-        if(it){
+        if (it) {
             rt << it.trim()
         }
     }
     process.waitFor();
 
-    ["code": process.exitValue(), "msg":rt]
+    ["code": process.exitValue(), "msg": rt]
+}
+
+def execPipe(shell) {
+
+    def processBuilder = new ProcessBuilder("/bin/sh","-c",shell);
+    def process = processBuilder.redirectErrorStream(true).start();
+    def rt = [] as List;
+    process.inputStream.eachLine {
+        if (it) {
+            rt << it.trim()
+        }
+    }
+    process.waitFor();
+
+    ["code": process.exitValue(), "msg": rt]
 }
 
 
-
-def sshug(String host){
+def sshug(String host) {
     def rt = exec("id -u -n", host)
     def user = rt.msg[0]
     rt = exec("id -g -n", host)
     def group = rt.msg[0]
-    ["u": user, "g":group]
+    ["u": user, "g": group]
 }
 
