@@ -11,9 +11,9 @@ GroovyShell groovyShell = new GroovyShell()
 def shell = groovyShell.parse(new File(currentPath, "../../core/Shell.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy"))
 def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"))
-def logger = logback.getLogger("infra-hd")
+def logger = logback.getLogger("infra-hbase")
 
-def configFile = new File('hadoopCfg.groovy')
+def configFile = new File('hbaseCfg.groovy')
 def config = null
 if (configFile.exists()) {
     config = new ConfigSlurper().parse(configFile.text)
@@ -26,77 +26,53 @@ def buildOs = { onRemote ->
     osBuilder.etcHost(config.setting.hosts, onRemote)
 }
 
+def cfg = {
+    def tmpDir = File.createTempDir()
+
+    logger.info("** Generate configurations ...")
+    def generate = new File("hbase")
+    generate.mkdir()
+
+    logger.info("** Generate configurations ...")
+
+    ["hbaseSite"].each { prop ->
+
+        def fileName = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, prop)
+
+        logger.info "** Generate ${fileName}.xml ..."
+        def file = new File(generate, "${fileName}.xml");
+        def writer = new FileWriter(file)
+        def xml = new MarkupBuilder(writer)
+
+        xml.mkp.xmlDeclaration([version: '1.0', encoding: 'UTF-8'])
+        xml.mkp.pi("xml-stylesheet": [type: "text/xsl", href: "configuration.xsl"])
+
+        xml.configuration {
+            config.get(prop).flatten().each { sec ->
+                property {
+                    name(sec.key)
+                    value(sec.value)
+                }
+
+            }
+        }
+        writer.close()
+    }
+
+    logger.info("** Generate regionservers ...")
+    def regionservers = new File(generate, "regionservers").withWriter { w ->
+        def bw = new BufferedWriter(w)
+        config.regionservers.each { h ->
+            bw.write(h)
+            bw.newLine()
+        }
+    }
+    logger.info("** Configurations are generated at {}", generate.absolutePath)
+}
+
 def deploy = { deployable, host ->
 
     if (config.setting.hosts.contains(host)) {
-
-        def tmpDir = File.createTempDir()
-
-        logger.info("** Generate configurations ...")
-        def generate = new File("hadoop")
-        generate.mkdir()
-
-
-        logger.info("** Generate configurations ...")
-
-        ["coreSite", "hdfsSite", "mapredSite"].each { prop ->
-
-            def fileName = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, prop)
-
-            logger.info "** Generate ${fileName}.xml ..."
-            def file = new File(generate, "${fileName}.xml");
-            def writer = new FileWriter(file)
-            def xml = new MarkupBuilder(writer)
-
-            xml.mkp.xmlDeclaration([version: '1.0', encoding: 'UTF-8'])
-            xml.mkp.pi("xml-stylesheet": [type: "text/xsl", href: "configuration.xsl"])
-
-            xml.configuration {
-                config.get(prop).flatten().each { sec ->
-                    property {
-                        name(sec.key)
-                        value(sec.value)
-                    }
-
-                }
-            }
-            writer.close()
-        }
-
-
-
-        logger.info("** Generate masters & slaves ...")
-        def masters = new File(generate, "masters")
-        masters << config.setting.hosts[1] << "\n"
-        def slaves = new File(generate, "slaves")
-        slaves.withWriter { w ->
-            def bw = new BufferedWriter(w)
-            config.setting.hosts.each { h ->
-                bw.write(h)
-                bw.newLine()
-            }
-        }
-
-        logger.info("** Generate folder list ...")
-
-        new File(generate, "folder").withWriter { w ->
-            def bw = new BufferedWriter(w)
-            config.flatten().each { k, v ->
-                if (k.toUpperCase().indexOf("DIR") > -1) {
-                    bw << v
-                    bw.newLine()
-                }
-            }
-            config.setting.dataVols.each { rootPath ->
-                bw << rootPath
-                bw.newLine()
-            }
-            bw.close()
-        }
-
-
-        logger.info("** Configurations are generated at {}", generate.absolutePath)
-
 
         def rootName = deployable.name.replace(".tar", "").replace(".gz", "").replace(".tgz", "");
         logger.info("** unzipping ${deployable.absolutePath} at ${tmpDir.absolutePath} ......")
@@ -111,12 +87,13 @@ def deploy = { deployable, host ->
         }
 
 
-        logger.info("** Generate hadoop-env.sh ......")
-        def hadoopenv = new File("${tmpDir.absolutePath}/${rootName}/conf/hadoop-env.sh")
-        config.hadoopenv.flatten().each { entry ->
+        logger.info("** Generate hbase-env.sh ......")
+        def hbaseEnv = new File("${tmpDir.absolutePath}/${rootName}/conf/hbase-env.sh")
+        config.hbaseEnv.flatten().each { entry ->
             logger.info "** Add ${entry.key}=${entry.value}"
-            hadoopenv.append("${System.getProperty("line.separator")}export ${entry.key}=${entry.value}")
+            hbaseEnv.append("${System.getProperty("line.separator")}export ${entry.key}=${entry.value}")
         }
+
 
 
         logger.info("** Re-generate ${rootName}.tar ......")
@@ -124,7 +101,7 @@ def deploy = { deployable, host ->
 
         logger.info("** Deploy ${rootName}.tar ......")
 
-        rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host, "hadoop", "HADOOP_HOME");
+        rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host, "hbase", "HBASE_HOME");
         tmpDir.deleteDir()
         if (rt != 1) {
             logger.error "Failed to deploy ${deployable} on ${host}"
@@ -164,13 +141,13 @@ def deploy = { deployable, host ->
 }
 
 if (!args) {
-    logger.info("make sure your settings are correct and then run the command : init, build or [deploy]")
+    logger.info("make sure your settings are correct and then run the command : init, build, cfg, deploy")
 } else {
     if ("init".equalsIgnoreCase(args[0])) {
-        new File("hadoopCfg.groovy").withWriter { w ->
-            w << new File(currentPath, "hadoopCfg.groovy").text
+        new File("hbaseCfg.groovy").withWriter { w ->
+            w << new File(currentPath, "hbaseCfg.groovy").text
         }
-        logger.info "** Please do the changes according to your environments in hadoopCfg.groovy"
+        logger.info "** Please do the changes according to your environments in hbaseCfg.groovy"
     } else {
         if (!configFile.exists()) {
             logger.error "** hosts is null, please run init first ......"
@@ -178,6 +155,8 @@ if (!args) {
         }
         if ('build'.equalsIgnoreCase(args[0])) {
             buildOs(args.length > 1 ? true : false)
+        } else if ("cfg".equalsIgnoreCase(args[0])) {
+            cfg()
         } else if ("deploy".equalsIgnoreCase(args[0]) && args.length == 3) {
             def deployable = new File(args[1])
             if (!deployable.exists()) {
