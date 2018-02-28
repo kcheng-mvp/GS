@@ -25,7 +25,7 @@ def logger = logback.getLogger("infra.os")
 @Field
 def home = System.getProperty("user.home")
 
-def etcHost(hosts, boolean onRemote) {
+def etcHost(hosts) {
     logger.info("******************** Start building os ********************")
     hosts.sort()
     def ips = [] as List
@@ -46,19 +46,17 @@ def etcHost(hosts, boolean onRemote) {
             logger.info("** sudo hostnamectl set-hostname '{hostname}'")
             return true
         }
-        rt = shell.exec("hostname -i", host)
+        rt = shell.exec("hostname -I", host)
         def hostIps = new ArrayList()
-        hostIps.addAll(rt.msg.get(0).split())
-        if(onRemote){
-           hostIps.retainAll(ips)
-        } else {
-           hostIps.removeAll(ips)
-        }
+        //10.0.0.0,172.16.0.0,192.168.0.0
+        hostIps.addAll(rt.msg.get(0).split().findAll{it -> it.startsWith("10") || it.startsWith("172") || it.startsWith("192")})
+//        hostIps.addAll(rt.msg.get(0).split())
         if(hostIps.size() !=1){
             logger.error "** Runs into error when try to get host's IP address:${hostIps.toString()} ..."
             return -1
         }
         hostMap.put(hostIps[0], host.trim())
+
 
         logger.info("** Checking ssh key for {}", host)
         rt = shell.exec("ls ~/.ssh/id_rsa", host)

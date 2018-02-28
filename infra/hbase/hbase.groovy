@@ -13,22 +13,13 @@ def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy
 def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"))
 def logger = logback.getLogger("infra-hbase")
 
-def configFile = new File('hbaseCfg.groovy')
-def config = null
-if (configFile.exists()) {
-    config = new ConfigSlurper().parse(configFile.text)
-}
 
-
-
-def buildOs = { onRemote ->
+def buildOs = { config ->
     logger.info("** Check and set /etc/hosts for all servers ...")
-    osBuilder.etcHost(config.setting.hosts, onRemote)
+    osBuilder.etcHost(config.regionservers)
 }
 
-def cfg = {
-    def tmpDir = File.createTempDir()
-
+def cfg = { config ->
     logger.info("** Generate configurations ...")
     def generate = new File("hbase")
     generate.mkdir()
@@ -52,28 +43,34 @@ def cfg = {
                     name(sec.key)
                     value(sec.value)
                 }
-
             }
         }
         writer.close()
     }
 
     logger.info("** Generate regionservers ...")
-    println config.regionservers
     def regionservers = new File(generate, "regionservers").withWriter { w ->
         def bw = new BufferedWriter(w)
-        config.regionservers.split(",").each { h ->
+        config.regionservers.each { h ->
             bw.write(h)
             bw.newLine()
         }
         bw.close()
     }
     logger.info("** Configurations are generated at {}", generate.absolutePath)
+//    def dirs = config.flatten().findAll{it -> it.key.indexOf("_DIR") > -1}.collect{it -> it.value}
 }
 
-def deploy = { deployable, host ->
+def deploy = { config, deployable, host ->
 
-    if (config.setting.hosts.contains(host)) {
+    def tmpDir = File.createTempDir()
+    if (config.regionservers.contains(host)) {
+
+        def generate = new File("hbase")
+        if(!generate.exists() || !generate.isDirectory() || generate.list().length < 1){
+            logger.error("Can not find the folder hbase or it's empty folder")
+            return -1
+        }
 
         def rootName = deployable.name.replace(".tar", "").replace(".gz", "").replace(".tgz", "");
         logger.info("** unzipping ${deployable.absolutePath} at ${tmpDir.absolutePath} ......")
@@ -88,10 +85,12 @@ def deploy = { deployable, host ->
         }
 
 
-        logger.info("** Generate hbase-env.sh ......")
+        logger.info("** update hbase-env.sh ......")
         def hbaseEnv = new File("${tmpDir.absolutePath}/${rootName}/conf/hbase-env.sh")
+        def defaultHbasePidDir = true;
         config.hbaseEnv.flatten().each { entry ->
             logger.info "** Add ${entry.key}=${entry.value}"
+            if ("HBASE_PID_DIR".equals(entry.key.trim())) defaultHbasePidDir = false
             hbaseEnv.append("${System.getProperty("line.separator")}export ${entry.key}=${entry.value}")
         }
 
@@ -115,27 +114,29 @@ def deploy = { deployable, host ->
         def ug = shell.sshug(host)
         def group = ug.g
         def user = ug.u
-        new File(generate, "folder").eachLine { f ->
-            if (f) {
-                f = f.replaceAll(",", " ")
-                f.split().each { p ->
-                    def pathEle = new StringBuffer()
-                    p.split(File.separator).each { ele ->
-                        if (ele) {
-                            pathEle.append(File.separator).append(ele)
-                            rt = shell.exec("ls -l ${pathEle.toString()}", host)
-                            if (rt.code) {
-                                logger.info("**[@${host}]: Creating folder: ${pathEle.toString()} ... ")
-                                rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
-                                rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
-                                logger.info("**[@${host}]: Changing owner: ${pathEle.toString()}")
-                            }
 
-                        }
+        def dirs = config.flatten().findAll { it -> it.key.indexOf("_DIR") > -1 }.collect { it -> it.value }
+        if (defaultHbasePidDir) dirs.add("/var/hbase/pid")
+
+        dirs.each { dir ->
+            logger.info("**[@${host}]: Creating folder: ${dir} ... ")
+            def pathEle = new StringBuffer()
+            dir.split(File.separator).each { ele ->
+                if (ele) {
+                    pathEle.append(File.separator).append(ele)
+                    rt = shell.exec("ls -l ${pathEle.toString()}", host)
+                    if (rt.code) {
+                        logger.info("**[@${host}]: Creating folder: ${pathEle.toString()} ... ")
+                        rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
+                        rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
+                        logger.info("**[@${host}]: Changing owner: ${pathEle.toString()}")
                     }
+
                 }
             }
+
         }
+
     } else {
         logger.error "${host} is not in the server list: ${config.setting.hosts.toString()}"
     }
@@ -150,21 +151,24 @@ if (!args) {
         }
         logger.info "** Please do the changes according to your environments in hbaseCfg.groovy"
     } else {
+        def configFile = new File('hbaseCfg.groovy')
         if (!configFile.exists()) {
-            logger.error "** hosts is null, please run init first ......"
+            logger.error "** Can't find file hbaseCfg.groovy in current folder ......"
             return -1
         }
+        def config = new ConfigSlurper().parse(configFile.text)
+
         if ('build'.equalsIgnoreCase(args[0])) {
-            buildOs(args.length > 1 ? true : false)
+            buildOs(config)
         } else if ("cfg".equalsIgnoreCase(args[0])) {
-            cfg()
+            cfg(config)
         } else if ("deploy".equalsIgnoreCase(args[0]) && args.length == 3) {
             def deployable = new File(args[1])
             if (!deployable.exists()) {
                 logger.error "Can't find the file ${deployable.absolutePath} ......"
                 return -1
             }
-            deploy(deployable, args[2])
+            deploy(config, deployable, args[2])
         } else {
             logger.error("Can not find the command ${args[0]} ...")
         }

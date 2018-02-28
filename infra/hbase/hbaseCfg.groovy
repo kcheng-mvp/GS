@@ -1,18 +1,19 @@
 hbaseEnv{
-    JAVA_HOME="/usr/jkd"
+    JAVA_HOME="/usr/local/jdk"
     //Add a pointer to your HADOOP_CONF_DIR to the HBASE_CLASSPATH environment variable in hbase-env.sh
-    HBASE_CLASSPATH="hadoop_home/conf"
-    HBASE_PID_DIR="hadoop_home/conf"
+    HBASE_CLASSPATH="/usr/local/hbase/conf"
+    // default to /var/hbase/pid
+    //HBASE_PID_DIR="/data0/hbase/pid"
 }
 //https://github.com/apache/hbase/blob/master/hbase-common/src/main/resources/hbase-default.xml
 hbaseSite{
     hbase{
-        rootdir="hdfs://hbase001:9000/hbase"
+        rootdir="hdfs://xly01:9000/hbase"
         cluster{
             distributed=true
         }
         zookeeper{
-            quorum = "hbase001,hbase002,hbase003"
+            quorum = "xly01,xly02,xly03"
             property{
                 dataDir = "/data0/hbase/zookeeper"
             }
@@ -24,4 +25,4 @@ hbaseSite{
         }
     }
 }
-regionservers = "hbase001,hbase002,hbase003,hbase004"
+regionservers = ["xly01","xly02","xly03","xly04"]
