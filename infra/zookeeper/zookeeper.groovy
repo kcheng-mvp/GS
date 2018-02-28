@@ -7,7 +7,6 @@ def currentPath = new File(getClass().protectionDomain.codeSource.location.path)
 GroovyShell groovyShell = new GroovyShell()
 def shell = groovyShell.parse(new File(currentPath, "../../core/Shell.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy"))
-//def clipboard = groovyShell.parse(new File(currentPath, "../../core/Clipboard.groovy"))
 def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"))
 
 def logger = logback.getLogger("infra-zk")

@@ -105,9 +105,12 @@ def etcHost(hosts, boolean onRemote) {
                     if (entries.size() != 2) {
                         w.write(m)
                     } else {
-                        if (!hostMap.get(entries[0].trim()).equals(entries[1].trim())) {
+                        if (!entries[1].trim().equals(hostMap.get(entries[0].trim()))) {
                             w.write(m)
+                            if(hostMap.get(entries[0].trim()))
+                                logger.error("@${h}:There are multiple mapping for ip ${entries[0].trim()}, please fix it ...")
                         }
+
                     }
                     w.newLine()
                 }
