@@ -21,8 +21,8 @@ def buildOs = { config ->
 
 def cfg = { config ->
     logger.info("** Generate configurations ...")
-    def generate = new File("hbase")
-    generate.mkdir()
+    def settings = new File("hbase")
+    settings.mkdir()
 
 
     ["hbaseSite"].each { prop ->
@@ -30,7 +30,7 @@ def cfg = { config ->
         def fileName = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, prop)
 
         logger.info "** Generate ${fileName}.xml ..."
-        def file = new File(generate, "${fileName}.xml");
+        def file = new File(settings, "${fileName}.xml");
         def writer = new FileWriter(file)
         def xml = new MarkupBuilder(writer)
 
@@ -49,7 +49,7 @@ def cfg = { config ->
     }
 
     logger.info("** Generate regionservers ...")
-    def regionservers = new File(generate, "regionservers").withWriter { w ->
+    new File(settings, "regionservers").withWriter { w ->
         def bw = new BufferedWriter(w)
         config.regionservers.each { h ->
             bw.write(h)
@@ -57,26 +57,26 @@ def cfg = { config ->
         }
         bw.close()
     }
-    logger.info("** Configurations are generated at {}", generate.absolutePath)
-//    def dirs = config.flatten().findAll{it -> it.key.indexOf("_DIR") > -1}.collect{it -> it.value}
+    logger.info("** Configurations are generated at {}", settings.absolutePath)
 }
 
 def deploy = { config, deployable, host ->
 
-    def tmpDir = File.createTempDir()
     if (config.regionservers.contains(host)) {
 
-        def generate = new File("hbase")
-        if(!generate.exists() || !generate.isDirectory() || generate.list().length < 1){
+        def settings = new File("hbase")
+        if(!settings.exists() || !settings.isDirectory() || settings.list().length < 1){
             logger.error("Can not find the folder hbase or it's empty folder")
             return -1
         }
+
+        def tmpDir = File.createTempDir()
 
         def rootName = deployable.name.replace(".tar", "").replace(".gz", "").replace(".tgz", "");
         logger.info("** unzipping ${deployable.absolutePath} at ${tmpDir.absolutePath} ......")
         def rt = shell.exec("tar -vxf ${deployable.absolutePath} -C ${tmpDir.absolutePath}")
         if (!rt.code) {
-            generate.eachFileRecurse(FileType.FILES) { f ->
+            settings.eachFileRecurse(FileType.FILES) { f ->
                 if (!f.name.equalsIgnoreCase("folder")) {
                     logger.info("** copy ${f.absolutePath}......")
                     shell.exec("cp ${f.absolutePath} ${tmpDir.absolutePath}/${rootName}/conf")

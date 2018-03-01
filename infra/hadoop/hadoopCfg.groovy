@@ -68,7 +68,7 @@ mapredSite {
         }
     }
 }
-hadoopenv {
+hadoopEnv {
     HADOOP_PID_DIR="${setting.dataVols[0]}/logs"
     HADOOP_LOG_DIR="${setting.dataVols[0]}/pids"
     JAVA_HOME="/usr/lib/j2sdk1.5-sun"
