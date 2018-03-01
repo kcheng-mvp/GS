@@ -2,6 +2,7 @@
 
 import groovy.transform.Field
 import java.text.SimpleDateFormat
+
 /*
 1: hostname
 2: add new user and add user to the group wheel(manual)
@@ -30,7 +31,7 @@ def etcHost(hosts) {
     hosts.sort()
     def ips = [] as List
     new File("${home}/.ssh/config").eachLine { line ->
-        if(line.trim().startsWith("HostName")){
+        if (line.trim().startsWith("HostName")) {
             ips.add(line.split()[1].trim())
         }
     }
@@ -49,9 +50,9 @@ def etcHost(hosts) {
         rt = shell.exec("hostname -I", host)
         def hostIps = new ArrayList()
         //10.0.0.0,172.16.0.0,192.168.0.0
-        hostIps.addAll(rt.msg.get(0).split().findAll{it -> it.startsWith("10") || it.startsWith("172") || it.startsWith("192")})
+        hostIps.addAll(rt.msg.get(0).split().findAll { it -> it.startsWith("10") || it.startsWith("172") || it.startsWith("192") })
 //        hostIps.addAll(rt.msg.get(0).split())
-        if(hostIps.size() !=1){
+        if (hostIps.size() != 1) {
             logger.error "** Runs into error when try to get host's IP address:${hostIps.toString()} ..."
             return -1
         }
@@ -89,7 +90,7 @@ def etcHost(hosts) {
         return
     }
     // sort the map
-    hostMap.sort({a,b -> a.value <=> b.value})
+    hostMap.sort({ a, b -> a.value <=> b.value })
     hosts.each { h ->
         logger.info("** Setting hosts for {}", h)
         File file = File.createTempFile(h, ".etchosts");
@@ -105,7 +106,7 @@ def etcHost(hosts) {
                     } else {
                         if (!entries[1].trim().equals(hostMap.get(entries[0].trim()))) {
                             w.write(m)
-                            if(hostMap.get(entries[0].trim()))
+                            if (hostMap.get(entries[0].trim()))
                                 logger.error("@${h}:There are multiple mapping for ip ${entries[0].trim()}, please fix it ...")
                         }
 
@@ -129,7 +130,7 @@ def etcHost(hosts) {
 }
 
 
-def deploy(deployable,host, command, homeVar) {
+def deploy(deployable, host, command, homeVar) {
 
     logger.info("** Deploy ${deployable} on {}", host)
     def targetFolder = deployable.name.replace(".tar", "")
@@ -148,40 +149,18 @@ def deploy(deployable,host, command, homeVar) {
         return -1
     }
 
-    if(rt.code) return -1
+    if (rt.code) return -1
 
-    rt = shell.exec("type ${command}", host);
-    if (rt.code) {
-        logger.info("** Create ${homeVar} environment variable on {}", host)
-        rt = shell.exec("cat ~/.bash_profile", host)
-        File file = File.createTempFile(host, ".bash_profile");
-        file.deleteOnExit()
-        file.withWriter { write ->
-            def w = new BufferedWriter(write);
-            rt.msg.eachWithIndex { m, idx ->
-                if(m.indexOf("export ${homeVar}") > -1)
-                    logger.warn "** Variable ${homeVar} has been definied ..."
-                if (idx + 1 == rt.msg.size) {
-                    w.newLine();
-                    w.write("export ${homeVar}=/usr/local/${targetFolder}")
-                    w.newLine();
-                    def sec = m.split("=");
-                    if(sec.length ==2){
-                        w.write("${sec[0]}=\$${homeVar}/bin:${sec[1]}")
-                    } else {
-                        w.write("export PATH=\$${homeVar}/bin:\$PATH")
-                    }
-                } else {
-                    w.newLine()
-                    w.write(m)
-                }
-            }
-            w.close()
-        }
-        rt = shell.exec("mv ~/.bash_profile ~/.bash_profile.bak", host)
-        rt = shell.exec("scp ${file.absolutePath} ${host}:~/.bash_profile")
-        rt = shell.exec("cat ~/.bash_profile", host)
-
+    logger.info("** Create ${homeVar} environment variable on {}", host)
+    rt = shell.exec("cat ~/.bash_profile", host)
+    def exists = rt.msg.any { v -> v.indexOf("export ${homeVar}") > -1 }
+    if (exists) {
+        logger.error(">> ** Variable ${homeVar} has been definied ...")
+        return -1
+    } else {
+        rt = shell.exec("echo '' >> ~/.bash_profile", host)
+        rt = shell.exec("echo 'export ${homeVar}=/usr/local/${targetFolder}' >> ~/.bash_profile", host)
+        rt = shell.exec("echo 'export PATH=\$${homeVar}/bin:\$PATH' >> ~/.bash_profile", host)
     }
     return 1
 }

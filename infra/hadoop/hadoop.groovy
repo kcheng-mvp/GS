@@ -98,7 +98,7 @@ def deploy = {config,deployable, host ->
         def tmpDir = File.createTempDir()
         def settings = new File("hadoop")
         if(!settings.exists() || !settings.isDirectory() || settings.list().length < 1){
-            logger.error("Can not find the folder hadoop or it's empty folder")
+            logger.error("** Can not find the folder hadoop or it's empty folder")
             return -1
         }
 
@@ -131,7 +131,7 @@ def deploy = {config,deployable, host ->
         rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host, "hadoop", "HADOOP_HOME");
         tmpDir.deleteDir()
         if (rt != 1) {
-            logger.error "Failed to deploy ${deployable} on ${host}"
+            logger.error "** Failed to deploy ${deployable} on ${host}"
             return -1
         }
 
@@ -163,12 +163,12 @@ def deploy = {config,deployable, host ->
             }
         }
     } else {
-        logger.error "${host} is not in the server list: ${config.setting.hosts.toString()}"
+        logger.error "** ${host} is not in the server list: ${config.setting.hosts.toString()}"
     }
 }
 
 if (!args) {
-    logger.info("make sure your settings are correct and then run the command : init, build or [deploy]")
+    logger.info("** make sure your settings are correct and then run the command : init, build or [deploy]")
 } else {
     if ("init".equalsIgnoreCase(args[0])) {
         new File("hadoopCfg.groovy").withWriter { w ->
@@ -190,12 +190,12 @@ if (!args) {
         else if ("deploy".equalsIgnoreCase(args[0]) && args.length == 3) {
             def deployable = new File(args[1])
             if (!deployable.exists()) {
-                logger.error "Can't find the file ${deployable.absolutePath} ......"
+                logger.error "** Can't find the file ${deployable.absolutePath} ......"
                 return -1
             }
             deploy(config,deployable, args[2])
         } else {
-            logger.error("Can not find the command ${args[0]} ...")
+            logger.error("** Can not find the command ${args[0]} ...")
         }
     }
 }
