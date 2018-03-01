@@ -101,7 +101,7 @@ def deploy = { config, deployable, host ->
 
         logger.info("** Deploy ${rootName}.tar ......")
 
-        rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host, "hbase", "HBASE_HOME");
+        rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host, "HBASE_HOME");
         tmpDir.deleteDir()
         if (rt != 1) {
             logger.error "** Failed to deploy ${deployable} on ${host}"

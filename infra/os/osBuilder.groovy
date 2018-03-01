@@ -130,7 +130,7 @@ def etcHost(hosts) {
 }
 
 
-def deploy(deployable, host, command, homeVar) {
+def deploy(deployable, host, homeVar) {
 
     logger.info("** Deploy ${deployable} on {}", host)
     def targetFolder = deployable.name.replace(".tar", "")

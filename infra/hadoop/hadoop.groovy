@@ -128,7 +128,7 @@ def deploy = {config,deployable, host ->
 
         logger.info("** Deploy ${rootName}.tar ......")
 
-        rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host, "hadoop", "HADOOP_HOME");
+        rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host,  "HADOOP_HOME");
         tmpDir.deleteDir()
         if (rt != 1) {
             logger.error "** Failed to deploy ${deployable} on ${host}"
