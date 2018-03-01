@@ -12,12 +12,6 @@ def shell = groovyShell.parse(new File(currentPath, "../../core/Shell.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy"))
 def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"))
 def logger = logback.getLogger("infra-hd")
-//
-//def configFile = new File('hadoopCfg.groovy')
-//def config = null
-//if (configFile.exists()) {
-//    config = new ConfigSlurper().parse(configFile.text)
-//}
 
 
 
