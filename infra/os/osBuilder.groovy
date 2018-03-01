@@ -152,7 +152,7 @@ def deploy(deployable,host, command, homeVar) {
 
     rt = shell.exec("type ${command}", host);
     if (rt.code) {
-        logger.info("** Create ${homeVar} environment on {}", host)
+        logger.info("** Create ${homeVar} environment variable on {}", host)
         rt = shell.exec("cat ~/.bash_profile", host)
         File file = File.createTempFile(host, ".bash_profile");
         file.deleteOnExit()

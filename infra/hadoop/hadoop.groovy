@@ -151,10 +151,10 @@ def deploy = {config,deployable, host ->
                             pathEle.append(File.separator).append(ele)
                             rt = shell.exec("ls -l ${pathEle.toString()}", host)
                             if (rt.code) {
-                                logger.info("**[@${host}]: Creating folder: ${pathEle.toString()} ... ")
+                                logger.info("** [${host}]: Creating folder: ${pathEle.toString()} ... ")
                                 rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
                                 rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
-                                logger.info("**[@${host}]: Changing owner: ${pathEle.toString()}")
+                                logger.info("** [${host}]: Changing owner: ${pathEle.toString()}")
                             }
 
                         }

@@ -11,7 +11,7 @@ GroovyShell groovyShell = new GroovyShell()
 def shell = groovyShell.parse(new File(currentPath, "../../core/Shell.groovy"))
 def logback = groovyShell.parse(new File(currentPath, "../../core/Logback.groovy"))
 def osBuilder = groovyShell.parse(new File(currentPath, "../os/osBuilder.groovy"))
-def logger = logback.getLogger("infra-hbase")
+def logger = logback.getLogger("infra-hb")
 
 
 def buildOs = { config ->
