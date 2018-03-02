@@ -208,7 +208,7 @@ SELECT *
 FROM CRMR
 '''
 
-    def csv = File.createTempFile("ADV",".CSV")
+    def csv = File.createTempFile("ADV_SUMMARY",".CSV")
     csv.deleteOnExit()
 //    def rows = [] as List
     csv.withWriter { w ->
@@ -225,7 +225,29 @@ FROM CRMR
 //    dataMap.put("AdvReport", rows)
 //    def xlsPath = xls.generateXls(dataMap)
 
-    mailMan.sendMail("导量日报（${lastDay}）", "导量日报（${lastDay}）", configFile, csv.absolutePath)
+
+    //
+    detailSql = '''
+SELECT DAY_STR,ADV_APP_ID, APP_ID , PLATFORM , COUNT(UID) AS CNT
+FROM CRMR
+GROUP BY DAY_STR,ADV_APP_ID, APP_ID, PLATFORM
+ORDER BY DAY_STR,ADV_APP_ID ASC, APP_ID ASC, PLATFORM ASC
+'''
+    def csv1 = File.createTempFile("ADV_DETAIL",".CSV")
+    csv1.deleteOnExit()
+    csv1.withWriter { w ->
+        def bw = new BufferedWriter(w)
+        sql.eachRow(detailSql) { row ->
+            bw << "${row['DAY_STR']}, ${gameName(row['ADV_APP_ID'])}, ${gameName(row['APP_ID'])}, ${row['PLATFORM']}, ${row['CNT']}"
+            bw.newLine()
+        }
+        bw.close()
+    }
+
+    // end 5h to app
+
+
+    mailMan.sendMail("导量日报（${lastDay}）", "导量日报（${lastDay}）", configFile, [csv.absolutePath,csv1.absolutePath])
 
 //    new File(csv.absolutePath).delete();
 

@@ -3,10 +3,8 @@
         @Grab(group = 'com.google.guava', module = 'guava', version = '18.0')
 ])
 import com.google.common.base.CaseFormat
-@Grapes([
-        @Grab(group = 'com.google.guava', module = 'guava', version = '18.0')
-])
-import com.google.common.base.CaseFormat
+
+import groovy.io.FileType
 
 def currentPath = new File(getClass().protectionDomain.codeSource.location.path).parent
 GroovyShell groovyShell = new GroovyShell()
@@ -30,72 +28,99 @@ def buildOs = { config ->
 
 def cfg = { configFile ->
 
-    def setting = new File("kafka")
-    setting.mkdir()
+    def configDir = new File("kafka")
+    configDir.mkdirs()
     def config = new ConfigSlurper().parse(configFile.text)
+    def foundSection = osBuilder.findBound(configFile, config.settings.ka.hosts)
 
     logger.info("** Generate configuration ......")
-    config.ka.hosts.each { host ->
-        def boundConfig = new ConfigSlurper().with {
-            it.setBinding(currentHost: host)
-            it.parse(configFile.text)
-        }
-        ["server"].find { name ->
-            new File(setting, "${name}-${host}.properties").withWriter { w ->
-                def bw = new BufferedWriter(w)
-                boundConfig.get(name).flatten().each { k, v ->
-                    bw.write("${k}=${v}")
-                    bw.newLine()
+    config.keySet().each { dir ->
+        if (!"settings".equals(dir)) {
+            def currentDir = new File(configDir, dir).with { it.mkdirs() ;it }
+            config.get(dir).keySet().each { fileName ->
+                def once = !fileName.equals(foundSection)
+                config.settings.ka.hosts.find { host ->
+                    def boundConfig = new ConfigSlurper().with {
+                        it.setBinding(host: host)
+                        it.parse(configFile.text)
+                    }
+                    def targetName = once ? "${fileName}.properties" : "${fileName}-(${host}).properties"
+                    new File(currentDir, targetName).withWriter { w ->
+                        def bw = new BufferedWriter(w)
+                        boundConfig."${dir}".get(fileName).flatten().each { k, v ->
+                            bw.write("${k}=${v}")
+                            bw.newLine()
+                        }
+                        bw.close()
+                    }
+                    return once
                 }
-                bw.close()
+
             }
         }
-
     }
-    ["producer", "consumer", "log4j"].find { name ->
-        new File(setting, "${name}.properties").withWriter { w ->
-            def bw = new BufferedWriter(w)
-            config.get(name).flatten().each { k, v ->
-                bw.write("${k}=${v}")
-                bw.newLine()
-            }
-            bw.close()
-        }
-    }
-
 
 }
 
 def deploy = { config, deployable, host ->
-    if (config.ka.hosts.contains(host)) {
+    if (config.settings.ka.hosts.contains(host)) {
 
-        def settings = new File("kafka")
-        if (!settings.exists() || !settings.isDirectory() || settings.list().length < 1) {
-            logger.error("** Can not find the folder hadoop or it's empty folder")
+        def configDir = new File("kafka")
+        if (!configDir.exists() || !configDir.isDirectory() || configDir.list().length < 1) {
+            logger.error("** Can not find the folder kafka or it's empty folder")
             return -1
         }
 
 
-        logger.info("** unzip ${deployable.absolutePath}")
 
         def rootName = deployable.name.replace(".tar", "").replace(".gz", "").replace(".tgz", "");
         def tmpDir = File.createTempDir()
+        logger.info("** unzip ${deployable.absolutePath} to ${tmpDir.absolutePath}")
+
         rt = shell.exec("tar -vxf ${deployable.absolutePath} -C ${tmpDir.absolutePath}")
 
+
+
+
+        def pattern = ~/-\(.*\)/
         if (!rt.code) {
-            settings.eachFileRecurse(FileType.FILES) { f ->
-                if (!f.name.equalsIgnoreCase("folder")) {
-                    if (f.name.indexOf("-") < 0 || f.name.indexOf(host) > 0) {
-                        def targetName = f.name.replace("-${host}", "")
-                        logger.info("** copy ${f.absolutePath}......")
-                        shell.exec("cp ${f.absolutePath} ${tmpDir.absolutePath}/${rootName}/conf/${targetName}")
+            configDir.eachFileRecurse(FileType.FILES) {  f  ->
+                if(!(f.name =~ pattern) || (f.name =~ pattern && f.name.indexOf(host) > -1)){
+                    def target = f.name.replaceAll(pattern,"")
+                    target  = new File("${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}/${target}")
+                    if(target.exists()){
+                        def backup = new File("${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}/${target.name}.bak").with{
+                            it << target.text
+                            it
+                        }
+                        def keyMap = [:]
+                        f.eachLine {line ->
+                            def entries = line.split("=")
+                            keyMap.put(entries[0].trim(),entries.length > 1 ? entries[1].trim() : "")
+                        }
+                        target.withWriter {w ->
+                            def bw = new BufferedWriter(w)
+                            backup.eachLine {line ->
+                                def item = keyMap.find {k,v ->
+                                    def ll = line.replaceAll("\\s","")
+                                    ll.startsWith("${k}=")  || ll.startsWith("#${k}=")
+                                }
+
+                                bw.write(item ? "${item.key}=${item.value}" : line)
+                                bw.newLine()
+                            }
+                            bw.close()
+                        }
+                    } else {
+                        shell.exec("cp ${f.absolutePath} ${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}")
                     }
                 }
             }
         }
 
 
-        logger.info("** Re-generate ${rootName}.tar ......")
+        return -1
+        logger.info("** Re-generate ${rootName}.tar ")
         rt = shell.exec("tar -cvzf  ${tmpDir.absolutePath}/${rootName}.tar -C ${tmpDir.absolutePath} ./${rootName}")
 
         rt = osBuilder.deploy(new File("${tmpDir.absolutePath}/${rootName}.tar"), host, "KA_HOME")
@@ -107,7 +132,7 @@ def deploy = { config, deployable, host ->
         }
         def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 }.collect { it.value }
 
-        logger.info "** Create corresponding folders on ${host} ...."
+        logger.info "** Create corresponding folders on ${host} "
         def ug = shell.sshug(host)
         def group = ug.g
         def user = ug.u
@@ -120,10 +145,10 @@ def deploy = { config, deployable, host ->
                         pathEle.append(File.separator).append(ele)
                         rt = shell.exec("ls -l ${pathEle.toString()}", host)
                         if (rt.code) {
-                            logger.info("** [${host}]: Creating folder: ${pathEle.toString()} ... ")
+                            logger.info("** [${host}]: Creating folder: ${pathEle.toString()} ...... ")
                             rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
                             rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
-                            logger.info("** [${host}]: Changing owner: ${pathEle.toString()}")
+                            logger.info("** [${host}]: Changing owner: ${pathEle.toString()} ......")
                         }
 
                     }
@@ -166,3 +191,12 @@ if (!args) {
     }
 }
 
+
+
+def filename = "server-(xly04).properties"
+def pattern = ~/.*-\(.*\)/
+
+
+if (filename =~ pattern){
+    println "hello"
+}

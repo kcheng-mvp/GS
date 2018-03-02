@@ -132,12 +132,12 @@ def etcHost(hosts) {
 
 def deploy(deployable, host, homeVar) {
 
-    logger.info("** Deploy ${deployable} on {}", host)
+    logger.info("** Deploy ${deployable} on {} ......", host)
     def targetFolder = deployable.name.replace(".tar", "")
     def rt = shell.exec("ls -l /usr/local/${targetFolder}", host)
     if (rt.code) {
         def sdf = new SimpleDateFormat("yyyyMMddHHmmss")
-        logger.info "** scp ${deployable.absolutePath} ${host} ......(This may take minutes)"
+        logger.info "** scp ${deployable.absolutePath} ${host} (This may take minutes) ......"
         def targetName = "${targetFolder}.${sdf.format(Calendar.getInstance().getTime())}.tar"
         rt = shell.exec("scp ${deployable.absolutePath} ${host}:~/${targetName}");
         logger.info "** unzip the file to target folder ..."
@@ -151,7 +151,7 @@ def deploy(deployable, host, homeVar) {
 
     if (rt.code) return -1
 
-    logger.info("** Create ${homeVar} environment variable on {}", host)
+    logger.info("** Create ${homeVar} environment variable on {} ......", host)
     rt = shell.exec("cat ~/.bash_profile", host)
     def exists = rt.msg.any { v -> v.indexOf("export ${homeVar}") > -1 }
     if (exists) {
@@ -165,3 +165,20 @@ def deploy(deployable, host, homeVar) {
     return 1
 }
 
+// utils
+
+def findBound(configFile, hosts) {
+    assert hosts.size() >= 2
+    def config1 = new ConfigSlurper().with {
+        it.setBinding(host: hosts[0])
+        it.parse(configFile.text)
+    }.flatten()
+    def config2 = new ConfigSlurper().with {
+        it.setBinding(host: hosts[1])
+        it.parse(configFile.text)
+    }.flatten()
+    def result = config1.collectEntries { k, v ->
+        v.equals(config2[k]) ? [:] : ["${k}": 1]
+    }.keySet()[0]
+    return result ? result.split("[.]")[1] : ""
+}

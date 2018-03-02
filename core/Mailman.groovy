@@ -9,7 +9,7 @@ import javax.mail.*
 import javax.activation.*
 
 
-def sendMail(subject, message, configFile, attachment = null) {
+def sendMail(subject, message, configFile, attachments = []) {
 
     def configObject = new ConfigSlurper().parse(configFile.text)
 
@@ -39,7 +39,7 @@ def sendMail(subject, message, configFile, attachment = null) {
     // Set text message part
     multipart.addBodyPart(messageBodyPart);
 
-    if (attachment) {
+    attachments.each { attachment ->
         // Part two is attachment
         messageBodyPart = new MimeBodyPart();
         DataSource source = new FileDataSource(attachment);
@@ -48,6 +48,8 @@ def sendMail(subject, message, configFile, attachment = null) {
         multipart.addBodyPart(messageBodyPart);
         // Send the complete message parts
     }
+
+
 
     mimeMessage.setContent(multipart);
     Transport.send(mimeMessage);
