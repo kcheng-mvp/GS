@@ -6,23 +6,26 @@ settings {
 }
 
 config {
-    server {
-        listeners = "PLAINTEXT://:${settings.ka.client.port}"
-        log.dirs = "/data0/kafka/data"
-        num.partitions = 2
-        broker.id = settings.ka.hosts.indexOf(host) + 1
-        zookeeper.connect = settings.zk.hosts.collect { "${it}:${settings.zk.client.port}" }.join(",") + "/kafka"
+    settings.ka.hosts.eachWithIndex { host, idx ->
+        "server-(${host}).properties" {
+            listeners = "PLAINTEXT://:${settings.ka.client.port}"
+            log.dirs = "/data0/kafka/data"
+            num.partitions = 2
+            broker.id = settings.ka.hosts.indexOf(host) + 1
+            zookeeper.connect = settings.zk.hosts.collect { "${it}:${settings.zk.client.port}" }.join(",") + "/kafka"
+        }
+
     }
 
-    producer {
+    'producer.properties' {
         bootstrap.servers = settings.ka.hosts.collect { "${it}:${settings.ka.client.port}" }.join(",")
     }
 
-    consumer {
+    'consumer.properties' {
         bootstrap.servers = settings.ka.hosts.collect { "${it}:${settings.ka.client.port}" }.join(",")
     }
 
-    log4j {
+    'log4j.properties' {
         kafka.logs.dir = "/data0/kafka/log"
         log4j.appender.kafkaAppender.MaxBackupIndex = 3
         log4j.appender.kafkaAppender.MaxFileSize = "10MB"

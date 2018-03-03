@@ -150,7 +150,12 @@ def deploy(deployable, host, homeVar) {
         return -1
     }
 
-    if (rt.code) return -1
+    if (rt.code) {
+        rt.msg.each{
+            logger.error it
+        }
+        return -1
+    }
 
     logger.info("** Create ${homeVar} environment variable on {} ......", host)
     rt = shell.exec("cat ~/.bash_profile", host)
@@ -232,27 +237,29 @@ def generateCfg(config, dir) {
     }
 }
 
-def consolidate(deployable, configDir) {
+def consolidate(deployable, configDir,host = null) {
 
     def settings = new File(configDir)
     if (!settings.exists() || !settings.isDirectory() || settings.list().length < 1) {
-        logger.error("** Can not find the folder configDir or it's empty folder")
-        return -1
+        logger.error("** Can not find the folder ${configDir} or it's empty folder")
+        return null
     }
 
     deployable = new File(deployable)
     if (!deployable.exists()) logger.error "Can't find the deployable ${deployable}"
-    def rootName = deployable.name.replace(".tar", "").replace(".gz", "");
+    def rootName = deployable.name.replace(".tar", "").replace(".gz", "").replaceAll(".tgz","");
+    logger.info "** Root file name is ${rootName}"
     def tmpDir = File.createTempDir()
     logger.info("** Unzip ${deployable.absolutePath} to ${tmpDir.absolutePath}")
     rt = shell.exec("tar -vxf ${deployable.absolutePath} -C ${tmpDir.absolutePath}")
 
     logger.info("** Update configurations")
     def sdf = new SimpleDateFormat("yyyyMMddHHmm")
+    // for the case settings vary with host, in this the configuration file will be with the pattern -${host}
     def pattern = ~/-\(.*\)/
     if (!rt.code) {
         settings.eachFileRecurse(FileType.FILES) { f ->
-            if (!(f.name =~ pattern) || (f.name =~ pattern && f.name.indexOf(host) > -1)) {
+            if (!(f.name =~ pattern) || (host && f.name =~ pattern && f.name.indexOf(host) > -1)) {
                 def target = f.name.replaceAll(pattern, "")
                 target = new File("${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}/${target}")
                 if (target.exists()) {
@@ -292,5 +299,12 @@ def consolidate(deployable, configDir) {
 
     logger.info("** Re-generate ${rootName}.tar ")
     rt = shell.exec("tar -cvzf  ${tmpDir.absolutePath}/${rootName}.tar -C ${tmpDir.absolutePath} ./${rootName}")
-    new File("${tmpDir.absolutePath}/${rootName}.tar")
+    if(rt.code){
+        rt.msg.each{
+            logger.error it
+        }
+        return null
+    } else {
+        new File("${tmpDir.absolutePath}/${rootName}.tar")
+    }
 }

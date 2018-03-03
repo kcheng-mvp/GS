@@ -27,30 +27,33 @@ def deploy = { config, deployable, host ->
     if (config.settings.hosts.contains(host)) {
 
         def consolidated = osBuilder.consolidate(deployable, CONFIG_FOLDER)
+        if(consolidated){
 
-        rt = osBuilder.deploy(consolidated, host, DEPLOYABLE_HOME)
-        if (rt < 0) {
-            logger.error "** Failed to deploy ${deployable} on host ${host}"
-            return -1
-        }
+            def rt = osBuilder.deploy(consolidated, host, DEPLOYABLE_HOME)
+            if (rt < 0) {
+                logger.error "** Failed to deploy ${deployable} on host ${host}"
+                return -1
+            }
 
 
-        def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 }.collect { it.value }
-        osBuilder.mkdirs(host, dirs)
+            def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 }.collect { it.value }
+            osBuilder.mkdirs(host, dirs)
 
-        // specials for zookeeper
-        def ug = shell.sshug(host)
-        def group = ug.g
-        def user = ug.u
-        logger.info("** Creating ${config.conf.'zoo.cfg'.dataDir}/myid for {}", host)
-        rt = shell.exec("ls -l ${config.conf.'zoo.cfg'.dataDir}/myid", host);
-        if (rt.code) {
-            rt = shell.exec("echo ${config.settings.hosts.indexOf(host) + 1} > ${config.conf.'zoo.cfg'.dataDir}/myid", host)
-            if (!rt.code) {
-                rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${config.conf.'zoo.cfg'.dataDir}/myid", host)
-                rt = shell.exec("stat -c '%n %U %G %y' ${config.conf.'zoo.cfg'.dataDir}/myid", host)
+            // specials for zookeeper
+            def ug = shell.sshug(host)
+            def group = ug.g
+            def user = ug.u
+            logger.info("** Creating ${config.conf.'zoo.cfg'.dataDir}/myid for {}", host)
+            rt = shell.exec("ls -l ${config.conf.'zoo.cfg'.dataDir}/myid", host);
+            if (rt.code) {
+                rt = shell.exec("echo ${config.settings.hosts.indexOf(host) + 1} > ${config.conf.'zoo.cfg'.dataDir}/myid", host)
+                if (!rt.code) {
+                    rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${config.conf.'zoo.cfg'.dataDir}/myid", host)
+                    rt = shell.exec("stat -c '%n %U %G %y' ${config.conf.'zoo.cfg'.dataDir}/myid", host)
+                }
             }
         }
+
     } else {
         logger.error "${host} is not in the server list : ${config.setting.hosts.toString()}"
     }
@@ -81,3 +84,5 @@ if (!args) {
         }
     }
 }
+
+

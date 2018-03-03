@@ -17,8 +17,9 @@ conf {
         clientPort = 12181
         dataDir = "/data0/zookeeper/data"
         settings.hosts.eachWithIndex { s, idx ->
-            setProperty("server.${idx+1}","${s}:12888:13888")
+            setProperty("server.${idx + 1}", "${s}:12888:13888")
         }
     }
 
 }
+
