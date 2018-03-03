@@ -5,6 +5,7 @@
 import com.google.common.base.CaseFormat
 
 import groovy.io.FileType
+import java.text.SimpleDateFormat
 
 def currentPath = new File(getClass().protectionDomain.codeSource.location.path).parent
 GroovyShell groovyShell = new GroovyShell()
@@ -82,6 +83,7 @@ def deploy = { config, deployable, host ->
 
 
 
+        def sdf = new SimpleDateFormat("yyyyMMddHHmm")
         def pattern = ~/-\(.*\)/
         if (!rt.code) {
             configDir.eachFileRecurse(FileType.FILES) {  f  ->
@@ -89,7 +91,7 @@ def deploy = { config, deployable, host ->
                     def target = f.name.replaceAll(pattern,"")
                     target  = new File("${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}/${target}")
                     if(target.exists()){
-                        def backup = new File("${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}/${target.name}.bak").with{
+                        def backup = new File("${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}/${target.name}.${sdf.format(Calendar.getInstance().getTime())}").with{
                             it << target.text
                             it
                         }
@@ -108,6 +110,11 @@ def deploy = { config, deployable, host ->
 
                                 bw.write(item ? "${item.key}=${item.value}" : line)
                                 bw.newLine()
+                                if(item) keyMap.remove(item.key)
+                            }
+                            keyMap.each{ item ->
+                                bw.write("${item.key}=${item.value}")
+                                bw.newLine()
                             }
                             bw.close()
                         }
@@ -118,8 +125,6 @@ def deploy = { config, deployable, host ->
             }
         }
 
-
-        return -1
         logger.info("** Re-generate ${rootName}.tar ")
         rt = shell.exec("tar -cvzf  ${tmpDir.absolutePath}/${rootName}.tar -C ${tmpDir.absolutePath} ./${rootName}")
 
@@ -132,29 +137,31 @@ def deploy = { config, deployable, host ->
         }
         def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 }.collect { it.value }
 
-        logger.info "** Create corresponding folders on ${host} "
-        def ug = shell.sshug(host)
-        def group = ug.g
-        def user = ug.u
-        dirs.each { dir ->
-            def rt = shell.exec("ls -l ${dir}", host);
-            if (rt.code) {
-                def pathEle = new StringBuffer()
-                dir.split(File.separator).each { ele ->
-                    if (ele) {
-                        pathEle.append(File.separator).append(ele)
-                        rt = shell.exec("ls -l ${pathEle.toString()}", host)
-                        if (rt.code) {
-                            logger.info("** [${host}]: Creating folder: ${pathEle.toString()} ...... ")
-                            rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
-                            rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
-                            logger.info("** [${host}]: Changing owner: ${pathEle.toString()} ......")
-                        }
+        osBuilder.mkdirs(host, dirs)
 
-                    }
-                }
-            }
-        }
+//        logger.info "** Create corresponding folders on ${host} "
+//        def ug = shell.sshug(host)
+//        def group = ug.g
+//        def user = ug.u
+//        dirs.each { dir ->
+//            def rt = shell.exec("ls -l ${dir}", host);
+//            if (rt.code) {
+//                def pathEle = new StringBuffer()
+//                dir.split(File.separator).each { ele ->
+//                    if (ele) {
+//                        pathEle.append(File.separator).append(ele)
+//                        rt = shell.exec("ls -l ${pathEle.toString()}", host)
+//                        if (rt.code) {
+//                            logger.info("** [${host}]: Creating folder: ${pathEle.toString()} ...... ")
+//                            rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
+//                            rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
+//                            logger.info("** [${host}]: Changing owner: ${pathEle.toString()} ......")
+//                        }
+//
+//                    }
+//                }
+//            }
+//        }
 
     } else {
         logger.error "${host} is not in the server list: ${config.setting.ka.hosts.toString()}"
@@ -192,11 +199,3 @@ if (!args) {
 }
 
 
-
-def filename = "server-(xly04).properties"
-def pattern = ~/.*-\(.*\)/
-
-
-if (filename =~ pattern){
-    println "hello"
-}

@@ -155,7 +155,7 @@ def deploy(deployable, host, homeVar) {
     rt = shell.exec("cat ~/.bash_profile", host)
     def exists = rt.msg.any { v -> v.indexOf("export ${homeVar}") > -1 }
     if (exists) {
-        logger.error(">> ** Variable ${homeVar} has been definied ...")
+        logger.error(" ** Variable ${homeVar} has been definied ...")
         return -1
     } else {
         rt = shell.exec("echo '' >> ~/.bash_profile", host)
@@ -163,6 +163,33 @@ def deploy(deployable, host, homeVar) {
         rt = shell.exec("echo 'export PATH=\$${homeVar}/bin:\$PATH' >> ~/.bash_profile", host)
     }
     return 1
+}
+
+def mkdirs(host, dirs) {
+    logger.info "** Create corresponding folders on ${host} "
+    def ug = shell.sshug(host)
+    def group = ug.g
+    def user = ug.u
+    dirs.each { dir ->
+        def rt = shell.exec("ls -l ${dir}", host);
+        if (rt.code) {
+            logger.info("** [${host}]: Creating folder: ${dir} ...... ")
+            def pathEle = new StringBuffer()
+            dir.split(File.separator).each { ele ->
+                if (ele) {
+                    pathEle.append(File.separator).append(ele)
+                    rt = shell.exec("ls -l ${pathEle.toString()}", host)
+                    if (rt.code) {
+                        rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
+                        rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
+                    }
+                }
+            }
+        }else {
+            logger.warn "** Folder ${dir} exits on ${host}, ignore "
+        }
+    }
+
 }
 
 // utils
