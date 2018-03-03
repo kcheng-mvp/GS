@@ -2,6 +2,7 @@
 
 import groovy.transform.Field
 import java.text.SimpleDateFormat
+import groovy.io.FileType
 
 /*
 1: hostname
@@ -185,7 +186,7 @@ def mkdirs(host, dirs) {
                     }
                 }
             }
-        }else {
+        } else {
             logger.warn "** Folder ${dir} exits on ${host}, ignore "
         }
     }
@@ -208,4 +209,88 @@ def findBound(configFile, hosts) {
         v.equals(config2[k]) ? [:] : ["${k}": 1]
     }.keySet()[0]
     return result ? result.split("[.]")[1] : ""
+}
+
+def generateCfg(config, dir) {
+    def settings = new File(dir)
+    settings.mkdir()
+    config.keySet().each { key ->
+        if (key && !"settings".equals(key)) {
+            dir = new File(settings, key).with { it.mkdirs(); it }
+            config."${key}".keySet().each { f ->
+                logger.info "** Generate ${f}"
+                new File(dir, f).withWriter { w ->
+                    def bw = new BufferedWriter(w)
+                    config."${key}".get(f).flatten().each { entry ->
+                        bw.write("${entry.key}=${entry.value}")
+                        bw.newLine()
+                    }
+                    bw.close()
+                }
+            }
+        }
+    }
+}
+
+def consolidate(deployable, configDir) {
+
+    def settings = new File(configDir)
+    if (!settings.exists() || !settings.isDirectory() || settings.list().length < 1) {
+        logger.error("** Can not find the folder configDir or it's empty folder")
+        return -1
+    }
+
+    deployable = new File(deployable)
+    if (!deployable.exists()) logger.error "Can't find the deployable ${deployable}"
+    def rootName = deployable.name.replace(".tar", "").replace(".gz", "");
+    def tmpDir = File.createTempDir()
+    logger.info("** Unzip ${deployable.absolutePath} to ${tmpDir.absolutePath}")
+    rt = shell.exec("tar -vxf ${deployable.absolutePath} -C ${tmpDir.absolutePath}")
+
+    logger.info("** Update configurations")
+    def sdf = new SimpleDateFormat("yyyyMMddHHmm")
+    def pattern = ~/-\(.*\)/
+    if (!rt.code) {
+        settings.eachFileRecurse(FileType.FILES) { f ->
+            if (!(f.name =~ pattern) || (f.name =~ pattern && f.name.indexOf(host) > -1)) {
+                def target = f.name.replaceAll(pattern, "")
+                target = new File("${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}/${target}")
+                if (target.exists()) {
+                    def backup = new File("${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}/${target.name}.${sdf.format(Calendar.getInstance().getTime())}").with {
+                        it << target.text
+                        it
+                    }
+                    def keyMap = [:]
+                    f.eachLine { line ->
+                        def entries = line.split("=")
+                        keyMap.put(entries[0].trim(), entries.length > 1 ? entries[1].trim() : "")
+                    }
+                    target.withWriter { w ->
+                        def bw = new BufferedWriter(w)
+                        backup.eachLine { line ->
+                            def item = keyMap.find { k, v ->
+                                def ll = line.replaceAll("\\s", "")
+                                ll.startsWith("${k}=") || ll.startsWith("#${k}=")
+                            }
+
+                            bw.write(item ? "${item.key}=${item.value}" : line)
+                            bw.newLine()
+                            if (item) keyMap.remove(item.key)
+                        }
+                        keyMap.each { item ->
+                            bw.write("${item.key}=${item.value}")
+                            bw.newLine()
+                        }
+                        bw.close()
+                    }
+                } else {
+                    shell.exec("cp ${f.absolutePath} ${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}")
+                }
+            }
+        }
+    }
+
+    logger.info("** Re-generate ${rootName}.tar ")
+    rt = shell.exec("tar -cvzf  ${tmpDir.absolutePath}/${rootName}.tar -C ${tmpDir.absolutePath} ./${rootName}")
+    new File("${tmpDir.absolutePath}/${rootName}.tar")
 }

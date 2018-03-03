@@ -138,31 +138,6 @@ def deploy = { config, deployable, host ->
         def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 }.collect { it.value }
 
         osBuilder.mkdirs(host, dirs)
-
-//        logger.info "** Create corresponding folders on ${host} "
-//        def ug = shell.sshug(host)
-//        def group = ug.g
-//        def user = ug.u
-//        dirs.each { dir ->
-//            def rt = shell.exec("ls -l ${dir}", host);
-//            if (rt.code) {
-//                def pathEle = new StringBuffer()
-//                dir.split(File.separator).each { ele ->
-//                    if (ele) {
-//                        pathEle.append(File.separator).append(ele)
-//                        rt = shell.exec("ls -l ${pathEle.toString()}", host)
-//                        if (rt.code) {
-//                            logger.info("** [${host}]: Creating folder: ${pathEle.toString()} ...... ")
-//                            rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
-//                            rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
-//                            logger.info("** [${host}]: Changing owner: ${pathEle.toString()} ......")
-//                        }
-//
-//                    }
-//                }
-//            }
-//        }
-
     } else {
         logger.error "${host} is not in the server list: ${config.setting.ka.hosts.toString()}"
     }
