@@ -45,7 +45,7 @@ def deploy = { config, deployable, host ->
                 logger.error "** Failed to deploy ${deployable} on host ${host}"
                 return -1
             }
-            def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 }.collect { it.value }
+            def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 }.collect(new HashSet<>()) { it.value.split(",") }.flatten()
             osBuilder.mkdirs(host, dirs)
         }
     } else {
