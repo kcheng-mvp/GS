@@ -240,6 +240,7 @@ def generateCfg(config, dir) {
                         }
                         w.close()
                     } else {
+                        def shellCommand = f.endsWith(".sh") ? "export " :""
                         def bw = new BufferedWriter(w)
                         def var = config."${key}".get(f).flatten()
                         var.each { item ->
@@ -247,7 +248,7 @@ def generateCfg(config, dir) {
                                 bw.write(item)
                             } else {
 
-                                bw.write("${item.key}=${item.value}")
+                                bw.write("${shellCommand}${item.key}=${item.value}")
                             }
                             bw.newLine()
                         }

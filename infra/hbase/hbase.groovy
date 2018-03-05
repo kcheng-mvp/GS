@@ -31,17 +31,15 @@ def buildOs = { config ->
 
 def deploy = { config, deployable, host ->
     if (config.conf.regionservers.contains(host)) {
-        def consolidated = osBuilder.consolidate(deployable, CONFIG_FOLDER,host,{dir ->
-            def file = new File(dir,"conf/regionservers")
-            if(file.exists()) {
-                logger.info("** Delete ${file.absolutePath}")
-                file.delete()
+        def consolidated = osBuilder.consolidate(deployable, CONFIG_FOLDER, null, { dir ->
+            ["conf/regionservers", "conf/hbase-site.xml"].each { f ->
+                def file = new File(dir, f)
+                if (file.exists()) {
+                    logger.info("** Delete ${file.absolutePath}")
+                    file.delete()
+                }
             }
-            file = new File(dir,"/conf/hbase-site.xml")
-            if(file.exists()) {
-                logger.info("** Delete ${file.absolutePath}")
-                file.delete()
-            }
+
         })
         if (consolidated) {
             def rt = osBuilder.deploy(consolidated, host, DEPLOYABLE_HOME)
@@ -49,7 +47,9 @@ def deploy = { config, deployable, host ->
                 logger.error "** Failed to deploy ${deployable} on host ${host}"
                 return -1
             }
-            def dirs = config.flatten().findAll {it -> it.key.toUpperCase().indexOf("DIR") > -1  && it.key.indexOf("rootdir") < 0}.collect(new HashSet<>()) { it.value.split(",") }.flatten()
+            def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 && it.key.indexOf("rootdir") < 0 }.collect(new HashSet<>()) {
+                it.value.split(",")
+            }.flatten()
             osBuilder.mkdirs(host, dirs)
         }
     } else {

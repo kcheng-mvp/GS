@@ -1,75 +1,84 @@
-setting {
-    hosts = ["xly01","xly02","xly03"] as List
-    dataVols = ["/data0/hadoop1","/data0/hadoop2"] as List
+settings {
+    hosts = ["xly01", "xly02", "xly03"] as List
+    dataDirs = ["/data0/hadoop1", "/data0/hadoop2"] as List
 }
 
-coreSite {
-    fs {
-        'default' {
-            name = "hdfs://${setting.hosts[0]}:9000"
-        }
-    }
-    hadoop {
-        tmp {
-            dir = "${setting.dataVols[0]}/tmp"
-        }
-    }
-}
+conf {
+    // secondary name node
+    masters = ["xly02"]
+    // dataNode and jobNode
+    slaves = ["xly01", "xly02", "xly03"] as List
 
-hdfsSite {
-    dfs {
-        name {
-            dir = "${setting.dataVols[0]}/dfs/name"
+    'core-site.xml' {
+        fs {
+            'default' {
+                name = "hdfs://${settings.hosts[0]}:9000"
+            }
         }
-    }
-    //list, separated by comma
-    dfs {
-        data {
-            dir = setting.dataVols.collect{ "${it}/dfs/data"}.join(",")
-        }
-    }
-    fs {
-        checkpoint {
-            dir = "${setting.dataVols[0]}/dfs/namesecondary"
-        }
-    }
-    dfs {
-        secondary {
-            http {
-                address = "${setting.hosts[1]}:50090"
+        hadoop {
+            tmp {
+                dir = "${settings.dataDirs[0]}/tmp"
             }
         }
     }
-}
-mapredSite {
-    mapred {
-        job {
-            tracker = "${setting.hosts[0]}:9001"
+
+    'hdfs-site.xml' {
+        dfs {
+            name {
+                dir = "${settings.dataDirs[0]}/dfs/name"
+            }
         }
-    }
-    //list, separated by comma
-    mapred {
-        local {
-            dir = setting.dataVols.collect{ "${it}/mapred/local"}.join(",")
+        //list, separated by comma
+        dfs {
+            data {
+                dir = settings.dataDirs.collect { "${it}/dfs/data" }.join(",")
+            }
         }
-    }
-    mapred {
-        system {
-            dir = "${setting.dataVols[0]}/mapred/system"
+        fs {
+            checkpoint {
+                dir = "${settings.dataDirs[0]}/dfs/namesecondary"
+            }
         }
-    }
-    mapreduce {
-        jobtracker {
-            staging {
-                root {
-                    dir = "${setting.dataVols[0]}/mapred/staging"
+        dfs {
+            secondary {
+                http {
+                    address = "${masters[0]}:50090"
                 }
             }
         }
     }
+    'mapred-site.xml' {
+        mapred {
+            job {
+                tracker = "${settings.hosts[0]}:9001"
+            }
+        }
+        //list, separated by comma
+        mapred {
+            local {
+                dir = settings.dataDirs.collect { "${it}/mapred/local" }.join(",")
+            }
+        }
+        mapred {
+            system {
+                dir = "${settings.dataDirs[0]}/mapred/system"
+            }
+        }
+        mapreduce {
+            jobtracker {
+                staging {
+                    root {
+                        dir = "${settings.dataDirs[0]}/mapred/staging"
+                    }
+                }
+            }
+        }
+    }
+
+    'hadoop-env.sh' {
+        HADOOP_PID_DIR = "${settings.dataDirs[0]}/logs"
+        HADOOP_LOG_DIR = "${settings.dataDirs[0]}/pids"
+        JAVA_HOME = "/usr/local/jdk"
+    }
 }
-hadoopEnv {
-    HADOOP_PID_DIR="${setting.dataVols[0]}/logs"
-    HADOOP_LOG_DIR="${setting.dataVols[0]}/pids"
-    JAVA_HOME="/usr/lib/j2sdk1.5-sun"
-}
+
