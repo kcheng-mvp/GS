@@ -17,7 +17,7 @@ def logger = logback.getLogger("infra-ka")
 
 
 def CONFIG_FOLDER = "kafka"
-def DEPLOYABLE_HOME = "KA_HOME"
+def DEPLOYABLE_HOME = "KAFKA_HOME"
 def CONFIG_FILE_NAME = "kafkaCfg.groovy"
 
 def cfg = { config ->
