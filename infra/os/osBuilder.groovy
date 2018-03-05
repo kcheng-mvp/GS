@@ -3,6 +3,7 @@
 import groovy.transform.Field
 import java.text.SimpleDateFormat
 import groovy.io.FileType
+import groovy.xml.MarkupBuilder
 
 /*
 1: hostname
@@ -151,7 +152,7 @@ def deploy(deployable, host, homeVar) {
     }
 
     if (rt.code) {
-        rt.msg.each{
+        rt.msg.each {
             logger.error it
         }
         return -1
@@ -225,19 +226,40 @@ def generateCfg(config, dir) {
             config."${key}".keySet().each { f ->
                 logger.info "** Generate ${f}"
                 new File(dir, f).withWriter { w ->
-                    def bw = new BufferedWriter(w)
-                    config."${key}".get(f).flatten().each { entry ->
-                        bw.write("${entry.key}=${entry.value}")
-                        bw.newLine()
+                    if (f.endsWith(".xml")) {
+                        def xml = new MarkupBuilder(w)
+                        xml.mkp.xmlDeclaration([version: '1.0', encoding: 'UTF-8'])
+                        xml.mkp.pi("xml-stylesheet": [type: "text/xsl", href: "configuration.xsl"])
+                        xml.configuration {
+                            config."${key}".get(f).flatten().each { entry ->
+                                property {
+                                    name(entry.key)
+                                    value(entry.value)
+                                }
+                            }
+                        }
+                        w.close()
+                    } else {
+                        def bw = new BufferedWriter(w)
+                        def var = config."${key}".get(f).flatten()
+                        var.each { item ->
+                            if (var instanceof List) {
+                                bw.write(item)
+                            } else {
+
+                                bw.write("${item.key}=${item.value}")
+                            }
+                            bw.newLine()
+                        }
+                        bw.close()
                     }
-                    bw.close()
                 }
             }
         }
     }
 }
 
-def consolidate(deployable, configDir,host = null) {
+def consolidate(deployable, configDir, host = null,Closure closure=null) {
 
     def settings = new File(configDir)
     if (!settings.exists() || !settings.isDirectory() || settings.list().length < 1) {
@@ -247,11 +269,14 @@ def consolidate(deployable, configDir,host = null) {
 
     deployable = new File(deployable)
     if (!deployable.exists()) logger.error "Can't find the deployable ${deployable}"
-    def rootName = deployable.name.replace(".tar", "").replace(".gz", "").replaceAll(".tgz","");
-    logger.info "** Root file name is ${rootName}"
+//    def rootName = deployable.name.replace(".tar", "").replace(".gz", "").replaceAll(".tgz", "");
+//    logger.info "** Root file name is ${rootName}"
     def tmpDir = File.createTempDir()
     logger.info("** Unzip ${deployable.absolutePath} to ${tmpDir.absolutePath}")
     rt = shell.exec("tar -vxf ${deployable.absolutePath} -C ${tmpDir.absolutePath}")
+    rootName = tmpDir.listFiles()[0].name
+    logger.info "** Root file name is ${rootName}"
+    if(closure) closure(new File(tmpDir,rootName))
 
     logger.info("** Update configurations")
     def sdf = new SimpleDateFormat("yyyyMMddHHmm")
@@ -299,8 +324,8 @@ def consolidate(deployable, configDir,host = null) {
 
     logger.info("** Re-generate ${rootName}.tar ")
     rt = shell.exec("tar -cvzf  ${tmpDir.absolutePath}/${rootName}.tar -C ${tmpDir.absolutePath} ./${rootName}")
-    if(rt.code){
-        rt.msg.each{
+    if (rt.code) {
+        rt.msg.each {
             logger.error it
         }
         return null
