@@ -1,10 +1,10 @@
 conf {
     'hbase-env.sh' {
-        JAVA_HOME = "/usr/local/jdk"
+        setProperty("export JAVA_HOME","/usr/local/jdk")
         //Add a pointer to your HADOOP_CONF_DIR to the HBASE_CLASSPATH environment variable in hbase-env.sh
-        HBASE_CLASSPATH = "/usr/local/hadoop/conf"
-        HBASE_PID_DIR="/var/hbase/pid"
-        HBASE_LOG_DIR="/var/hbase/log"
+        setProperty("export HBASE_CLASSPATH","/usr/local/hadoop/conf")
+        setProperty("export HBASE_PID_DIR","/var/hbase/pid")
+        setProperty("export HBASE_LOG_DIR","/var/hbase/log")
     }
     //https://github.com/apache/hbase/blob/master/hbase-common/src/main/resources/hbase-default.xml
     'hbase-site.xml' {

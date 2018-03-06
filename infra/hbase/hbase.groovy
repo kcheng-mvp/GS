@@ -31,7 +31,7 @@ def buildOs = { config ->
 
 def deploy = { config, deployable, host ->
     if (config.conf.regionservers.contains(host)) {
-        def consolidated = osBuilder.consolidate(deployable, CONFIG_FOLDER, null, { dir ->
+        def consolidated = osBuilder.consolidate(deployable, CONFIG_FOLDER, host, { dir ->
             ["conf/regionservers", "conf/hbase-site.xml"].each { f ->
                 def file = new File(dir, f)
                 if (file.exists()) {

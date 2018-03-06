@@ -26,7 +26,7 @@ def deploy = { config, deployable, host ->
 
     if (config.settings.hosts.contains(host)) {
 
-        def consolidated = osBuilder.consolidate(deployable, CONFIG_FOLDER)
+        def consolidated = osBuilder.consolidate(deployable,CONFIG_FOLDER,host)
         if(consolidated){
 
             def rt = osBuilder.deploy(consolidated, host, DEPLOYABLE_HOME)

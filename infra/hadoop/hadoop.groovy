@@ -29,7 +29,7 @@ def buildOs = { config ->
 
 def deploy = { config, deployable, host ->
     if (config.settings.hosts.contains(host)) {
-        def consolidated = osBuilder.consolidate(deployable, CONFIG_FOLDER, null, { dir ->
+        def consolidated = osBuilder.consolidate(deployable, CONFIG_FOLDER, host, { dir ->
             ["conf/masters", "conf/slaves","conf/core-site.xml","conf/hdfs-site.xml","conf/mapred-site.xml"].each { f ->
                 def file = new File(dir, f)
                 if (file.exists()) {

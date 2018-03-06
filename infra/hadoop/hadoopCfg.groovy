@@ -76,9 +76,9 @@ conf {
     }
 
     'hadoop-env.sh' {
-        HADOOP_PID_DIR = "${settings.dataDirs[0]}/logs"
-        HADOOP_LOG_DIR = "${settings.dataDirs[0]}/pids"
-        JAVA_HOME = "/usr/local/jdk"
+        setProperty("export HADOOP_PID_DIR","${settings.dataDirs[0]}/logs")
+        setProperty("export HADOOP_LOG_DIR","${settings.dataDirs[0]}/pids")
+        setProperty("export JAVA_HOME","/usr/local/jdk")
     }
 }
 

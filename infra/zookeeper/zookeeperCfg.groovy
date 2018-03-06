@@ -20,6 +20,11 @@ conf {
             setProperty("server.${idx + 1}", "${s}:12888:13888")
         }
     }
+}
+scripts {
+    settings.hosts.eachWithIndex { h, idx ->
+        setProperty("zkCli-(${h}).sh", ["echo ../bin/zkCli.sh -server ${settings.hosts[(idx + 1) % settings.hosts.size()]}:${conf.'zoo.cfg'.clientPort}",
+                                        "../bin/zkCli.sh -server ${settings.hosts[(idx + 1) % settings.hosts.size()]}:${conf.'zoo.cfg'.clientPort}"])
+    }
 
 }
-

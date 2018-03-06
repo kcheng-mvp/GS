@@ -239,16 +239,14 @@ def generateCfg(config, dir) {
                             }
                         }
                         w.close()
-                    } else {
-                        def shellCommand = f.endsWith(".sh") ? "export " :""
+                    }else {
                         def bw = new BufferedWriter(w)
                         def var = config."${key}".get(f).flatten()
                         var.each { item ->
                             if (var instanceof List) {
                                 bw.write(item)
                             } else {
-
-                                bw.write("${shellCommand}${item.key}=${item.value}")
+                                bw.write("${item.key}=${item.value}")
                             }
                             bw.newLine()
                         }
@@ -260,7 +258,7 @@ def generateCfg(config, dir) {
     }
 }
 
-def consolidate(deployable, configDir, host = null,Closure closure=null) {
+def consolidate(deployable, configDir, host = null, Closure closure = null) {
 
     def settings = new File(configDir)
     if (!settings.exists() || !settings.isDirectory() || settings.list().length < 1) {
@@ -277,7 +275,7 @@ def consolidate(deployable, configDir, host = null,Closure closure=null) {
     rt = shell.exec("tar -vxf ${deployable.absolutePath} -C ${tmpDir.absolutePath}")
     rootName = tmpDir.listFiles()[0].name
     logger.info "** Root file name is ${rootName}"
-    if(closure) closure(new File(tmpDir,rootName))
+    if (closure) closure(new File(tmpDir, rootName))
 
     logger.info("** Update configurations")
     def sdf = new SimpleDateFormat("yyyyMMddHHmm")
@@ -287,7 +285,12 @@ def consolidate(deployable, configDir, host = null,Closure closure=null) {
         settings.eachFileRecurse(FileType.FILES) { f ->
             if (!(f.name =~ pattern) || (host && f.name =~ pattern && f.name.indexOf(host) > -1)) {
                 def target = f.name.replaceAll(pattern, "")
-                target = new File("${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}/${target}")
+                def targetFolder = new File("${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}")
+                if(!targetFolder.exists()){
+                    targetFolder.mkdirs()
+                    logger.info("** Create folder ${targetFolder.absolutePath}")
+                }
+                target = new File(targetFolder,target);
                 if (target.exists()) {
                     def backup = new File("${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}/${target.name}.${sdf.format(Calendar.getInstance().getTime())}").with {
                         it << target.text
@@ -317,7 +320,7 @@ def consolidate(deployable, configDir, host = null,Closure closure=null) {
                         bw.close()
                     }
                 } else {
-                    shell.exec("cp ${f.absolutePath} ${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}")
+                    shell.exec("cp ${f.absolutePath} ${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}/${target.name}")
                 }
             }
         }
