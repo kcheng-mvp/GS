@@ -23,8 +23,7 @@ conf {
 }
 scripts {
     settings.hosts.eachWithIndex { h, idx ->
-        setProperty("zkCli-(${h}).sh", ["echo ../bin/zkCli.sh -server ${settings.hosts[(idx + 1) % settings.hosts.size()]}:${conf.'zoo.cfg'.clientPort}",
-                                        "../bin/zkCli.sh -server ${settings.hosts[(idx + 1) % settings.hosts.size()]}:${conf.'zoo.cfg'.clientPort}"])
+        setProperty("zkCli-(${h}).sh", ["../bin/zkCli.sh -server ${settings.hosts[(idx + 1) % settings.hosts.size()]}:${conf.'zoo.cfg'.clientPort}"])
+        setProperty("stat-(${h}).sh",["echo stat | nc ${settings.hosts[(idx + 1) % settings.hosts.size()]} ${conf.'zoo.cfg'.clientPort}"])
     }
-
 }

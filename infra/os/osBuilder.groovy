@@ -243,10 +243,10 @@ def generateCfg(config, dir) {
                         def bw = new BufferedWriter(w)
                         def var = config."${key}".get(f).flatten()
                         var.each { item ->
-                            if (var instanceof List) {
-                                bw.write(item)
-                            } else {
+                            if (var instanceof Map) {
                                 bw.write("${item.key}=${item.value}")
+                            } else {
+                                bw.write(item)
                             }
                             bw.newLine()
                         }

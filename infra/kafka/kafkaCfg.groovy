@@ -3,6 +3,7 @@ settings {
     zk.hosts = ["xly01", "xly02", "xly03"] as List
     zk.client.port = 12181
     ka.client.port = "9092"
+    zk.url=settings.zk.hosts.collect { "${it}:${settings.zk.client.port}" }.join(",")
 }
 
 config {
@@ -12,7 +13,7 @@ config {
             log.dirs = "/data0/kafka/data"
             num.partitions = 2
             broker.id = settings.ka.hosts.indexOf(host) + 1
-            zookeeper.connect = settings.zk.hosts.collect { "${it}:${settings.zk.client.port}" }.join(",") + "/kafka"
+            zookeeper.connect = settings.zk.url + "/kafka"
         }
 
     }
@@ -42,5 +43,8 @@ config {
     }
 }
 
-
-
+scripts {
+    setProperty("kafkaTopics.sh",["../bin/kafka-topics.sh --create --zookeeper ${settings.zk.url} --topic test-topic --partitions 2 --replication-factor 2"])
+    setProperty("kafkaConsoleProducer.sh",["../bin/kafka-console-producer.sh --broker-list ${config.'producer.properties'.bootstrap.servers} --topic test-topic "])
+    setProperty("kafkaConsoleConsumer.sh",["../bin/kafka-console-consumer.sh --zookeeper ${settings.zk.url} --topic test-topic --from-beginning "])
+}
