@@ -221,7 +221,7 @@ def generateCfg(config, dir) {
     def settings = new File(dir)
     settings.mkdir()
     config.keySet().each { key ->
-        if (key && !"settings".equals(key)) {
+        if (key.trim() && !"settings".equals(key)) {
             dir = new File(settings, key).with { it.mkdirs(); it }
             config."${key}".keySet().each { f ->
                 logger.info "** Generate ${f}"
