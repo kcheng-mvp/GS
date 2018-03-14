@@ -178,6 +178,8 @@ def mkdirs(host, dirs) {
     def group = ug.g
     def user = ug.u
     dirs.each { dir ->
+        // in case there are " in the directory settings, especially in the shell file.
+        dir = dir.replace("\"","")
         def rt = shell.exec("ls -l ${dir}", host);
         if (rt.code) {
             logger.info("** [${host}]: Creating folder: ${dir} ...... ")
@@ -217,6 +219,7 @@ def findBound(configFile, hosts) {
     return result ? result.split("[.]")[1] : ""
 }
 
+// It only supports .xml and .properties like style
 def generateCfg(config, dir) {
     def settings = new File(dir)
     settings.mkdir()

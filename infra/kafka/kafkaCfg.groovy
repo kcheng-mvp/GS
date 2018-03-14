@@ -3,7 +3,7 @@ settings {
     zk.hosts = ["xly01", "xly02", "xly03"] as List
     zk.client.port = 12181
     ka.client.port = "9092"
-    zk.connect=settings.zk.hosts.collect { "${it}:${settings.zk.client.port}" }.join(",")+"/kafka"
+    zk.connect = settings.zk.hosts.collect { "${it}:${settings.zk.client.port}" }.join(",") + "/kafka"
 }
 
 config {
@@ -27,7 +27,6 @@ config {
     }
 
     'log4j.properties' {
-        kafka.logs.dir = "/data0/kafka/log"
         log4j.appender.kafkaAppender.MaxBackupIndex = 3
         log4j.appender.kafkaAppender.MaxFileSize = "10MB"
         log4j.appender.stateChangeAppender.MaxBackupIndex = 3
@@ -41,10 +40,18 @@ config {
         log4j.appender.authorizerAppender.MaxBackupIndex = 3
         log4j.appender.authorizerAppender.MaxFileSize = "10MB"
     }
+
+}
+bin {
+    'kafka-run-class.sh' {
+        // set kafka log4j folder
+        LOG_DIR = '"/data0/kafka/log"'
+    }
+
 }
 
 scripts {
-    setProperty("kafkaTopics.sh",["../bin/kafka-topics.sh --create --zookeeper ${settings.zk.connect} --topic test-topic --partitions 2 --replication-factor 2"])
-    setProperty("kafkaConsoleProducer.sh",["../bin/kafka-console-producer.sh --broker-list ${config.'producer.properties'.bootstrap.servers} --topic test-topic "])
-    setProperty("kafkaConsoleConsumer.sh",["../bin/kafka-console-consumer.sh --zookeeper ${settings.zk.connect} --topic test-topic --from-beginning "])
+    setProperty("kafkaTopics.sh", ["../bin/kafka-topics.sh --create --zookeeper ${settings.zk.connect} --topic test-topic --partitions 2 --replication-factor 2"])
+    setProperty("kafkaConsoleProducer.sh", ["../bin/kafka-console-producer.sh --broker-list ${config.'producer.properties'.bootstrap.servers} --topic test-topic "])
+    setProperty("kafkaConsoleConsumer.sh", ["../bin/kafka-console-consumer.sh --zookeeper ${settings.zk.connect} --topic test-topic --from-beginning "])
 }
