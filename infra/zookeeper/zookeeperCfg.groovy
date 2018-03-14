@@ -3,10 +3,6 @@ settings {
 }
 
 conf {
-    'zookeeper-env.sh' {
-        ZOO_LOG_DIR = "\$ZOOKEEPER_PREFIX/logs"
-        ZOO_LOG4J_PROP = "INFO,ROLLINGFILE"
-    }
     'log4j.properties' {
         log4j.appender.ROLLINGFILE.MaxBackupIndex = 20
     }
@@ -19,6 +15,12 @@ conf {
         settings.hosts.eachWithIndex { s, idx ->
             setProperty("server.${idx + 1}", "${s}:12888:13888")
         }
+    }
+}
+bin {
+    'zkEnv.sh'{
+        // zookeeper log4j folder(There is a minimal changes since v3.3, but you can always set the folder
+        ZOO_LOG_DIR='"/data0/zookeeper/log"'
     }
 }
 scripts {

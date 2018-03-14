@@ -36,7 +36,7 @@ def deploy = { config, deployable, host ->
             }
 
 
-            def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 && it.key.indexOf("ZOO_LOG_DIR") < 0}.collect { it.value }.flatten()
+            def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1}.collect { it.value }.flatten()
             osBuilder.mkdirs(host, dirs)
 
             // specials for zookeeper
