@@ -45,7 +45,9 @@ def deploy = { config, deployable, host ->
                 logger.error "** Failed to deploy ${deployable} on host ${host}"
                 return -1
             }
-            def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 && it.key.indexOf("dataDirs") < 0 }.collect(new HashSet<>()) {
+            def dirs = config.flatten().findAll {
+                it -> it.key.toUpperCase().indexOf("DIR") > -1 && it.key.indexOf("mapred.system.dir") < 0 && it.key.indexOf("mapreduce.jobtracker.staging.root.dir") < 0
+            }.collect(new HashSet<>()) {
                 it.value.split(",")
             }.flatten()
             osBuilder.mkdirs(host, dirs)
