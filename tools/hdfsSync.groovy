@@ -96,7 +96,15 @@ def dataSync = {
 
                }
             }
-
+        }
+        //todo Delete backup 24 hours ago
+        backup.eachFile{ f ->
+            (24..36).each {
+                def namePattern = (now - it.hours).format(config.settings.namePattern)
+                if (f.name =~ /.*\.$namePattern\.log$/) {
+                    f.delete()
+                }
+            }
         }
     }
 
