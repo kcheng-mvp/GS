@@ -231,6 +231,7 @@ def genUpdate = {
     def tableName = "T_${CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, entity)}";
 
 
+    def ignoredProperties = ["createdAt","createdBy","id","class","updatedAt","updatedBy"]
     def updateBuffer = new StringBuffer(linebreak);
     updateBuffer.append("UPDATE ${tableName}").append(linebreak);
     updateBuffer.append("<set>")
@@ -238,7 +239,7 @@ def genUpdate = {
     def size = clz.metaClass.properties.size();
     clz.metaClass.properties.eachWithIndex { prop, idx ->
         def claz = (Class) prop.type
-        if (!prop.name.equals("id") && !prop.name.equals("class") && !java.util.Collection.class.isAssignableFrom(claz)) {
+        if (!ignoredProperties.contains(prop.name) && !java.util.Collection.class.isAssignableFrom(claz)) {
             def column = CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, prop.name);
 
             updateBuffer.append("<if test=\"${prop.name} != null\">").append(linebreak)
@@ -246,10 +247,12 @@ def genUpdate = {
             if (idx + 1 < size) {
                 updateBuffer.append(",");
             }
-            updateBuffer.append("</if>");
+            updateBuffer.append("</if>").append(linebreak);
         }
 
     }
+    updateBuffer.append("UPDATED_BY = #{updatedBy},").append(linebreak)
+    updateBuffer.append("UPDATED_AT = CURRENT_TIMESTAMP()").append(linebreak)
     updateBuffer.append("</set>");
     updateBuffer.append("WHERE ID = #{id}")
     return updateBuffer.toString();
