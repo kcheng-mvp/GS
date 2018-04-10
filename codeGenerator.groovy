@@ -231,7 +231,7 @@ def genUpdate = {
     def tableName = "T_${CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, entity)}";
 
 
-    def ignoredProperties = ["createdAt","createdBy","id","class","updatedAt","updatedBy"]
+    def ignoredProperties = ["createdAt","createdBy","id","class","updatedAt"]
     def updateBuffer = new StringBuffer(linebreak);
     updateBuffer.append("UPDATE ${tableName}").append(linebreak);
     updateBuffer.append("<set>")
@@ -251,7 +251,6 @@ def genUpdate = {
         }
 
     }
-    updateBuffer.append("UPDATED_BY = #{updatedBy},").append(linebreak)
     updateBuffer.append("UPDATED_AT = CURRENT_TIMESTAMP()").append(linebreak)
     updateBuffer.append("</set>");
     updateBuffer.append("WHERE ID = #{id}")
