@@ -363,7 +363,7 @@ def genMapper = {
         xml.mapper(namespace: "${mapperPackage}.${entity}Mapper") {
             insert(id: "create${entity}", parameterType: "${domainPackage}.${entity}", keyProperty: "id", useGeneratedKeys: "true", genInsert());
             update(id: "update${entity}", parameterType: "${domainPackage}.${entity}", genUpdate());
-            select(id: "find${entity}ById", resultType: "${domainPackage}.${entity}", genSelectById())
+            select(id: "find${entity}ById", resultType: "${domainPackage}.${entity}", flushCache:"true",genSelectById())
         }
 
         mapperXml << XmlUtil.serialize(writer.toString().replaceAll("&lt;", "<").replaceAll("&gt;", ">"));
