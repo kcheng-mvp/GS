@@ -14,25 +14,22 @@ def hostName = InetAddress.getLocalHost().getHostName()
 // hadoop version get hadoop version
 def properties = new Properties()
 properties.load(getClass().getResourceAsStream('hdfsSync.properties'));
-def localPath = new File(properties.get("localPath"))
-def hdfsRoot = properties.get("hdfsRoot")
-def logPath = properties.get("logPath")
 def log = logback.getLogger("hdfsSync", properties.get("logPath"))
 
-def backup = new File(localPath,"backup")
-if(!backup.exists()) backup.mkdirs()
-def dataSync = {
+def dataSync = { localPath, hdfsRoot ->
+    def backup = new File(localPath, "backup")
+    if (!backup.exists()) backup.mkdirs()
     def now = Calendar.getInstance().getTime();
     use(TimeCategory) {
         localPath.eachFile { f ->
 //            if(f.name.indexOf("advagg") > -1) return 0
             def isAgg = f.name.indexOf("advagg") > -1
-            (1..5).find {
+            (1..10).find {
                 def format = (now - it.hours).format("yyyy-MM-dd-HH")
                 def datePath = (now - it.hours).format("yyyy/MM/dd/HH")
-                if(isAgg) datePath = (now - it.hours).format("yyyy/MM/dd");
-                if (f.name =~ /.*\.$format\.log$/) {
-
+                if (isAgg) datePath = (now - it.hours).format("yyyy/MM/dd");
+                if (f.name =~ /.*\.$format\.log.*/) {
+                    println f.name
                     def command = "sudo chown hadoop ${f.absolutePath}"
                     shell.exec(command)
                     command = "sudo chgrp hadoop ${f.absolutePath}"
@@ -69,7 +66,7 @@ def dataSync = {
                         }
                     }
                     //todo: put the file the hdfs
-                    command = "hadoop fs -put ${f.absolutePath} ${hdfsRoot}/${category}/${datePath}/input/${f.name}.${hostName}"
+                    command = "hadoop fs -put ${f.absolutePath} ${hdfsRoot}/${category}/${datePath}/input/${f.name}"
                     rt = shell.exec(command)
                     if (rt["code"] != 0) {
                         rt["msg"].each {
@@ -95,18 +92,32 @@ def dataSync = {
                     } else {
                         log.warn("Failed to backup the file ${f.absolutePath}")
                     }
-
-
-
-               }
+                }
             }
-
+        }
+        // clean up backup
+        backup.eachFile { bf ->
+            (73..96).each {hg ->
+                def format = (now - hg.hours).format("yyyy-MM-dd-HH")
+                if (bf.name =~ /.*\.$format\.log.*/) {
+                    log.info("Delete backup file ${bf.absolutePath} ......");
+                    bf.delete();
+                }
+            }
         }
     }
 
 } as Runnable
 
-def cron = "25 * * * *"
-cron4j.start(cron, dataSync)
+def cron = "08 * * * *"
+
+def localPaths = properties.get("localPath").split(",")
+def hdfsRoots = properties.get("hdfsRoot").split(",")
+cron4j.start(cron, {
+    localPaths.eachWithIndex { path, idx ->
+        log.info("Syncing ${path}  -> ${hdfsRoots[idx]}...")
+        dataSync(new File(path), hdfsRoots[idx])
+    }
+})
 
 
