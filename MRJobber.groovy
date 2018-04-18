@@ -120,7 +120,7 @@ retain = {
         [1, 2, 3, 4, 5, 6, 7, 15, 30].each { d ->
             def registerDay = today - d.days
             def register = "/atmm/register/${registerDay.format("yyyy/MM/dd")}/*/input"
-            def output = "/atmm/retain/${today.format("yyyy/MM/dd")}/${d}"
+            def output = "/atmm/retain/${registerDay.format("yyyy/MM/dd")}/${d}"
             def input = login +","+ register
             logger.info("Retain:${d} -> input dir is ${input}")
             logger.info("Retain:${d} -> output dir is ${output}")
