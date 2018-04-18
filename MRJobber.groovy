@@ -44,7 +44,7 @@ dau = { it ->
 
     // dau
     def input = "/atmm/login/${today.format("yyyy/MM/dd")}/*/input"
-    def output = "/atmm/dau/${today.format("yyyy/MM/dd")}"
+    def output = "/atmm/dau/${today.format("yyyy/MM/dd")}/d"
 
     logger.info("dau input ${input}")
     logger.info("dau output ${output}")
@@ -57,7 +57,7 @@ dau = { it ->
     */
 
     //wau
-    output = "/atmm/wau/${today.format("yyyy/MM/dd")}"
+    output = "/atmm/wau/${today.format("yyyy/MM/dd")}/w"
     input = new StringBuffer("/atmm/login")
     def cal = Calendar.getInstance();
     cal.setTime(today);
@@ -89,7 +89,7 @@ dau = { it ->
     input = new StringBuffer("/atmm/login/")
     input.append(cal.format("yyyy/MM")).append("/{")
             .append("01..").append(cal.get(Calendar.DAY_OF_MONTH)).append("}/*/input")
-    output = "/atmm/mau/${today.format('yyyy/MM/dd')}"
+    output = "/atmm/mau/${today.format('yyyy/MM/dd')}/m"
 
     logger.info("mau input ${input}")
     logger.info("mau output ${output}")
@@ -136,8 +136,8 @@ retain = {
 
 
 }
-//dau()
-retain()
+dau()
+//retain()
 //cron4j.start("30 11 * * *", crmr)
 //cron4j.start("40 11 * * *", ccmr)
 
