@@ -136,8 +136,8 @@ retain = {
 
 
 }
-dau()
-//retain()
+//dau()
+retain()
 //cron4j.start("30 11 * * *", crmr)
 //cron4j.start("40 11 * * *", ccmr)
 
