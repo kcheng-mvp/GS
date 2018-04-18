@@ -117,6 +117,13 @@ retain = { it ->
     }
 }
 
+register = { it ->
+
+    def today = Calendar.getInstance().getTime();
+    hdfssync("/register/${day.format("yyyy/MM/dd/*/input/*")}","register/${day.format('yyyy/MM/dd')}")
+
+}
+
 def cleanup = {
     logger.info("Clean up database ...... ")
     def delete = "DELETE FROM T_ATM";
