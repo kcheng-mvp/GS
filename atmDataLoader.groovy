@@ -10,7 +10,7 @@ def logback = groovyShell.parse(new File(currentPath, "core/Logback.groovy"))
 def config = new File(currentPath, 'atmDataLoaderCfg.groovy')
 config = new ConfigSlurper().parse(config.text).flatten();
 def logger = logback.getLogger("amtDataLoader", config.get("setting.logPath"))
-def baseDir = new File(config.get("setting.localPath"))
+def localBaseDir = new File(config.get("setting.localPath"))
 def hdfsRoot = config.get("setting.hdfsRoot");
 
 def sql = db.h2mCon("atm")
@@ -30,23 +30,26 @@ CREATE INDEX IF NOT EXISTS INFO_IDX1 ON T_ATM(CHANNEL);
 CREATE INDEX IF NOT EXISTS INFO_IDX2 ON T_ATM(CATEGORY);
 ''')
 
-if (!baseDir.exists()) baseDir.mkdirs();
+if (!localBaseDir.exists()) localBaseDir.mkdirs();
+
 
 
 hdfssync = { remote, localDir ->
-
-    new File(logger).with {
-        if(it.exists()) {
-            it.deleteDir()
+    
+    def type = localDir.split("/")[0]
+    new File(localBaseDir, type).with {
+        if(it.exists()){
+            it.deleteDir();
         }
-        it.mkdirs();
     }
+    def f = new File(localBaseDir,localDir)
+    f.mkdirs();
     def command = "hadoop fs -get ${hdfsRoot}/${remote}  ${localDir}"
     def rt = shell.exec(command)
     rt.msg.each { it ->
         logger.info it
     }
-    rt.code
+    [code: rt.code, msg: f.absolutePath]
 }
 
 
@@ -54,8 +57,7 @@ hdfssync = { remote, localDir ->
 dau = { it ->
 
 
-    def dauBaseDir = new File(baseDir,"dau");
-    if(!dauBaseDir.exists()) dauBaseDir.mkdirs();
+
     logger.info("** Today is ${Calendar.getInstance().format("yyyy/MM/dd")}")
     def today = it ? (Date.parse("yyyy/MM/dd", it)) : use(TimeCategory) {
         Calendar.getInstance().getTime() - 1.days;
@@ -66,7 +68,7 @@ dau = { it ->
 
     def insert = "INSERT INTO T_ATM(CHANNEL,UID,CATEGORY,COUNT) VALUES (?,?,?,?)"
     def numOfLines = 0;
-    if (!hdfssync(remote, new File(dauBaseDir,day.format("yyyy/MM/dd")).absolutePath)) {
+    if (!hdfssync(remote, "dau/${day.format('yyyy/MM/dd')}")) {
         localDir.eachFileRecurse(FileType.FILES, { f ->
             //@todo need to check should be processed or not and file name pattern
             if (true) {
@@ -111,7 +113,7 @@ retain = { it ->
 
 //    def remote = "/dau/${today.format("yyyy/MM/dd")}"
     sameDayOfPreviousMonth.upto(today){day ->
-        hdfssync("/retain/${day.format("yyyy/MM/dd/*")}","${new File(baseDir,day.format("yyyy/MM/dd")).absolutePath}")
+        hdfssync("/retain/${day.format("yyyy/MM/dd/*")}","retain/${day.format('yyyy/MM/dd')}")
     }
 }
 
@@ -128,6 +130,7 @@ def cleanup = {
 //cron4j.start("40 11 * * *", ccmr)
 
 retain()
+
 
 
 
