@@ -222,6 +222,7 @@ def findBound(configFile, hosts) {
 // It only supports .xml and .properties like style
 def generateCfg(config, dir) {
     def settings = new File(dir)
+    if(settings.exists()) settings.deleteDir()
     settings.mkdir()
     config.keySet().each { key ->
         if (key.trim() && !"settings".equals(key)) {
