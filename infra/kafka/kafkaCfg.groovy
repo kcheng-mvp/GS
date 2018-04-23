@@ -51,7 +51,8 @@ bin {
 }
 
 scripts {
-    setProperty("kafkaTopics.sh", ["../bin/kafka-topics.sh --create --zookeeper ${settings.zk.connect} --topic test-topic --partitions 2 --replication-factor 2"])
-    setProperty("kafkaConsoleProducer.sh", ["../bin/kafka-console-producer.sh --broker-list ${config.'producer.properties'.bootstrap.servers} --topic test-topic "])
-    setProperty("kafkaConsoleConsumer.sh", ["../bin/kafka-console-consumer.sh --zookeeper ${settings.zk.connect} --topic test-topic --from-beginning "])
+    setProperty("kafka-topics.sh", ["../bin/kafka-topics.sh  --zookeeper ${settings.zk.connect}"])
+    setProperty("kafka-console-producer.sh", ["../bin/kafka-console-producer.sh --broker-list ${config.'producer.properties'.bootstrap.servers}"])
+    setProperty("kafka-console-consumer.sh", ["../bin/kafka-console-consumer.sh --zookeeper ${settings.zk.connect}"])
+    setProperty("kafka-consumer-groups.sh", ["../bin/kafka-consumer-groups.sh --zookeeper ${settings.zk.connect}"])
 }
