@@ -66,14 +66,14 @@ dau = { it ->
 
     input = new ArrayList<>();
     lastMonday.upto(today) {
-        command = "hadoop fs -test -e /atmm/login/${it.format('yyyy/MM/dd')}/*/input"
+        command = "hadoop fs -test -d /atmm/login/${it.format('yyyy/MM/dd')}"
         logger.info("Testing file exists : ${command}")
         rs = shell.exec(command)
         if(!rs.code){
             input.add("/atmm/login/${it.format('yyyy/MM/dd')}/*/input")
         } else {
             logger.error("** Can't not find the path : ${command}")
-            rs.msg {
+            rs.msg.each{
                 logger.error(it)
             }
         }
@@ -97,9 +97,8 @@ dau = { it ->
 //    def range = 01..cal.get(Calendar.DAY_OF_MONTH)
     def validDays = []
     01..cal.get(Calendar.DAY_OF_MONTH).each {
-        def dayPath = input.toString()+it.toString().padLeft(2, '0') +"/*/input"
-        command = "hadoop fs -test -e ${dayPath}"
-        logger.info("File existing test :${}", dayPath)
+        def dayPath = input.toString()+it.toString().padLeft(2, '0')
+        command = "hadoop fs -test -d ${dayPath}"
         rs = shell.exec(command)
         if(!rs.code){
             validDays.add(it.toString().padLeft(2, '0'))
@@ -151,11 +150,11 @@ retain = {
                 logger.info("RETAIN:${d} -> output dir is ${output}")
                 command = "hadoop jar ${config.get('cfg.jarHome')}/RETAIN.jar ${input} ${output} ATM-RETAIN-${d}"
                 rs = shell.exec(command);
-                rs["msg"].each {
+                rs.msg.each {
                     logger.info(it);
                 }
             } else {
-                logger.warn("No Register data at {}", registerDay.format("yyyy/MM/dd"))
+                logger.error("**No Register data at {}", registerDay.format("yyyy/MM/dd"))
             }
         }
     }
