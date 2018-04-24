@@ -48,7 +48,7 @@ dau = { it ->
 
     logger.info("dau input ${input}")
     logger.info("dau output ${output}")
-    def command = "hadoop jar ${config.get('cfg.jarHome')}/Dau.jar ${input} ${output} ATM-DAU"
+    def command = "hadoop jar ${config.get('cfg.jarHome')}/DAU.jar ${input} ${output} ATM-DAU"
     def rs = shell.exec(command);
     rs["msg"].each {
         logger.info(it);
@@ -72,7 +72,7 @@ dau = { it ->
 
     logger.info("wau input ${input}")
     logger.info("wau output ${output}")
-    command = "hadoop jar ${config.get('cfg.jarHome')}/Dau.jar ${input} ${output} ATM-WAU"
+    command = "hadoop jar ${config.get('cfg.jarHome')}/DAU.jar ${input} ${output} ATM-WAU"
     rs = shell.exec(command);
     rs["msg"].each {
         logger.info(it);
@@ -89,7 +89,7 @@ dau = { it ->
 
     logger.info("mau input ${input}")
     logger.info("mau output ${output}")
-    command = "hadoop jar ${config.get('cfg.jarHome')}/Dau.jar ${input} ${output} ATM-MAU"
+    command = "hadoop jar ${config.get('cfg.jarHome')}/DAU.jar ${input} ${output} ATM-MAU"
     rs = shell.exec(command);
     rs["msg"].each {
         logger.info(it);
@@ -116,10 +116,10 @@ retain = {
             def register = "/atmm/register/${registerDay.format("yyyy/MM/dd")}/*/input"
             def output = "/atmm/retain/${registerDay.format("yyyy/MM/dd")}/${d}"
             def input = login +","+ register
-            logger.info("Retain:${d} -> input dir is ${input}")
-            logger.info("Retain:${d} -> output dir is ${output}")
+            logger.info("RETAIN:${d} -> input dir is ${input}")
+            logger.info("RETAIN:${d} -> output dir is ${output}")
             /*
-            def command = "hadoop jar ${config.get('cfg.jarHome')}/Retain.jar ${input} ${output} ATM-RETAIN-${d}"
+            def command = "hadoop jar ${config.get('cfg.jarHome')}/RETAIN.jar ${input} ${output} ATM-RETAIN-${d}"
             def rs = shell.exec(command);
             rs["msg"].each {
                 logger.info(it);
