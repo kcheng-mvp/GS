@@ -2,7 +2,7 @@ setting{
     hdfsRoot = "hdfs://hbhadoop101:9000/atmm"
     logPath="/tmp"
     localPath="/tmp/atmd"
-    db.host =""
-    db.username =""
-    db.password = ""
+    db.host ="localhost"
+    db.username ="hello"
+    db.password = "hello"
 }
