@@ -50,7 +50,7 @@ dau = { it ->
     logger.info("dau output ${output}")
     def command = "hadoop jar ${config.get('cfg.jarHome')}/DAU.jar ${input} ${output} ATM-DAU"
     def rs = shell.exec(command);
-    rs["msg"].each {
+    rs.msg.each {
         logger.info(it);
     }
 
@@ -66,7 +66,17 @@ dau = { it ->
 
     input = new ArrayList<>();
     lastMonday.upto(today) {
-        input.add("/atmm/login/${it.format('yyyy/MM/dd')}/*/input")
+        command = "hadoop fs -test -e /atmm/login/${it.format('yyyy/MM/dd')}/*/input"
+        logger.info("Testing file exists : ${command}")
+        rs = shell.exec(command)
+        if(!rs.code){
+            input.add("/atmm/login/${it.format('yyyy/MM/dd')}/*/input")
+        } else {
+            logger.error("** Can't not find the path : ${command}")
+            rs.msg {
+                logger.error(it)
+            }
+        }
     }
     input = input.join(",")
 
@@ -74,7 +84,7 @@ dau = { it ->
     logger.info("wau output ${output}")
     command = "hadoop jar ${config.get('cfg.jarHome')}/DAU.jar ${input} ${output} ATM-WAU"
     rs = shell.exec(command);
-    rs["msg"].each {
+    rs.msg.each {
         logger.info(it);
     }
 
@@ -82,16 +92,33 @@ dau = { it ->
     cal = Calendar.getInstance();
     cal.setTime(today);
 
-    input = new StringBuffer("/atmm/login/")
-    input.append(cal.format("yyyy/MM")).append("/{")
-            .append("01..").append(cal.get(Calendar.DAY_OF_MONTH)).append("}/*/input")
+
+    input = new StringBuffer("/atmm/login/").append(cal.format("yyyy/MM/"))
+//    def range = 01..cal.get(Calendar.DAY_OF_MONTH)
+    def validDays = []
+    01..cal.get(Calendar.DAY_OF_MONTH).each {
+        def dayPath = input.toString()+it.toString().padLeft(2, '0') +"/*/input"
+        command = "hadoop fs -test -e ${dayPath}"
+        logger.info("File existing test :${}", dayPath)
+        rs = shell.exec(command)
+        if(!rs.code){
+            validDays.add(it.toString().padLeft(2, '0'))
+        } else {
+            rs.msg.each {
+                logger.warn(it);
+            }
+        }
+    }
+    logger.info("Valid days : {}", validDays)
+    input.append("{").append(validDays.join(",")).append("}/*/input")
+//    input.append("/{").append("01..").append(cal.get(Calendar.DAY_OF_MONTH)).append("}/*/input")
     output = "/atmm/mau/${today.format('yyyy/MM/dd')}/m"
 
     logger.info("mau input ${input}")
     logger.info("mau output ${output}")
     command = "hadoop jar ${config.get('cfg.jarHome')}/DAU.jar ${input} ${output} ATM-MAU"
     rs = shell.exec(command);
-    rs["msg"].each {
+    rs.msg.each {
         logger.info(it);
     }
 
@@ -114,24 +141,29 @@ retain = {
         [1, 2, 3, 4, 5, 6, 7, 15, 30].each { d ->
             def registerDay = today - d.days
             def register = "/atmm/register/${registerDay.format("yyyy/MM/dd")}/*/input"
-            def output = "/atmm/retain/${registerDay.format("yyyy/MM/dd")}/${d}"
-            def input = login +","+ register
-            logger.info("RETAIN:${d} -> input dir is ${input}")
-            logger.info("RETAIN:${d} -> output dir is ${output}")
-            /*
-            def command = "hadoop jar ${config.get('cfg.jarHome')}/RETAIN.jar ${input} ${output} ATM-RETAIN-${d}"
+
+            def command = "hadoop fs -test -e ${register}"
             def rs = shell.exec(command);
-            rs["msg"].each {
-                logger.info(it);
+            if(!rs.code){
+                def output = "/atmm/retain/${registerDay.format("yyyy/MM/dd")}/${d}"
+                def input = login + "," + register
+                logger.info("RETAIN:${d} -> input dir is ${input}")
+                logger.info("RETAIN:${d} -> output dir is ${output}")
+                command = "hadoop jar ${config.get('cfg.jarHome')}/RETAIN.jar ${input} ${output} ATM-RETAIN-${d}"
+                rs = shell.exec(command);
+                rs["msg"].each {
+                    logger.info(it);
+                }
+            } else {
+                logger.warn("No Register data at {}", registerDay.format("yyyy/MM/dd"))
             }
-            */
         }
     }
 
 
 }
-//dau()
-retain()
+dau("2018/04/23")
+//retain()
 //cron4j.start("30 11 * * *", crmr)
 //cron4j.start("40 11 * * *", ccmr)
 
