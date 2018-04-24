@@ -48,13 +48,11 @@ dau = { it ->
 
     logger.info("dau input ${input}")
     logger.info("dau output ${output}")
-    /*
     def command = "hadoop jar ${config.get('cfg.jarHome')}/Dau.jar ${input} ${output} ATM-DAU"
     def rs = shell.exec(command);
     rs["msg"].each {
         logger.info(it);
     }
-    */
 
     //wau
     output = "/atmm/wau/${today.format("yyyy/MM/dd")}/w"
@@ -74,13 +72,11 @@ dau = { it ->
 
     logger.info("wau input ${input}")
     logger.info("wau output ${output}")
-    /*
     command = "hadoop jar ${config.get('cfg.jarHome')}/Dau.jar ${input} ${output} ATM-WAU"
     rs = shell.exec(command);
     rs["msg"].each {
         logger.info(it);
     }
-    */
 
     //mau
     cal = Calendar.getInstance();
@@ -93,13 +89,11 @@ dau = { it ->
 
     logger.info("mau input ${input}")
     logger.info("mau output ${output}")
-    /*
     command = "hadoop jar ${config.get('cfg.jarHome')}/Dau.jar ${input} ${output} ATM-MAU"
     rs = shell.exec(command);
     rs["msg"].each {
         logger.info(it);
     }
-    */
 
 }
 // 9 jobs
