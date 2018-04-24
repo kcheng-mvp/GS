@@ -55,7 +55,7 @@ dau = { it ->
     }
 
     //wau
-    output = "/atmm/wau/${today.format("yyyy/MM/dd")}/w"
+    output = "/atmm/dau/${today.format("yyyy/MM/dd")}/w"
     input = new StringBuffer("/atmm/login")
     def cal = Calendar.getInstance();
     cal.setTime(today);
@@ -111,7 +111,7 @@ dau = { it ->
     logger.info("Valid days : {}", validDays)
     input.append("{").append(validDays.join(",")).append("}/*/input")
 //    input.append("/{").append("01..").append(cal.get(Calendar.DAY_OF_MONTH)).append("}/*/input")
-    output = "/atmm/mau/${today.format('yyyy/MM/dd')}/m"
+    output = "/atmm/dau/${today.format('yyyy/MM/dd')}/m"
 
     logger.info("mau input ${input}")
     logger.info("mau output ${output}")
