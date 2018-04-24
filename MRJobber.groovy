@@ -139,13 +139,13 @@ retain = {
         logger.info("Login day is ${today.format("yyyy/MM/dd")}")
         [1, 2, 3, 4, 5, 6, 7, 15, 30].each { d ->
             def registerDay = today - d.days
-            def register = "/atmm/register/${registerDay.format("yyyy/MM/dd")}/*/input"
+            def register = "/atmm/register/${registerDay.format("yyyy/MM/dd")}"
 
-            def command = "hadoop fs -test -e ${register}"
+            def command = "hadoop fs -test -d ${register}"
             def rs = shell.exec(command);
             if(!rs.code){
                 def output = "/atmm/retain/${registerDay.format("yyyy/MM/dd")}/${d}"
-                def input = login + "," + register
+                def input = login+ "," + register+"/*/input"
                 logger.info("RETAIN:${d} -> input dir is ${input}")
                 logger.info("RETAIN:${d} -> output dir is ${output}")
                 command = "hadoop jar ${config.get('cfg.jarHome')}/RETAIN.jar ${input} ${output} ATM-RETAIN-${d}"
