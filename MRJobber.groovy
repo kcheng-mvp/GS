@@ -42,7 +42,7 @@ dau = { it ->
         Calendar.getInstance().getTime() - 1.days;
     }
 
-    logger.info("** Start DAU")
+    logger.info("** Start DAU ${today.format('yyyy/MM/dd')}")
     // dau
     def input = "/atmm/login/${today.format("yyyy/MM/dd")}/*/input"
     def output = "/atmm/dau/${today.format("yyyy/MM/dd")}/d"
@@ -55,7 +55,7 @@ dau = { it ->
         logger.info(it);
     }
 
-    logger.info("** Start WAU")
+    logger.info("** Start WAU ${today.format('yyyy/MM/dd')}")
     //wau
     output = "/atmm/dau/${today.format("yyyy/MM/dd")}/w"
     input = new StringBuffer("/atmm/login")
@@ -90,31 +90,32 @@ dau = { it ->
         logger.info(it);
     }
 
-    logger.info("** Start MAU")
+    logger.info("** Start MAU ${today.format('yyyy/MM/dd')}")
     //mau
     cal = Calendar.getInstance();
     cal.setTime(today);
 
-
-    input = new StringBuffer("/atmm/login/").append(cal.format("yyyy/MM/"))
-//    def range = 01..cal.get(Calendar.DAY_OF_MONTH)
-    def validDays = []
-    01..cal.get(Calendar.DAY_OF_MONTH).each {
-        def dayPath = input.toString()+it.toString().padLeft(2, '0')
-        command = "hadoop fs -test -d ${dayPath}"
+    def previous = cal
+    def validDays = [] as List
+    while(previous.get(Calendar.MONTH).equals(cal.get(Calendar.MONTH))){
+        command = "hadoop fs -test -d /atmm/login/${previous.format('yyyy/MM/dd')}"
+        logger.info("Testing file exists : ${command}")
         rs = shell.exec(command)
         if(!rs.code){
-            validDays.add(it.toString().padLeft(2, '0'))
+//            input.add("/atmm/login/${it.format('yyyy/MM/dd')}/*/input")
+            validDays.add(previous.format("dd"))
         } else {
             logger.error("**  mau Can't not find the path : ${command}")
-            rs.msg.each {
-                logger.warn(it);
+            rs.msg.each{
+                logger.error(it)
             }
         }
+        previous = previous.previous();
     }
-    logger.info("Valid days : {}", validDays)
+
+    input = new StringBuffer("/atmm/login/").append(today.format("yyyy/MM/"))
+    logger.info("Valid days : {}", validDays.join(","))
     input.append("{").append(validDays.join(",")).append("}/*/input")
-//    input.append("/{").append("01..").append(cal.get(Calendar.DAY_OF_MONTH)).append("}/*/input")
     output = "/atmm/dau/${today.format('yyyy/MM/dd')}/m"
 
     logger.info("mau input ${input}")
@@ -131,6 +132,7 @@ retain = {
     // input path args[0] /atmm/login/{day}/*/input,/atmm/register/{day-1}/*/input
     // output path args[1] /atmm/retain/{day}
     //1,2,3,4,5,6,7,15,30
+
 
     logger.info("** Today is ${Calendar.getInstance().format("yyyy/MM/dd")}")
     def today = it ? (Date.parse("yyyy/MM/dd", it)) : use(TimeCategory) {
@@ -172,5 +174,6 @@ cron4j.start("10 03 * * *", crmr)
 cron4j.start("20 03 * * *", ccmr)
 cron4j.start("30 03 * * *", dau)
 cron4j.start("50 03 * * *", retain)
+
 
 
