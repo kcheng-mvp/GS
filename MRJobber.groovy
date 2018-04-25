@@ -42,6 +42,7 @@ dau = { it ->
         Calendar.getInstance().getTime() - 1.days;
     }
 
+    logger.info("** Start DAU")
     // dau
     def input = "/atmm/login/${today.format("yyyy/MM/dd")}/*/input"
     def output = "/atmm/dau/${today.format("yyyy/MM/dd")}/d"
@@ -54,6 +55,7 @@ dau = { it ->
         logger.info(it);
     }
 
+    logger.info("** Start WAU")
     //wau
     output = "/atmm/dau/${today.format("yyyy/MM/dd")}/w"
     input = new StringBuffer("/atmm/login")
@@ -72,7 +74,7 @@ dau = { it ->
         if(!rs.code){
             input.add("/atmm/login/${it.format('yyyy/MM/dd')}/*/input")
         } else {
-            logger.error("** Can't not find the path : ${command}")
+            logger.error("**  wau Can't not find the path : ${command}")
             rs.msg.each{
                 logger.error(it)
             }
@@ -88,6 +90,7 @@ dau = { it ->
         logger.info(it);
     }
 
+    logger.info("** Start MAU")
     //mau
     cal = Calendar.getInstance();
     cal.setTime(today);
@@ -103,6 +106,7 @@ dau = { it ->
         if(!rs.code){
             validDays.add(it.toString().padLeft(2, '0'))
         } else {
+            logger.error("**  mau Can't not find the path : ${command}")
             rs.msg.each {
                 logger.warn(it);
             }
@@ -161,9 +165,12 @@ retain = {
 
 
 }
-dau("2018/04/23")
+//dau()
 //retain()
-//cron4j.start("30 11 * * *", crmr)
-//cron4j.start("40 11 * * *", ccmr)
+
+cron4j.start("10 03 * * *", crmr)
+cron4j.start("20 03 * * *", ccmr)
+cron4j.start("30 03 * * *", dau)
+cron4j.start("50 03 * * *", retain)
 
 
