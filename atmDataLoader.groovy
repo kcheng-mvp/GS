@@ -200,13 +200,18 @@ dau = { it ->
         //@todo update process status in hdfs
     }
 
-    def summary = "select sum(dau) dau, sum(wau) wau, sum(mau) mau , report_day from T_USER_ACTIVITY WHERE REPORT_DAY = ? and channel != 9999 group by report_day"
-    def sum = mysql.rows(summary, today.format("yyyy/MM/dd"));
-    if (checkExits(mysql, today, 9999)) {
-        mysql.execute("UPDATE T_USER_ACTIVITY set dau = ? , wau = ? , mau = ? where report_day = ? and channel = ?", [sum[0].dau, sum[0].wau, sum[0].mau, today.format("yyyy/MM/dd"), 9999]);
-    } else {
-        mysql.execute("INSERT INTO T_USER_ACTIVITY(dau, wau, mau, REPORT_DAY,CHANNEL) values (?,?,?,?,?)", [sum[0].dau, sum[0].wau, sum[0].mau, today.format("yyyy/MM/dd"), 9999])
+//    def summary = "select sum(dau) dau, sum(wau) wau, sum(mau) mau , report_day from T_USER_ACTIVITY WHERE REPORT_DAY = ? and channel != 9999 group by report_day"
+
+    def summary = "SELECT CATEGORY,COUNT(distinct UID) AS DAU,SUM(COUNT) AS TOTAL_LOGIN FROM T_ATM GROUP BY CATEGORY ORDER BY CATEGORY"
+//    def sum = mysql.rows(summary, today.format("yyyy/MM/dd"));
+    h2.eachRow(summary) { row ->
+        if (checkExits(mysql, today, 9999)) {
+            mysql.execute("UPDATE T_USER_ACTIVITY set ${categoryColumnMap.get(row.CATEGORY)} = ? WHERE REPORT_DAY = ? and CHANNEL = 9999", [row.DAU, today.format("yyyy/MM/dd")])
+        } else {
+            mysql.execute("INSERT INTO T_USER_ACTIVITY(${categoryColumnMap.get(row.CATEGORY)}, REPORT_DAY,CHANNEL) values (?,?,?)", [row.DAU, today.format("yyyy/MM/dd"), 9999])
+        }
     }
+
     h2.close()
     mysql.close()
 
@@ -224,10 +229,10 @@ retain = { it ->
     h2.execute(createIndex)
 
     def insert = "INSERT INTO T_ATM(DATE_STR,UID,CHANNEL,CATEGORY,COUNT) VALUES (?,?,?,?,?)"
-    def summary1= "SELECT COUNT(1) CNT, CONCAT_WS(',',DATE_STR, CHANNEL, CATEGORY) AS KeyStr FROM T_ATM WHERE COUNT = 1 GROUP BY KeyStr"
-    def summary2= "SELECT COUNT(1) CNT, CONCAT_WS(',',DATE_STR, CHANNEL, CATEGORY) AS KeyStr FROM T_ATM GROUP BY KeyStr"
-    def summary3= "SELECT COUNT(1) CNT, CONCAT_WS(',',DATE_STR, CATEGORY) AS KeyStr FROM T_ATM WHERE COUNT = 1 GROUP BY KeyStr"
-    def summary4= "SELECT COUNT(1) CNT, CONCAT_WS(',',DATE_STR, CATEGORY) AS KeyStr FROM T_ATM GROUP BY KeyStr"
+    def summary1 = "SELECT COUNT(1) CNT, CONCAT_WS(',',DATE_STR, CHANNEL, CATEGORY) AS KeyStr FROM T_ATM WHERE COUNT = 1 GROUP BY KeyStr"
+    def summary2 = "SELECT COUNT(1) CNT, CONCAT_WS(',',DATE_STR, CHANNEL, CATEGORY) AS KeyStr FROM T_ATM GROUP BY KeyStr"
+    def summary3 = "SELECT COUNT(1) CNT, CONCAT_WS(',',DATE_STR, CATEGORY) AS KeyStr FROM T_ATM WHERE COUNT = 1 GROUP BY KeyStr"
+    def summary4 = "SELECT COUNT(1) CNT, CONCAT_WS(',',DATE_STR, CATEGORY) AS KeyStr FROM T_ATM GROUP BY KeyStr"
     (0..30).each { d ->
         use(TimeCategory) {
             def syncDay = today - d.days;
@@ -249,7 +254,7 @@ retain = { it ->
                                     f.eachLine { line ->
                                         //2088002216223590        100     1524486495      0
                                         def entries = line.split("\t")
-                                        stmt.addBatch(syncDay.format('yyyy/MM/dd'),entries[0], entries[1], f.getParentFile().getName(), entries[3]);
+                                        stmt.addBatch(syncDay.format('yyyy/MM/dd'), entries[0], entries[1], f.getParentFile().getName(), entries[3]);
                                     }
                                 }
                             }
@@ -268,7 +273,7 @@ retain = { it ->
     }
 
 
-    def rs1 = h2.rows(summary1).collectEntries{
+    def rs1 = h2.rows(summary1).collectEntries {
         [it.KeyStr, it.CNT]
     }
     logger.info("rs1 -> ${}", rs1)
@@ -277,7 +282,7 @@ retain = { it ->
     }
 
     logger.info("rs2 -> ${}", rs2)
-    def rs3 = h2.rows(summary3).collectEntries{
+    def rs3 = h2.rows(summary3).collectEntries {
         [it.KeyStr, it.CNT]
     }
 
@@ -290,8 +295,8 @@ retain = { it ->
     logger.info("rs4 -> ${}", rs4)
 
     def mysql = Sql.newInstance(config.get("setting.db.host"), config.get("setting.db.username"), config.get("setting.db.password"), "com.mysql.jdbc.Driver");
-    rs1.each {k, v ->
-        def rate = v/rs2.get(k)
+    rs1.each { k, v ->
+        def rate = v / rs2.get(k)
         def entries = k.split(",") //date, channel, retain
         logger.info("DAY${entries[2]}_RETAIN_${entries[1]} : {} ", rate)
         def update = "UPDATE T_USER_ACTIVITY SET DAY${entries[2]}_RETAIN = ? WHERE REPORT_DAY = ? AND CHANNEL = ? "
@@ -299,8 +304,8 @@ retain = { it ->
         mysql.execute(update, [rate, entries[0], entries[1]])
     }
 
-    rs3.each {k, v ->
-        def rate = v/rs4.get(k)
+    rs3.each { k, v ->
+        def rate = v / rs4.get(k)
 
         def entries = k.split(",") //date, channel, retain
         logger.info("DAY${entries[1]}_RETAIN_9999 : {} ", rate)
