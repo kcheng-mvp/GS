@@ -64,8 +64,8 @@ hdfssync = { remote, localDir ->
 
     new File(localBaseDir, type).with {
         if (it.exists()) it.deleteDir()
-        it.mkdirs();
-    };
+//        it.mkdirs();
+    }
 
     def f = new File(localBaseDir, localDir)
     f.mkdirs();
@@ -87,101 +87,6 @@ checkExits = { mysql, reportDay, channel ->
     return !rs.isEmpty()
 }
 
-dau = { it ->
-
-    def h2 = db.h2mCon("atm")
-
-    h2.execute(createTable)
-    h2.execute(createIndex)
-
-    def mysql = Sql.newInstance(config.get("setting.db.host"), config.get("setting.db.username"), config.get("setting.db.password"), "com.mysql.jdbc.Driver");
-
-    logger.info("** Today is ${Calendar.getInstance().format("yyyy/MM/dd")}")
-    def today = it ? (Date.parse("yyyy/MM/dd", it)) : use(TimeCategory) {
-        Calendar.getInstance().getTime() - 1.days;
-    }
-    def remote = "dau/${today.format("yyyy/MM/dd")}/*"
-
-    def insert = "INSERT INTO T_ATM(CHANNEL,UID,CATEGORY,COUNT) VALUES (?,?,?,?)"
-    def numOfLines = 0;
-    def syncStatus = hdfssync(remote, "dau/${today.format('yyyyMMdd')}")
-    if (!syncStatus.code) {
-        def path = new File(syncStatus.msg)
-        path.eachFileRecurse(FileType.FILES, { f ->
-            //@todo need to check should be processed or not and file name pattern
-            if (f.name.indexOf("part-r-") > -1) {
-                def category = f.getParentFile().name.toUpperCase();
-                h2.withTransaction {
-                    h2.withBatch(100, insert) { stmt ->
-                        f.eachLine { line ->
-                            numOfLines++
-                            def entries = line.split("\t")
-                            stmt.addBatch(entries[0], entries[1], category, entries[2]);
-                        }
-                    }
-                }
-            }
-
-        })
-    }
-    logger.info("There are totally ${numOfLines} have been processed !")
-
-    def query = "SELECT CHANNEL,CATEGORY,COUNT(1) AS DAU,SUM(COUNT) AS TOTAL_LOGIN FROM T_ATM GROUP BY CHANNEL,CATEGORY ORDER BY CHANNEL,CATEGORY"
-//    def check = "SELECT 1 FROM T_USER_ACTIVITY where REPORT_DAY = ? AND CHANNEL = ?"
-    def categoryColumnMap = ["D": "DAU", "W": "WAU", "M": "MAU"]
-    h2.eachRow(query) { row ->
-
-//        logger.info("today -> : {}", today)
-//        logger.info("row.CHANNEL -> : {}", row.CHANNEL)
-//        def rs = mysql.rows(check, [today.format("yyyy/MM/dd"), row.CHANNEL])
-
-        if(row.CHANNEL){
-
-            def exits = checkExits(mysql, today, row.CHANNEL)
-
-            logger.info("${row.DAU}, ${row.CHANNEL}, ${row.CATEGORY}")
-            if (exits) {
-                // update
-                mysql.execute("UPDATE T_USER_ACTIVITY set ${categoryColumnMap.get(row.CATEGORY)} = ? WHERE REPORT_DAY = ? and CHANNEL = ?", [row.DAU, today.format("yyyy/MM/dd"), row.CHANNEL])
-            } else {
-                // insert
-                mysql.execute("INSERT INTO T_USER_ACTIVITY(${categoryColumnMap.get(row.CATEGORY)}, REPORT_DAY,CHANNEL) values (?,?,?)", [row.DAU, today.format("yyyy/MM/dd"), row.CHANNEL])
-            }
-        }
-        //@todo need to insert the result to database
-        //@todo update process status in hdfs
-    }
-
-    def summary = "select sum(dau) dau, sum(wau) wau, sum(mau) mau , report_day from T_USER_ACTIVITY WHERE REPORT_DAY = ? and channel != 9999 group by report_day"
-    def sum = mysql.rows(summary, today.format("yyyy/MM/dd"));
-    if (checkExits(mysql, today, 9999)) {
-        mysql.execute("UPDATE T_USER_ACTIVITY set dau = ? , wau = ? , mau = ? where report_day = ? and channel = ?", [sum[0].dau, sum[0].wau, sum[0].mau, today.format("yyyy/MM/dd"), 9999]);
-    } else {
-        mysql.execute("INSERT INTO T_USER_ACTIVITY(dau, wau, mau, REPORT_DAY,CHANNEL) values (?,?,?,?,?)", [sum[0].dau, sum[0].wau, sum[0].mau, today.format("yyyy/MM/dd"), 9999])
-    }
-    h2.close()
-    mysql.close()
-
-}
-retain = { it ->
-
-    logger.info("** Today is ${Calendar.getInstance().format("yyyy/MM/dd")}")
-    def today = it ? (Date.parse("yyyy/MM/dd", it)) : use(TimeCategory) {
-        Calendar.getInstance().getTime() - 1.days;
-    }
-
-    def sameDayOfPreviousMonth = use(TimeCategory) {
-        today - 1.month - 1.days;
-    }
-
-    println today.format("yyyy/MM/dd")
-    println sameDayOfPreviousMonth.format("yyyy/MM/dd")
-
-//    def remote = "/dau/${today.format("yyyy/MM/dd")}"
-    sameDayOfPreviousMonth.upto(today) { day ->
-        hdfssync("/retain/${day.format("yyyy/MM/dd/*")}", "retain/${day.format('yyyy/MM/dd')}")
-    }
-}
 
 register = { it ->
 
@@ -235,19 +140,187 @@ register = { it ->
 
 }
 
-def cleanup = {
-    logger.info("Clean up database ...... ")
-    def delete = "DELETE FROM T_ATM";
-    sql.execute(delete);
-    def check = "SELECT COUNT(1) as CNT FROM CRMR"
-    def rt = sql.firstRow(check)
-    logger.info("There are ${rt.CNT} rows in db.")
+dau = { it ->
+
+    def h2 = db.h2mCon("atm")
+
+    h2.execute(createTable)
+    h2.execute(createIndex)
+
+    def mysql = Sql.newInstance(config.get("setting.db.host"), config.get("setting.db.username"), config.get("setting.db.password"), "com.mysql.jdbc.Driver");
+
+    logger.info("** Today is ${Calendar.getInstance().format("yyyy/MM/dd")}")
+    def today = it ? (Date.parse("yyyy/MM/dd", it)) : use(TimeCategory) {
+        Calendar.getInstance().getTime() - 1.days;
+    }
+    def remote = "dau/${today.format("yyyy/MM/dd")}/*"
+
+    def insert = "INSERT INTO T_ATM(CHANNEL,UID,CATEGORY,COUNT) VALUES (?,?,?,?)"
+    def numOfLines = 0;
+    def syncStatus = hdfssync(remote, "dau/${today.format('yyyyMMdd')}")
+    if (!syncStatus.code) {
+        def path = new File(syncStatus.msg)
+        path.eachFileRecurse(FileType.FILES, { f ->
+            //@todo need to check should be processed or not and file name pattern
+            if (f.name.indexOf("part-r-") > -1) {
+                def category = f.getParentFile().name.toUpperCase();
+                h2.withTransaction {
+                    h2.withBatch(100, insert) { stmt ->
+                        f.eachLine { line ->
+                            numOfLines++
+                            def entries = line.split("\t")
+                            stmt.addBatch(entries[0], entries[1], category, entries[2]);
+                        }
+                    }
+                }
+            }
+
+        })
+    }
+    logger.info("There are totally ${numOfLines} have been processed !")
+
+    def query = "SELECT CHANNEL,CATEGORY,COUNT(1) AS DAU,SUM(COUNT) AS TOTAL_LOGIN FROM T_ATM GROUP BY CHANNEL,CATEGORY ORDER BY CHANNEL,CATEGORY"
+    def categoryColumnMap = ["D": "DAU", "W": "WAU", "M": "MAU"]
+    h2.eachRow(query) { row ->
+
+        if (row.CHANNEL) {
+
+            def exits = checkExits(mysql, today, row.CHANNEL)
+
+            logger.info("${row.DAU}, ${row.CHANNEL}, ${row.CATEGORY}")
+            if (exits) {
+                // update
+                mysql.execute("UPDATE T_USER_ACTIVITY set ${categoryColumnMap.get(row.CATEGORY)} = ? WHERE REPORT_DAY = ? and CHANNEL = ?", [row.DAU, today.format("yyyy/MM/dd"), row.CHANNEL])
+            } else {
+                // insert
+                mysql.execute("INSERT INTO T_USER_ACTIVITY(${categoryColumnMap.get(row.CATEGORY)}, REPORT_DAY,CHANNEL) values (?,?,?)", [row.DAU, today.format("yyyy/MM/dd"), row.CHANNEL])
+            }
+        }
+        //@todo need to insert the result to database
+        //@todo update process status in hdfs
+    }
+
+    def summary = "select sum(dau) dau, sum(wau) wau, sum(mau) mau , report_day from T_USER_ACTIVITY WHERE REPORT_DAY = ? and channel != 9999 group by report_day"
+    def sum = mysql.rows(summary, today.format("yyyy/MM/dd"));
+    if (checkExits(mysql, today, 9999)) {
+        mysql.execute("UPDATE T_USER_ACTIVITY set dau = ? , wau = ? , mau = ? where report_day = ? and channel = ?", [sum[0].dau, sum[0].wau, sum[0].mau, today.format("yyyy/MM/dd"), 9999]);
+    } else {
+        mysql.execute("INSERT INTO T_USER_ACTIVITY(dau, wau, mau, REPORT_DAY,CHANNEL) values (?,?,?,?,?)", [sum[0].dau, sum[0].wau, sum[0].mau, today.format("yyyy/MM/dd"), 9999])
+    }
+    h2.close()
+    mysql.close()
+
 }
 
-cron4j.start("10 04 * * *", dau)
-cron4j.start("20 04 * * *", register)
-//dau()
-//register()
+retain = { it ->
+
+    logger.info("** Today is ${Calendar.getInstance().format("yyyy/MM/dd")}")
+    def today = it ? (Date.parse("yyyy/MM/dd", it)) : use(TimeCategory) {
+        Calendar.getInstance().getTime() - 1.days;
+    }
+    def h2 = db.h2mCon("atm")
+
+    h2.execute(createTable)
+    h2.execute(createIndex)
+
+    def insert = "INSERT INTO T_ATM(DATE_STR,UID,CHANNEL,CATEGORY,COUNT) VALUES (?,?,?,?,?)"
+    def summary1= "SELECT COUNT(1) CNT, CONCAT_WS(',',DATE_STR, CHANNEL, CATEGORY) AS KeyStr FROM T_ATM WHERE COUNT = 1 GROUP BY KeyStr"
+    def summary2= "SELECT COUNT(1) CNT, CONCAT_WS(',',DATE_STR, CHANNEL, CATEGORY) AS KeyStr FROM T_ATM GROUP BY KeyStr"
+    def summary3= "SELECT COUNT(1) CNT, CONCAT_WS(',',DATE_STR, CATEGORY) AS KeyStr FROM T_ATM WHERE COUNT = 1 GROUP BY KeyStr"
+    def summary4= "SELECT COUNT(1) CNT, CONCAT_WS(',',DATE_STR, CATEGORY) AS KeyStr FROM T_ATM GROUP BY KeyStr"
+    (0..30).each { d ->
+        use(TimeCategory) {
+            def syncDay = today - d.days;
+            def dataDir = "retain/${syncDay.format('yyyy/MM/dd')}";
+            logger.info("Sync data : ${dataDir}")
+            def syncStatus = hdfssync(dataDir, "retain/${syncDay.format('yyyyMMdd')}")
+            if (!syncStatus.code) {
+                //hadoop fs -touchz /atmm/retain/2018/04/23/1.sync
+                def path = new File(syncStatus.msg)
+                path.eachFileRecurse(FileType.FILES, { f ->
+                    //@todo need to check should be processed or not and file name pattern
+                    if (f.name.indexOf("part-r") > -1) {
+                        logger.info("Process retain file :{}", f.absolutePath)
+                        def syncFlag = new File(f.getParentFile(), "synced")
+                        if (!syncFlag.exists()) {
+                            //
+                            h2.withTransaction {
+                                h2.withBatch(100, insert) { stmt ->
+                                    f.eachLine { line ->
+                                        //2088002216223590        100     1524486495      0
+                                        def entries = line.split("\t")
+                                        stmt.addBatch(syncDay.format('yyyy/MM/dd'),entries[0], entries[1], f.getParentFile().getName(), entries[3]);
+                                    }
+                                }
+                            }
+                            def command = "hadoop fs -touchz /atmm/retain/${syncDay.format('yyyy/MM/dd')}/${f.getParentFile().getName()}/synced"
+                            def rs = shell.exec(command)
+                            rs.msg.each { msg ->
+                                logger.info msg
+                            }
+                        } else {
+                            logger.info "${f.absolutePath} has been sync, ignore it"
+                        }
+                    }
+                })
+            }
+        }
+    }
+
+
+    def rs1 = h2.rows(summary1).collectEntries{
+        [it.KeyStr, it.CNT]
+    }
+    logger.info("rs1 -> ${}", rs1)
+    def rs2 = h2.rows(summary2).collectEntries {
+        [it.KeyStr, it.CNT]
+    }
+
+    logger.info("rs2 -> ${}", rs2)
+    def rs3 = h2.rows(summary3).collectEntries{
+        [it.KeyStr, it.CNT]
+    }
+
+
+    logger.info("rs3 -> ${}", rs3)
+    def rs4 = h2.rows(summary4).collectEntries {
+        [it.KeyStr, it.CNT]
+    }
+
+    logger.info("rs4 -> ${}", rs4)
+
+    def mysql = Sql.newInstance(config.get("setting.db.host"), config.get("setting.db.username"), config.get("setting.db.password"), "com.mysql.jdbc.Driver");
+    rs1.each {k, v ->
+        def rate = v/rs2.get(k)
+        def entries = k.split(",") //date, channel, retain
+        logger.info("DAY${entries[2]}_RETAIN_${entries[1]} : {} ", rate)
+        def update = "UPDATE T_USER_ACTIVITY SET DAY${entries[2]}_RETAIN = ? WHERE REPORT_DAY = ? AND CHANNEL = ? "
+        logger.info("Update DAY${entries[2]}_RETAIN for ${entries[1]} at ${entries[0]}")
+        mysql.execute(update, [rate, entries[0], entries[1]])
+    }
+
+    rs3.each {k, v ->
+        def rate = v/rs4.get(k)
+
+        def entries = k.split(",") //date, channel, retain
+        logger.info("DAY${entries[1]}_RETAIN_9999 : {} ", rate)
+        def update = "UPDATE T_USER_ACTIVITY SET DAY${entries[1]}_RETAIN = ? WHERE REPORT_DAY = ? AND CHANNEL = 9999 "
+        logger.info("Update DAY${entries[1]}_RETAIN for '9999' at ${entries[0]}")
+        mysql.execute(update, [rate, entries[0]])
+    }
+
+    mysql.close()
+    h2.close()
+
+}
+
+retain()
+/*
+cron4j.start("10 04 * * *", register)
+cron4j.start("20 04 * * *", dau)
+cron4j.start("40 04 * * *", retain)
+*/
+
 
 
 
