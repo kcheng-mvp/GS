@@ -195,9 +195,15 @@ dau = { it ->
                 // insert
                 mysql.execute("INSERT INTO T_USER_ACTIVITY(${categoryColumnMap.get(row.CATEGORY)}, REPORT_DAY,CHANNEL) values (?,?,?)", [row.DAU, today.format("yyyy/MM/dd"), row.CHANNEL])
             }
+
+            //AVG_LOGIN
+            if ("D".equals(row.CATEGORY)) {
+                mysql.execute("UPDATE T_USER_ACTIVITY set AVG_LOGIN = ? WHERE REPORT_DAY = ? and CHANNEL = ?", [row.TOTAL_LOGIN / row.DAU, today.format("yyyy/MM/dd"), row.CHANNEL])
+            }
         }
         //@todo need to insert the result to database
         //@todo update process status in hdfs
+        //AVG_LOGIN
     }
 
 //    def summary = "select sum(dau) dau, sum(wau) wau, sum(mau) mau , report_day from T_USER_ACTIVITY WHERE REPORT_DAY = ? and channel != 9999 group by report_day"
@@ -209,6 +215,10 @@ dau = { it ->
             mysql.execute("UPDATE T_USER_ACTIVITY set ${categoryColumnMap.get(row.CATEGORY)} = ? WHERE REPORT_DAY = ? and CHANNEL = 9999", [row.DAU, today.format("yyyy/MM/dd")])
         } else {
             mysql.execute("INSERT INTO T_USER_ACTIVITY(${categoryColumnMap.get(row.CATEGORY)}, REPORT_DAY,CHANNEL) values (?,?,?)", [row.DAU, today.format("yyyy/MM/dd"), 9999])
+        }
+
+        if ("D".equals(row.CATEGORY)) {
+            mysql.execute("UPDATE T_USER_ACTIVITY set AVG_LOGIN = ? WHERE REPORT_DAY = ? and CHANNEL = 9999", [row.TOTAL_LOGIN / row.DAU, today.format("yyyy/MM/dd")])
         }
     }
 
