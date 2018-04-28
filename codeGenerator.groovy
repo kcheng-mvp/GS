@@ -71,13 +71,13 @@ def genSchema = {
             targetFileName = f.name
             f.eachWithIndex { line, idx ->
                 if (line && idx != 0) {
-                    if(line.indexOf("ENGINE") < 0 ) {
+                    if (line.indexOf("ENGINE") < 0) {
                         line = line.subSequence(0, line.length() - 1);
                         def entries = line.split();
                         columnTypeMap.put(entries[0], entries[1])
                         columnOrderMap.put(entries[0], idx);
                     }
-                    if (line.indexOf("CREATE INDEX") > -1 || line.indexOf("CREATE UNIQUE INDEX") > -1){
+                    if (line.indexOf("CREATE INDEX") > -1 || line.indexOf("CREATE UNIQUE INDEX") > -1) {
                         indexClause.add(line)
                     }
                 }
@@ -91,37 +91,36 @@ def genSchema = {
     }.eachWithIndex { prop, idx ->
         if (!prop.name.equals("class")) {
             def claz = (Class) prop.type
-            if (java.util.Collection.class.isAssignableFrom(claz)) {
-                println "**Info**: ${prop.name} (${prop.type}) is assigned from  java.util.Collection"
-            } else {
-                def type = typeMap.get(prop.type.name);
-                def column = CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, prop.name);
-                if (!type) {
-                    if (claz.isEnum()) {
-                        type = "VARCHAR(15)"
-                        column = CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, prop.name);
-                    } else {
-//                        throw RuntimeException("Can not find mapping for ${prop.name} ${prop.type.name}")
-                        println "**Info**: ${prop.name} (${prop.type}) is not a simple Type"
-
-                        column = column+"_ID"
-                        type = "BIGINT"
-                    }
-                }
-                type = columnTypeMap.get(column) ?: type;
-                sb.append("${linebreak}").append("\t")
-                if (prop.name.equals("id")) {
-                    sb.append("ID BIGINT NOT NULL AUTO_INCREMENT,")
+            def type = typeMap.get(prop.type.name);
+            def column = CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, prop.name);
+            if (!type) {
+                if (claz.isEnum()) {
+                    type = "VARCHAR(15)"
+                    column = CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, prop.name);
+                } else if(java.util.Collection.class.isAssignableFrom(claz)) {
+                    println "**Info**: ${prop.name} (${prop.type}) is assigned from  java.util.Collection"
+                    type ="VARCHAR(20)"
+                    column = CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, prop.name);
                 } else {
-                    sb.append("${column} ${type},")
+                    println "**Info**: ${prop.name} (${prop.type}) is not a simple Type"
+                    column = column + "_ID"
+                    type = "BIGINT"
                 }
             }
+            type = columnTypeMap.get(column) ?: type;
+            sb.append("${linebreak}").append("\t")
+            if (prop.name.equals("id")) {
+                sb.append("ID BIGINT NOT NULL AUTO_INCREMENT,")
+            } else {
+                sb.append("${column} ${type},")
+            }
+//            }
         }
     }
     sb.append("${linebreak}").append("\t")
     sb.append("PRIMARY KEY (ID)")
     sb.append("${linebreak})").append(" ").append("ENGINE=InnoDB CHARACTER SET utf8 COLLATE utf8_bin;")
-    indexClause.each{ line ->
+    indexClause.each { line ->
         sb.append("${linebreak}");
         sb.append(line).append(";")
     }
@@ -145,7 +144,7 @@ def genSchema = {
     def h2sql = new File("${resources}/schema-h2.sql");
     def mysql = new File("${resources}/schema-mysql.sql");
     def cnt = 0;
-    schemaFolder.listFiles().sort{it.name}.each { f ->
+    schemaFolder.listFiles().sort { it.name }.each { f ->
         if (f.name.indexOf(".SQL") > -1) {
             cnt++;
             f.eachWithIndex { line, idx ->
@@ -187,7 +186,7 @@ def genInsert = {
             if (idx + 1 < size) {
                 insertBuffer.append(",");
             }
-            if(prop.name.equals("createdAt") || prop.name.equals("updatedAt")){
+            if (prop.name.equals("createdAt") || prop.name.equals("updatedAt")) {
                 valueBuffer.append("CURRENT_TIMESTAMP()")
             } else {
                 valueBuffer.append("#{").append("${prop.name}").append("}")
@@ -231,7 +230,7 @@ def genUpdate = {
     def tableName = "T_${CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, entity)}";
 
 
-    def ignoredProperties = ["createdAt","createdBy","id","class","updatedAt"]
+    def ignoredProperties = ["createdAt", "createdBy", "id", "class", "updatedAt"]
     def updateBuffer = new StringBuffer(linebreak);
     updateBuffer.append("UPDATE ${tableName}").append(linebreak);
     updateBuffer.append("<set>")
@@ -312,8 +311,8 @@ def genMapper = {
     parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
     parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
 
-    def mapperXmlPath = new File(resources,mapperPackage.replaceAll(Pattern.quote("."), Matcher.quoteReplacement(File.separator)));
-    if(!mapperXmlPath.exists()) mapperXmlPath.mkdirs()
+    def mapperXmlPath = new File(resources, mapperPackage.replaceAll(Pattern.quote("."), Matcher.quoteReplacement(File.separator)));
+    if (!mapperXmlPath.exists()) mapperXmlPath.mkdirs()
     def mapperXml = new File(mapperXmlPath, "${entity}Mapper.xml");
 //    println "Try to generate file ${entity}Mapper.xml";
     if (mapperXml.exists() && !mapperXml.isDirectory()) {
@@ -363,7 +362,7 @@ def genMapper = {
         xml.mapper(namespace: "${mapperPackage}.${entity}Mapper") {
             insert(id: "create${entity}", parameterType: "${domainPackage}.${entity}", keyProperty: "id", useGeneratedKeys: "true", genInsert());
             update(id: "update${entity}", parameterType: "${domainPackage}.${entity}", genUpdate());
-            select(id: "find${entity}ById", resultType: "${domainPackage}.${entity}", flushCache:"true",genSelectById())
+            select(id: "find${entity}ById", resultType: "${domainPackage}.${entity}", flushCache: "true", genSelectById())
         }
 
         mapperXml << XmlUtil.serialize(writer.toString().replaceAll("&lt;", "<").replaceAll("&gt;", ">"));

@@ -1,8 +1,7 @@
 #! /usr/bin/env groovy
+import groovy.sql.Sql
 import groovy.text.SimpleTemplateEngine
 import groovy.time.TimeCategory
-@Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.5.0')
-import groovyx.net.http.RESTClient
 @Grab(group = 'org.codehaus.groovy.modules.http-builder', module = 'http-builder', version = '0.5.0')
 import groovyx.net.http.RESTClient
 
@@ -10,6 +9,7 @@ import java.text.SimpleDateFormat
 
 import static groovyx.net.http.ContentType.JSON
 import groovy.json.JsonSlurper
+
 
 def url = "https://oapi.dingtalk.com"
 def context = "/robot/send"
@@ -306,18 +306,49 @@ ORDER BY DAY_STR ASC, APP_ID ASC,PLATFORM ASC
     csv2.deleteOnExit()
     csv2.withWriter { w ->
         def bw = new BufferedWriter(w)
-        sql.eachRow(registerSqlDetail,[sdf.format(validDate)]) { row ->
+        sql.eachRow(registerSqlDetail, [sdf.format(validDate)]) { row ->
             bw << "${row['DAY_STR']}, ${gameName(row['APP_ID'])}, ${row['PLATFORM']}, ${row['RCNT']}"
             bw.newLine()
         }
         bw.close()
     }
 
+    //mailMan.sendMail("导量日报（${lastDay}）", "导量日报（${lastDay}）", configFile, [csv.absolutePath, csv1.absolutePath,csv2.absolutePath])
+    mailMan.sendMail("导量日报（${lastDay}）", "导量日报（${lastDay}）", configFile, [csv1.absolutePath, csv2.absolutePath])
 
 
+}
 
-    mailMan.sendMail("导量日报（${lastDay}）", "导量日报（${lastDay}）", configFile, [csv.absolutePath, csv1.absolutePath,csv2.absolutePath])
+def antmall = {
+    def antMallTemplate = '''
+{
+     "msgtype": "markdown",
+     "markdown": {
+         "title":"蚂蚁商业街 (${reportDay})",
+         "text": "${detail}\n",
+     },
+    "at": {
+        "isAtAll": true
+    }
+ }
+''';
 
+    def cal = Calendar.getInstance();
+    def mysql = Sql.newInstance(config.flatten().get("settings.db.host"), config.flatten().get("settings.db.username"), config.flatten().get("settings.db.password"), "com.mysql.jdbc.Driver");
+    def query = "select REPORT_DAY ,DAU, NEW_REGISTER, ifnull(DAY1_RETAIN,'--') AS DAY1, ifnull(DAY3_RETAIN,'--') as DAY3, ifnull(DAY7_RETAIN,'--')  as DAY7 from t_user_activity where channel = 9999 ORDER BY REPORT_DAY DESC LIMIT 14";
+    def textDetail = new StringBuffer("### **商业街：(${cal.format('MM/dd')},A,N,1,7)**\n");
+    mysql.eachRow(query) { row ->
+//        textDetail.append("- ${row.REPORT_DAY.substring(5).replace("/","")}: ${row.DAU.toString().padRight(6)},${row.NEW_REGISTER.toString().padRight(6)}|${row.DAY1.toString().padRight(5)},${row.DAY3.toString().padRight(5)},${row.DAY7.toString().padRight(5)}\n");
+        textDetail.append("- ${row.REPORT_DAY.substring(5).replace("/","")}: ${row.DAU.toString().padRight(6)},${row.NEW_REGISTER.toString().padRight(6)}|${row.DAY1.toString().padRight(5)},${row.DAY7.toString().padRight(5)}\n");
+    }
+
+    if (textDetail.toString().length() > 0) {
+        def client = new RESTClient(url)
+        def simple = new SimpleTemplateEngine()
+        def binding = [detail: textDetail.toString(), reportDay: cal.format('yyyy/MM/dd')]
+        def msg = simple.createTemplate(antMallTemplate).make(binding).toString()
+        def response = client.post(path: context, contentType: JSON, body: msg, query: [access_token: access_token], headers: [Accept: 'application/json'])
+    }
 
 }
 
@@ -336,6 +367,7 @@ cron4j.start(cron, {
     loadData()
     genReport()
     cleanup()
+    antmall()
 })
 
 
