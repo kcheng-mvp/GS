@@ -11,7 +11,8 @@ config {
         "server-(${host}).properties" {
             listeners = "PLAINTEXT://:${settings.ka.client.port}"
             log.dirs = "/data0/kafka/data"
-            num.partitions = 2
+            // number of partition default as the number of the ka hosts
+            num.partitions = settings.ka.hosts.size()
             broker.id = settings.ka.hosts.indexOf(host) + 1
             zookeeper.connect = settings.zk.connect
         }
