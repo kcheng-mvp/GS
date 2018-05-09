@@ -2,7 +2,7 @@ settings {
     ka.hosts = ["xly04", "xly05"] as List
     zk.hosts = ["xly01", "xly02", "xly03"] as List
     zk.client.port = 12181
-    ka.client.port = "9092"
+    ka.client.port = 9092
     zk.connect = settings.zk.hosts.collect { "${it}:${settings.zk.client.port}" }.join(",") + "/kafka"
 }
 
