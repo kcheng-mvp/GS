@@ -329,6 +329,37 @@ retain = { it ->
 
 }
 
+online = {
+
+    logger.info("** Today is ${Calendar.getInstance().format("yyyy/MM/dd")}")
+    def today = it ? (Date.parse("yyyy/MM/dd", it)) : use(TimeCategory) {
+        Calendar.getInstance().getTime() - 1.days;
+    }
+    def remote = "onlinetime/${today.format("yyyy/MM/dd")}/average"
+    def syncStatus = hdfssync(remote, "onlinetime/${today.format('yyyyMMdd')}")
+    if (!syncStatus.code) {
+
+        def mysql = Sql.newInstance(config.get("setting.db.host"), config.get("setting.db.username"), config.get("setting.db.password"), "com.mysql.jdbc.Driver");
+        def path = new File(syncStatus.msg)
+
+        def update = "UPDATE T_USER_ACTIVITY SET AVG_ONLINE_TIME = ?/DAU WHERE REPORT_DAY = ? AND CHANNEL = ? "
+        path.eachFileRecurse(FileType.FILES, { f ->
+            //@todo need to check should be processed or not and file name pattern
+            if (f.name.indexOf("part-r-") > -1) {
+                def total = 0
+                f.eachLine {line ->
+                    def entries = line.split("\t");
+                    total += entries[1]
+                    mysql.execute(update, [entries[1], today.format('yyyy/MM/dd'), entries[0]])
+                }
+                mysql.execute(update, [total, today.format('yyyy/MM/dd'), 9999])
+            }
+
+        })
+        mysql.close()
+    }
+}
+
 retain()
 /*
 cron4j.start("10 04 * * *", register)
