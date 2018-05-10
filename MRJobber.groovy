@@ -71,11 +71,11 @@ dau = { it ->
         command = "hadoop fs -test -d /atmm/login/${it.format('yyyy/MM/dd')}"
         logger.info("Testing file exists : ${command}")
         rs = shell.exec(command)
-        if(!rs.code){
+        if (!rs.code) {
             input.add("/atmm/login/${it.format('yyyy/MM/dd')}/*/input")
         } else {
             logger.error("**  wau Can't not find the path : ${command}")
-            rs.msg.each{
+            rs.msg.each {
                 logger.error(it)
             }
         }
@@ -97,16 +97,16 @@ dau = { it ->
 
     def previous = cal
     def validDays = [] as List
-    while(previous.get(Calendar.MONTH).equals(cal.get(Calendar.MONTH))){
+    while (previous.get(Calendar.MONTH).equals(cal.get(Calendar.MONTH))) {
         command = "hadoop fs -test -d /atmm/login/${previous.format('yyyy/MM/dd')}"
         logger.info("Testing file exists : ${command}")
         rs = shell.exec(command)
-        if(!rs.code){
+        if (!rs.code) {
 //            input.add("/atmm/login/${it.format('yyyy/MM/dd')}/*/input")
             validDays.add(previous.format("dd"))
         } else {
             logger.error("**  mau Can't not find the path : ${command}")
-            rs.msg.each{
+            rs.msg.each {
                 logger.error(it)
             }
         }
@@ -134,7 +134,6 @@ retain = {
     //1,2,3,4,5,6,7,15,30
 
 
-
     def today = it ? (Date.parse("yyyy/MM/dd", it)) : use(TimeCategory) {
         Calendar.getInstance().getTime() - 1.days;
     }
@@ -148,12 +147,12 @@ retain = {
         [1, 2, 3, 4, 5, 6, 7, 15, 30].each { d ->
             def registerDay = today - d.days
             def register = "/atmm/register/${registerDay.format("yyyy/MM/dd")}"
-            logger.info("Retain[${d}]:${registerDay.format('yyyy/MM/dd')}-${today.format('yyyy/MM/dd')}" )
+            logger.info("Retain[${d}]:${registerDay.format('yyyy/MM/dd')}-${today.format('yyyy/MM/dd')}")
             def command = "hadoop fs -test -d ${register}"
             def rs = shell.exec(command);
-            if(!rs.code){
+            if (!rs.code) {
                 def output = "/atmm/retain/${registerDay.format("yyyy/MM/dd")}/${d}"
-                def input = login+ "," + register+"/*/input"
+                def input = login + "," + register + "/*/input"
                 logger.info("Retain[${d}] -> input dir is ${input}")
                 logger.info("Retain[${d}] -> output dir is ${output}")
                 command = "hadoop jar ${config.get('cfg.jarHome')}/RETAIN.jar ${input} ${output} ATM-RETAIN-${d}"
@@ -165,6 +164,26 @@ retain = {
                 logger.error("**No Register data at {}", registerDay.format("yyyy/MM/dd"))
             }
         }
+    }
+
+
+}
+
+online = {
+
+    def today = it ? (Date.parse("yyyy/MM/dd", it)) : use(TimeCategory) {
+        Calendar.getInstance().getTime() - 1.days;
+    }
+
+    logger.info("** average online base on login day : ${today.format("yyyy/MM/dd")}")
+
+    logger.info("login data :{}", today)
+    def input = "/atmm/onlinetime/${today.format("yyyy/MM/dd")}/*/input"
+    def output = "/atmm/onlinetime/${today.format("yyyy/MM/dd")}/average"
+    def command = "hadoop jar ${config.get('cfg.jarHome')}/ONLINE.jar ${input} ${output} AVERAGE-ONLINE-${today.format('yyyy/MM/dd')}"
+    def rs = shell.exec(command);
+    rs.msg.each {
+        logger.info(it);
     }
 
 
