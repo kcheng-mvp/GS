@@ -331,10 +331,11 @@ retain = { it ->
 
 online = {
 
-    logger.info("** Today is ${Calendar.getInstance().format("yyyy/MM/dd")}")
     def today = it ? (Date.parse("yyyy/MM/dd", it)) : use(TimeCategory) {
         Calendar.getInstance().getTime() - 1.days;
     }
+
+    logger.info("** average online time for ${today.format('yyyy/MM/dd')}")
     def remote = "onlinetime/${today.format("yyyy/MM/dd")}/average"
     def syncStatus = hdfssync(remote, "onlinetime/${today.format('yyyyMMdd')}")
     if (!syncStatus.code) {
@@ -349,9 +350,11 @@ online = {
                 def total = 0
                 f.eachLine {line ->
                     def entries = line.split("\t");
-                    total += entries[1]
-                    mysql.execute(update, [entries[1], today.format('yyyy/MM/dd'), entries[0]])
+                    total += Long.parseLong(entries[1])
+                    logger.info("Total online time for {}  is {}", entries[0], entries[1])
+                    mysql.execute(update, [Long.parseLong(entries[1]), today.format('yyyy/MM/dd'), entries[0]])
                 }
+                logger.info("Total online time for 9999  is {}", total)
                 mysql.execute(update, [total, today.format('yyyy/MM/dd'), 9999])
             }
 
