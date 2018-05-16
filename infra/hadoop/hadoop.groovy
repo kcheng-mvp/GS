@@ -53,7 +53,7 @@ def deploy = { config, deployable, host ->
             osBuilder.mkdirs(host, dirs)
         }
     } else {
-        logger.error "${host} is not in the server list: ${config.setting.ka.hosts.toString()}"
+        logger.error "${host} is not in the server list: ${config.settings.hosts.toString()}"
     }
 }
 
@@ -66,7 +66,7 @@ def mkdir = { config, host ->
         }.flatten()
         osBuilder.mkdirs(host, dirs)
     } else {
-        logger.error "${host} is not in the server list: ${config.setting.ka.hosts.toString()}"
+        logger.error "${host} is not in the server list: ${config.settings.hosts.toString()}"
     }
 }
 
