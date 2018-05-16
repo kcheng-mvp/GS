@@ -27,6 +27,22 @@ def buildOs = { config ->
     osBuilder.etcHost(config.settings.hosts)
 }
 
+def mkdir = { config, host ->
+    if (config.settings.hosts.contains(host)) {
+        def dirs = config.flatten().findAll {
+            it -> it.key.toUpperCase().indexOf("DIR") > -1 && it.key.indexOf("mapred.system.dir") < 0 &&
+                    it.key.indexOf("mapreduce.jobtracker.staging.root.dir") < 0 &&
+                    it.key.indexOf("dataDirs") < 0
+        }.collect(new HashSet<>()) {
+            it.value.split(",")
+        }.flatten()
+        osBuilder.mkdirs(host, dirs)
+    } else {
+        logger.error "${host} is not in the server list: ${config.settings.hosts.toString()}"
+    }
+}
+
+
 def deploy = { config, deployable, host ->
     if (config.settings.hosts.contains(host)) {
         def consolidated = osBuilder.consolidate(deployable, CONFIG_FOLDER, host, { dir ->
@@ -59,20 +75,6 @@ def deploy = { config, deployable, host ->
     }
 }
 
-def mkdir = { config, host ->
-    if (config.settings.hosts.contains(host)) {
-        def dirs = config.flatten().findAll {
-            it -> it.key.toUpperCase().indexOf("DIR") > -1 && it.key.indexOf("mapred.system.dir") < 0 &&
-                    it.key.indexOf("mapreduce.jobtracker.staging.root.dir") < 0 &&
-                    it.key.indexOf("dataDirs") < 0
-        }.collect(new HashSet<>()) {
-            it.value.split(",")
-        }.flatten()
-        osBuilder.mkdirs(host, dirs)
-    } else {
-        logger.error "${host} is not in the server list: ${config.settings.hosts.toString()}"
-    }
-}
 
 
 if (!args) {
@@ -95,10 +97,11 @@ if (!args) {
             cfg(config)
         } else if ("build".equalsIgnoreCase(args[0])) {
             buildOs(config)
-        } else if ("deploy".equalsIgnoreCase(args[0])) {
-            deploy(config, args[1], args[2])
         } else if ("mkdir".equalsIgnoreCase(args[0])) {
             mkdir(config, args[1])
+        }
+        else if ("deploy".equalsIgnoreCase(args[0])) {
+            deploy(config, args[1], args[2])
         }
     }
 }

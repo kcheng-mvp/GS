@@ -29,6 +29,17 @@ def buildOs = { config ->
     osBuilder.etcHost(config.conf.regionservers)
 }
 
+def mkdir = { config, host ->
+    if (config.conf.regionservers.contains(host)) {
+        def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 && it.key.indexOf("rootdir") < 0 }.collect(new HashSet<>()) {
+            it.value.split(",")
+        }.flatten()
+        osBuilder.mkdirs(host, dirs)
+    } else {
+        logger.error "${host} is not in the server list: ${config.conf.regionservers.toString()}"
+    }
+
+}
 def deploy = { config, deployable, host ->
     if (config.conf.regionservers.contains(host)) {
         def consolidated = osBuilder.consolidate(deployable, CONFIG_FOLDER, host, { dir ->
@@ -53,7 +64,7 @@ def deploy = { config, deployable, host ->
             osBuilder.mkdirs(host, dirs)
         }
     } else {
-        logger.error "${host} is not in the server list: ${config.setting.ka.hosts.toString()}"
+        logger.error "${host} is not in the server list: ${config.conf.regionservers.toString()}"
     }
 }
 
@@ -77,6 +88,8 @@ if (!args) {
             cfg(config)
         } else if ("build".equalsIgnoreCase(args[0])) {
             buildOs(config)
+        } else if ("mkdir".equalsIgnoreCase(args[0])) {
+            mkdir(config, args[1])
         } else if ("deploy".equalsIgnoreCase(args[0])) {
             deploy(config, args[1], args[2])
         }
