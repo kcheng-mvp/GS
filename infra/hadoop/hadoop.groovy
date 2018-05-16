@@ -30,7 +30,7 @@ def buildOs = { config ->
 def deploy = { config, deployable, host ->
     if (config.settings.hosts.contains(host)) {
         def consolidated = osBuilder.consolidate(deployable, CONFIG_FOLDER, host, { dir ->
-            ["conf/masters", "conf/slaves","conf/core-site.xml","conf/hdfs-site.xml","conf/mapred-site.xml"].each { f ->
+            ["conf/masters", "conf/slaves", "conf/core-site.xml", "conf/hdfs-site.xml", "conf/mapred-site.xml"].each { f ->
                 def file = new File(dir, f)
                 if (file.exists()) {
                     logger.info("** Delete ${file.absolutePath}")
@@ -52,6 +52,19 @@ def deploy = { config, deployable, host ->
             }.flatten()
             osBuilder.mkdirs(host, dirs)
         }
+    } else {
+        logger.error "${host} is not in the server list: ${config.setting.ka.hosts.toString()}"
+    }
+}
+
+def mkdir = { config, host ->
+    if (config.settings.hosts.contains(host)) {
+        def dirs = config.flatten().findAll {
+            it -> it.key.toUpperCase().indexOf("DIR") > -1 && it.key.indexOf("mapred.system.dir") < 0 && it.key.indexOf("mapreduce.jobtracker.staging.root.dir") < 0
+        }.collect(new HashSet<>()) {
+            it.value.split(",")
+        }.flatten()
+        osBuilder.mkdirs(host, dirs)
     } else {
         logger.error "${host} is not in the server list: ${config.setting.ka.hosts.toString()}"
     }
@@ -80,6 +93,8 @@ if (!args) {
             buildOs(config)
         } else if ("deploy".equalsIgnoreCase(args[0])) {
             deploy(config, args[1], args[2])
+        } else if ("mkdir".equalsIgnoreCase(args[0])) {
+            mkdir(config, args[1])
         }
     }
 }
