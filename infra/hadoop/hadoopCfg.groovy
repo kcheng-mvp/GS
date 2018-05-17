@@ -89,7 +89,7 @@ conf {
          */
         mapred {
             system {
-                dir = "${settings.dataDirs[0]}/mapred/system"
+                dir = "hadoop/mapred/system"
             }
         }
         /**
@@ -101,7 +101,7 @@ conf {
             jobtracker {
                 staging {
                     root {
-                        dir = "${settings.dataDirs[0]}/mapred/staging"
+                        dir = "hadoop/mapred/staging"
                     }
                 }
             }

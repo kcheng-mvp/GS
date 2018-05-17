@@ -36,16 +36,31 @@ def buildOs = { config ->
 
 }
 
+def mkdir = { config, host ->
+
+    if (config.settings.ka.hosts.contains(host)) {
+
+        def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 }.collect(new HashSet<>()) {
+            it.value.split(",")
+        }.flatten()
+        osBuilder.mkdirs(host, dirs)
+    } else {
+        logger.error "${host} is not in the server list: ${config.setting.ka.hosts.toString()}"
+    }
+}
+
 def deploy = { config, deployable, host ->
     if (config.settings.ka.hosts.contains(host)) {
-        def consolidated = osBuilder.consolidate(deployable, CONFIG_FOLDER,host)
+        def consolidated = osBuilder.consolidate(deployable, CONFIG_FOLDER, host)
         if (consolidated) {
             def rt = osBuilder.deploy(consolidated, host, DEPLOYABLE_HOME)
             if (rt < 0) {
                 logger.error "** Failed to deploy ${deployable} on host ${host}"
                 return -1
             }
-            def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 }.collect(new HashSet<>()) { it.value.split(",") }.flatten()
+            def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 }.collect(new HashSet<>()) {
+                it.value.split(",")
+            }.flatten()
             osBuilder.mkdirs(host, dirs)
         }
     } else {
@@ -73,7 +88,10 @@ if (!args) {
             cfg(config)
         } else if ("build".equalsIgnoreCase(args[0])) {
             buildOs(config)
-        } else if ("deploy".equalsIgnoreCase(args[0])) {
+        } else if ("mkdir".equalsIgnoreCase(args[0])){
+           mkdir(config,args[1])
+        }
+        else if ("deploy".equalsIgnoreCase(args[0])) {
             deploy(config, args[1], args[2])
         }
     }

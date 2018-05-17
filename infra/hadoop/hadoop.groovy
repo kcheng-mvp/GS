@@ -79,6 +79,7 @@ def deploy = { config, deployable, host ->
 
 if (!args) {
     logger.info("** Available commands : init, cfg build and deploy")
+    logger.info("** dfs health page http://namoenode:50070/dfshealth.jsp")
 } else {
     if ("init".equalsIgnoreCase(args[0])) {
         new File(CONFIG_FILE_NAME).withWriter { w ->

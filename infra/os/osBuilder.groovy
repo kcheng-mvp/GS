@@ -191,6 +191,8 @@ def mkdirs(host, dirs) {
                     if (rt.code) {
                         rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
                         rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
+                    } else {
+                        logger.info("** Path ${pathEle.toString()} exists ...")
                     }
                 }
             }
