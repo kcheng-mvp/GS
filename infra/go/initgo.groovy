@@ -19,8 +19,10 @@ def src = new File(gopath, "src")
 src.mkdirs()
 
 
-def env = new File(gopath, "env.sh");
+def env = new File(gopath, "gopath.sh");
 env << "#!/bin/bash\n"
 env << "export GOPATH=\$PWD\n"
 env << "export PATH=\$PATH:\$GOPATH/bin"
 shell.exec("chmod +x ${env.absolutePath}")
+
+println "please run 'source ./gopath.sh' ..."
