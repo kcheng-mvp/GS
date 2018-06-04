@@ -1,5 +1,11 @@
 #! /usr/bin/env groovy
 
+
+@Grapes([
+        @Grab(group = 'com.google.guava', module = 'guava', version = '18.0')
+])
+import com.google.common.base.CaseFormat
+
 def currentPath = new File(getClass().protectionDomain.codeSource.location.path).parent
 GroovyShell groovyShell = new GroovyShell()
 def shell = groovyShell.parse(new File(currentPath, "../../core/Shell.groovy"))
@@ -9,20 +15,23 @@ if(!args || args.length !=1){
     return -1
 }
 
-def gopath = new File(args[0]);
-if(gopath.exists()){
+def projectName = new File(args[0]);
+if(projectName.exists()){
     println "${args[0]} already exists ... "
     return -1
 }
+def ws = new File("${projectName}_ws")
+ws.mkdir()
+new File(ws , "src/${projectName}").mkdirs()
 
-def src = new File(gopath, "src")
-src.mkdirs()
 
-
-def env = new File(gopath, "gopath.sh");
+def env = new File(ws, "gopath.sh");
 env << "#!/bin/bash\n"
 env << "export GOPATH=\$PWD\n"
 env << "export PATH=\$PATH:\$GOPATH/bin"
 shell.exec("chmod +x ${env.absolutePath}")
 
+
 println "please run 'source ./gopath.sh' ..."
+
+
