@@ -68,7 +68,9 @@ def etcHost(hosts) {
             rt = shell.exec("ssh-keygen -b 4096 -q -N '' -C '${host}' -f ~/.ssh/id_rsa", host)
         }
 
-        logger.info("** Checking max open files for {}", host)
+
+        logger.info("** Checking max open files for {}, **should be :65535**", host)
+        logger.info("Please refer to https://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.6.5/bk_security/content/kerb-config-limits.html")
         rt = shell.exec("cat /etc/security/limits.conf", host)
         rt.msg.each { msg ->
             if (msg.startsWith("*")) {
