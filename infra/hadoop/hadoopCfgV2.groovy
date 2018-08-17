@@ -1,15 +1,15 @@
 
 /**
- * https://hadoop.apache.org/docs/r1.0.4/hdfs-default.html
- * https://hadoop.apache.org/docs/r1.0.4/core-default.html
- * https://hadoop.apache.org/docs/r1.0.4/mapred-default.html
+ * https://hadoop.apache.org/docs/r2.8.4/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml
  */
 /****
- *    Hadoop V1
+ *    Hadoop V2
  */
 settings {
     hosts = ["xly01", "xly02", "xly03"] as List
     dataDirs = ["/data0/hadoop1", "/data0/hadoop2"] as List
+    zkAddress = ["zk1:2181","zk2:2181","zk3:2181"] as List
+    rmIds = ["rm1":"xly01","rm2":"xly02"] as Map
 }
 
 conf {
@@ -38,9 +38,13 @@ conf {
          * for redundancy
          * */
         dfs {
-            name {
-
-                dir = "${settings.dataDirs[0]}/dfs/name"
+            namenode{
+                name {
+                    dir = "${settings.dataDirs[0]}/dfs/name"
+                }
+            }
+            checkpoint {
+                dir = "${settings.dataDirs[0]}/dfs/namesecondary"
             }
         }
         /**
@@ -49,58 +53,44 @@ conf {
          * typically on different devices. Directories that do not exist are ignored.
          */
         dfs {
-            data {
-                dir = settings.dataDirs.collect { "${it}/dfs/data" }.join(",")
-            }
-        }
-        /**
-         * Determines where on the **LOCAL FILESYSTEM** the DFS secondary name node should store the temporary images to merge.
-         * If this is a comma-delimited list of directories then the image is replicated in all of the directories for redundancy.
-         */
-        fs {
-            checkpoint {
-                dir = "${settings.dataDirs[0]}/dfs/namesecondary"
-            }
-        }
-        dfs {
-            secondary {
-                http {
-                    address = "${masters[0]}:50090"
+            datanode {
+                data {
+                    dir = settings.dataDirs.collect { "${it}/dfs/data" }.join(",")
                 }
             }
         }
+
     }
     'mapred-site.xml' {
-        mapred {
-            job {
-                tracker = "${settings.hosts[0]}:9001"
-            }
-        }
         /**
          * The **LOCAL DIRECTORY** where MapReduce stores intermediate data files.
          * May be a comma-separated list of directories on different devices in order to spread disk i/o.
          * Directories that do not exist are ignored.
          */
-        mapred {
-            local {
-                dir = settings.dataDirs.collect { "${it}/mapred/local" }.join(",")
-            }
-        }
-        /**
-         * The directory where MapReduce stores control files. Created by hadoop itself in hdfs
-         */
-        mapred {
-            system {
-                dir = "hadoop/mapred/system"
-            }
-        }
-        /**
-         * The root of the staging area for users' job files In practice,
-         * this should be the directory where users' home directories are located (usually /user)
-         * Created by hadoop itself in hdfs.
-         */
         mapreduce {
-            jobtracker {
+            framework {
+                name = "yarn"
+            }
+            cluster {
+                local {
+                    dir = settings.dataDirs.collect { "${it}/mapred/local" }.join(",")
+                }
+            }
+
+            jobtracker{
+                /**
+                 * The directory where MapReduce stores control files. Created by hadoop itself in hdfs
+                 */
+                system {
+                    dir = "hadoop/mapred/system"
+                }
+
+                /**
+                * The root of the staging area for users' job files In practice,
+                * this should be the directory where users' home directories are located (usually /user)
+                * Created by hadoop itself in hdfs.
+                */
+
                 staging {
                     root {
                         dir = "hadoop/mapred/staging"
@@ -108,6 +98,28 @@ conf {
                 }
             }
         }
+    }
+    'yarn-site.xml' {
+        yarn{
+            resourcemanager{
+                ha{
+                    enabled=true
+                    this."rm-ids"= "${settings.rmIds.keySet().collect { it }.join(",")}"
+                }
+                hostname {
+                    settings.rmIds.each {k, v ->
+                        this."${k}" = "${v}"
+                    }
+                }
+                'cluster-id' {
+                    "cluster1"
+                }
+                'zk-address' {
+                    return settings.zkAddress.collect { it }.join(",")
+                }
+            }
+        }
+
     }
 
     'hadoop-env.sh' {

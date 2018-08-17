@@ -78,12 +78,18 @@ def deploy = { config, deployable, host ->
 
 
 if (!args) {
-    logger.info("** Available commands : init, cfg build and deploy")
+    logger.info("** Available commands : init, cfg, build, mkdir and deploy")
     logger.info("** dfs health page http://namoenode:50070/dfshealth.jsp")
 } else {
     if ("init".equalsIgnoreCase(args[0])) {
         new File(CONFIG_FILE_NAME).withWriter { w ->
-            w << new File(currentPath, CONFIG_FILE_NAME).text
+            versionCfg = args.length > 1 ? "hadoopCfg${args[1].toUpperCase()}.groovy" : CONFIG_FILE_NAME
+            f = new File(currentPath, versionCfg)
+            if (f.exists()){
+                w << new File(currentPath, versionCfg).text
+            } else {
+                logger.error "Can't find the file ${f.absolutePath}"
+            }
         }
         logger.info "** Please do the changes according to your environments in ${CONFIG_FILE_NAME}"
 
@@ -94,6 +100,7 @@ if (!args) {
             return -1
         }
         def config = new ConfigSlurper().parse(configFile.text)
+
         if ("cfg".equalsIgnoreCase(args[0])) {
             cfg(config)
         } else if ("build".equalsIgnoreCase(args[0])) {
