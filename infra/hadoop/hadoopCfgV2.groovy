@@ -6,61 +6,124 @@
  *    Hadoop V2
  */
 settings {
+
     hosts = ["xly01", "xly02", "xly03"] as List
+
     dataDirs = ["/data0/hadoop1", "/data0/hadoop2"] as List
+
+    // Just a logic name, so you can set it any value
+    nameserviceID="mycluster"
+
+    // name node id -> host map, key is just a logic name
+    nameNodeIdHostMap = ["nn1":"xly01", "nn2":"xly02"] as Map
+    nameNodeRPCPort = "8020"
+    nameNodeHttpPort = "50070"
+
+    // JournalNode,must be odd number
+    journalNodes = ["xly01","xly02","xly03"] as List
+
+
     zkAddress = ["zk1:2181","zk2:2181","zk3:2181"] as List
     rmIds = ["rm1":"xly01","rm2":"xly02"] as Map
 }
 
 conf {
-    // secondary name node
-    masters = ["xly02"]
-    // dataNode and jobNode
-    slaves = ["xly01", "xly02", "xly03"] as List
 
     'core-site.xml' {
+
+        // fs.defaultFS
         fs {
-            'default' {
-                name = "hdfs://${settings.hosts[0]}:9000"
-            }
+            defaultFS = "hdfs://${settings.nameserviceID}"
         }
+
+        // hadoop.tmp.dir
         hadoop {
             tmp {
-                dir = "${settings.dataDirs[0]}/tmp"
+                dir = "${settings.dataDirs[0]}/hadoop-tmp"
             }
         }
     }
+
 
     'hdfs-site.xml' {
-        /**
-         * Determines where on the **LOCAL FILESYSTEM** the DFS name node should store the name table(fsimage).
-         * If this is a comma-delimited list of directories then the name table is replicated in all of the directories,
-         * for redundancy
-         * */
+
         dfs {
-            namenode{
+            //  the logical name for this new nameservice
+            nameservices = "${settings.nameserviceID}"
+
+            ha {
+                //  dfs.ha.namenodes.[nameservice ID]
+                namenodes {
+                    this."${nameservices}" = settings.nameNodeIdHostMap.keySet().collect { it }.join(",")
+                }
+
+                // dfs.ha.fencing.methods - a list of scripts or Java classes which will be used to fence the Active NameNode during a failover
+                fencing {
+                    methods = "sshfence"
+                    this."ssh.private-key-files" = "/home/hadoop/.ssh/id_rsa"
+                    this."ssh.connect-timeout" = 30000
+                }
+
+            }
+
+
+            namenode {
+
+                // the fully-qualified RPC address for each NameNode to listen on
+                // dfs.namenode.rpc-address.mycluster
+                "rpc-address" {
+                    "${nameservices}" {
+                        settings.nameNodeIdHostMap.each { k, v ->
+                            this."${k}" = "${v}:${settings.nameNodeRPCPort}"
+                        }
+                    }
+                }
+
+                // the fully-qualified HTTP address for each NameNode to listen on
+                // dfs.namenode.http-address.mycluster
+                "http-address" {
+                    "${nameservices}" {
+                        settings.nameNodeIdHostMap.each { k, v ->
+                            this."${k}" = "${v}:${settings.nameNodeHttpPort}"
+                        }
+                    }
+                }
+
+                //dfs.namenode.shared.edits.dir
+                //the default port for the JournalNode is 8485
+                shared {
+                    edits {
+                        dir = "qjournal://" + settings.journalNodes.collect {
+                            "${it}:8485"
+                        }.join(";") + "/${nameservices}"
+                    }
+                }
+
+                // dfs.namenode.name.dir
                 name {
-                    dir = "${settings.dataDirs[0]}/dfs/name"
+                    dir = settings.dataDirs.collect { "${it}/dfs/name" }.join(",")
                 }
-            }
-            checkpoint {
-                dir = "${settings.dataDirs[0]}/dfs/namesecondary"
-            }
-        }
-        /**
-         * Determines where on the **LOCAL FILESYSTEM** an DFS data node should store its blocks.
-         * If this is a comma-delimited list of directories, then data will be stored in all named directories,
-         * typically on different devices. Directories that do not exist are ignored.
-         */
-        dfs {
-            datanode {
-                data {
-                    dir = settings.dataDirs.collect { "${it}/dfs/data" }.join(",")
+
+                // dfs.namenode.checkpoint.dir
+                checkpoint {
+                    dir = settings.dataDirs.collect { "${it}/dfs/namesecondary" }.join(",")
                 }
+
             }
+
+             // dfs.client.failover.proxy.provider.[nameservice ID]
+            this."client.failover.proxy.provider.${nameservices}" = "org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider"
+
+            // dfs.datanode.data.dir
+            this."datanode.data.dir" = settings.dataDirs.collect { "${it}/dfs/data" }.join(",")
+
+            // dfs.journalnode.edits.dir - the path where the JournalNode daemon will store its local state
+            this."journalnode.edits.dir" = "${conf.'core-site.xml'.hadoop.tmp.dir}/journal/local/data"
+
         }
 
     }
+
     'mapred-site.xml' {
         /**
          * The **LOCAL DIRECTORY** where MapReduce stores intermediate data files.
@@ -69,10 +132,17 @@ conf {
          */
         mapreduce {
             framework {
+                // mapreduce.framework.name
                 name = "yarn"
             }
             cluster {
                 local {
+                    /**
+                     * mapreduce.cluster.local.dir
+                     * The local directory where MapReduce stores intermediate data files.
+                     * May be a comma-separated list of directories on different devices in order to spread disk i/o.
+                     * Directories that do not exist are ignored.
+                     */
                     dir = settings.dataDirs.collect { "${it}/mapred/local" }.join(",")
                 }
             }
@@ -82,7 +152,8 @@ conf {
                  * The directory where MapReduce stores control files. Created by hadoop itself in hdfs
                  */
                 system {
-                    dir = "hadoop/mapred/system"
+                    // mapreduce.jobtracker.system.dir
+                    dir = "${settings.dataDirs[0]}/mapred/system"
                 }
 
                 /**
@@ -93,7 +164,8 @@ conf {
 
                 staging {
                     root {
-                        dir = "hadoop/mapred/staging"
+                        // mapreduce.jobtracker.staging.root.dir
+                        dir = "${settings.dataDirs[0]}/mapred/staging"
                     }
                 }
             }
@@ -111,12 +183,10 @@ conf {
                         this."${k}" = "${v}"
                     }
                 }
-                'cluster-id' {
-                    "cluster1"
-                }
-                'zk-address' {
-                    return settings.zkAddress.collect { it }.join(",")
-                }
+                this."cluster-id" = "cluster1"
+
+                this."zk-address" = settings.zkAddress.collect { it }.join(",")
+
             }
         }
 
