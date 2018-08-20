@@ -291,7 +291,9 @@ def consolidate(deployable, configDir, host = null, Closure closure = null) {
     def pattern = ~/-\(.*\)/
     if (!rt.code) {
         settings.eachFileRecurse(FileType.FILES) { f ->
+            logger.info "Configuration file is ${f.absolutePath} ..."
             if (!(f.name =~ pattern) || (host && f.name =~ pattern && f.name.indexOf(host) > -1)) {
+                logger.info "Process file ${f.absolutePath} ..."
                 def target = f.name.replaceAll(pattern, "")
                 def targetFolder = new File("${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}")
                 if(!targetFolder.exists()){
