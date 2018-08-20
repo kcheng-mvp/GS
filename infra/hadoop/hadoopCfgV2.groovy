@@ -12,7 +12,7 @@ settings {
     dataDirs = ["/data0/hadoop1", "/data0/hadoop2"] as List
 
     // Just a logic name, so you can set it any value
-    nameserviceID="mycluster"
+    nameserviceID="hacluster"
 
     // name node id -> host map, key is just a logic name
     nameNodeIdHostMap = ["nn1":"xly01", "nn2":"xly02"] as Map
@@ -39,7 +39,7 @@ conf {
         // hadoop.tmp.dir
         hadoop {
             tmp {
-                dir = "${settings.dataDirs[0]}/hadoop-tmp"
+                dir = "${settings.dataDirs[0]}/hbase-tmp"
             }
         }
     }
@@ -118,7 +118,7 @@ conf {
             this."datanode.data.dir" = settings.dataDirs.collect { "${it}/dfs/data" }.join(",")
 
             // dfs.journalnode.edits.dir - the path where the JournalNode daemon will store its local state
-            this."journalnode.edits.dir" = "${conf.'core-site.xml'.hadoop.tmp.dir}/journal/local/data"
+//            this."journalnode.edits.dir" = "${conf.'core-site.xml'.hadoop.tmp.dir}/journal/local/data"
 
         }
 
