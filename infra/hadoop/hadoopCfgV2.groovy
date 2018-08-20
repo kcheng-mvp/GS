@@ -12,7 +12,7 @@ settings {
     dataDirs = ["/data0/hadoop1", "/data0/hadoop2"] as List
 
     // Just a logic name, so you can set it any value
-    nameserviceID="hacluster"
+    nameserviceID="hdcluster"
 
     // name node id -> host map, key is just a logic name
     nameNodeIdHostMap = ["nn1":"xly01", "nn2":"xly02"] as Map
@@ -39,7 +39,7 @@ conf {
         // hadoop.tmp.dir
         hadoop {
             tmp {
-                dir = "${settings.dataDirs[0]}/hbase-tmp"
+                dir = "${settings.dataDirs[0]}/hadoop-local"
             }
         }
     }

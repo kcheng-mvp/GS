@@ -9,8 +9,8 @@ conf {
     //https://github.com/apache/hbase/blob/master/hbase-common/src/main/resources/hbase-default.xml
     'hbase-site.xml' {
         hbase {
-            this."tmp.dir" = "/data0/hbase-tmp"
-            rootdir = "hdfs://hacluster/hbase"
+            this."tmp.dir" = "/data0/hbase-local"
+            rootdir = "hdfs://hdcluster/hbase"
             cluster {
                 distributed = true
             }
