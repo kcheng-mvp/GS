@@ -1,4 +1,5 @@
 settings {
+    //@todo
     hosts = ["xly01", "xly02", "xly03"] as List
 }
 
@@ -11,6 +12,7 @@ conf {
         initLimit = 10
         syncLimit = 5
         clientPort = 12181
+        //@todo
         dataDir = "/data0/zookeeper/data"
         settings.hosts.eachWithIndex { s, idx ->
             setProperty("server.${idx + 1}", "${s}:12888:13888")
