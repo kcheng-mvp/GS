@@ -9,21 +9,26 @@ settings {
 
     hosts = ["xly01", "xly02", "xly03"] as List
 
+    //@todo
     dataDirs = ["/data0/hadoop1", "/data0/hadoop2"] as List
 
     // Just a logic name, so you can set it any value
     nameserviceID="hdcluster"
 
     // name node id -> host map, key is just a logic name
+    //@todo
     nameNodeIdHostMap = ["nn1":"xly01", "nn2":"xly02"] as Map
     nameNodeRPCPort = "8020"
     nameNodeHttpPort = "50070"
 
     // JournalNode,must be odd number
+    //@todo
     journalNodes = ["xly01","xly02","xly03"] as List
 
 
+    //@todo
     zkAddress = ["zk1:2181","zk2:2181","zk3:2181"] as List
+    //@todo
     rmIds = ["rm1":"xly01","rm2":"xly02"] as Map
 }
 

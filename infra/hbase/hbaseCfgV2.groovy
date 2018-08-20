@@ -15,6 +15,7 @@ conf {
                 distributed = true
             }
             zookeeper {
+                //@todo
                 quorum = "xly01,xly02,xly03"
                 property {
                     dataDir = "/data0/hbase/zookeeper"
@@ -27,6 +28,7 @@ conf {
             }
         }
     }
+    //@todo
     regionservers=["xly01", "xly02", "xly03", "xly04"]
 
 }
