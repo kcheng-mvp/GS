@@ -29,6 +29,7 @@ settings {
 
     //@todo
     zkAddress = ["zk1:2181","zk2:2181","zk3:2181"] as List
+
     //@todo
     rmIds = ["rm1":"xly01","rm2":"xly02"] as Map
 }
@@ -61,6 +62,12 @@ conf {
                 //  dfs.ha.namenodes.[nameservice ID]
                 namenodes {
                     this."${nameservices}" = settings.nameNodeIdHostMap.keySet().collect { it }.join(",")
+                }
+                this."automatic-failover" {
+                    enabled = true
+                }
+                zookeeper {
+                    quorum = settings.zkAddress.collect { it }.join(",")
                 }
 
                 // dfs.ha.fencing.methods - a list of scripts or Java classes which will be used to fence the Active NameNode during a failover
@@ -181,16 +188,27 @@ conf {
         yarn{
             resourcemanager{
                 ha{
+                    //yarn.resourcemanager.ha.enabled
                     enabled=true
+                    //yarn.resourcemanager.ha.rm-ids
                     this."rm-ids"= "${settings.rmIds.keySet().collect { it }.join(",")}"
                 }
+                //yarn.resourcemanager.hostname
                 hostname {
                     settings.rmIds.each {k, v ->
                         this."${k}" = "${v}"
                     }
                 }
+                //yarn.resourcemanager.webapp.address
+                this."webapp.address" {
+                    settings.rmIds.each {k, v ->
+                        this."${k}" = "${v}:8080"
+                    }
+                }
+                //yarn.resourcemanager.cluster-id
                 this."cluster-id" = "cluster1"
 
+                //yarn.resourcemanager.zk-address
                 this."zk-address" = settings.zkAddress.collect { it }.join(",")
 
             }
