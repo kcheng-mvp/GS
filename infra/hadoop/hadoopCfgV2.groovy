@@ -46,7 +46,7 @@ conf {
         // hadoop.tmp.dir
         hadoop {
             tmp {
-                dir = "${settings.dataDirs[0]}/hadoop-local"
+                dir = "${settings.dataDirs[0]}/hadoop-tmp"
             }
         }
     }
