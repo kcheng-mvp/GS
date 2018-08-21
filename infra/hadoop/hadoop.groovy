@@ -27,20 +27,30 @@ def buildOs = { config ->
     osBuilder.etcHost(config.settings.hosts)
 }
 
-def mkdir = { config, host ->
+def getDirs = {config, host  ->
     if (config.settings.hosts.contains(host)) {
         def dirs = config.flatten().findAll {
             it -> it.key.indexOf("dfs.namenode.shared.edits") < 0 && it.key.toUpperCase().indexOf("DIR") > -1 && it.key.indexOf("mapred.system.dir") < 0 &&
                     it.key.indexOf("mapreduce.jobtracker.staging.root.dir") < 0 &&
                     it.key.indexOf("dataDirs") < 0
         }.collect(new HashSet<>()) {
-            it.value.split(",")
+            it.value.replaceAll("file://","").split(",")
         }.flatten()
+        return dirs
+    }
+    return null
+
+}
+
+def mkdir = { config, host ->
+    if (config.settings.hosts.contains(host)) {
+        def dirs = getDirs(config,host)
         osBuilder.mkdirs(host, dirs)
     } else {
         logger.error "${host} is not in the server list: ${config.settings.hosts.toString()}"
     }
 }
+
 
 
 def deploy = { config, deployable, host ->
@@ -61,14 +71,7 @@ def deploy = { config, deployable, host ->
                 logger.error "** Failed to deploy ${deployable} on host ${host}"
                 return -1
             }
-            def dirs = config.flatten().findAll {
-                it -> it.key.toUpperCase().indexOf("DIR") > -1 && it.key.indexOf("mapred.system.dir") < 0 &&
-                        it.key.indexOf("mapreduce.jobtracker.staging.root.dir") < 0 &&
-                        it.key.indexOf("dataDirs") < 0
-            }.collect(new HashSet<>()) {
-                it.value.split(",")
-            }.flatten()
-            osBuilder.mkdirs(host, dirs)
+            osBuilder.mkdirs(host, getDirs(config,host))
         }
     } else {
         logger.error "${host} is not in the server list: ${config.settings.hosts.toString()}"

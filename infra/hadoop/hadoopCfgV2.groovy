@@ -36,11 +36,11 @@ settings {
 
 conf {
 
-    'core-site.xml' {
+    // data node
+    // @todo
+    slaves = ["xly01", "xly02", "xly03"] as List
 
-        // data node
-        // @todo
-        slaves = ["xly01", "xly02", "xly03"] as List
+    'core-site.xml' {
         // fs.defaultFS
         fs {
             defaultFS = "hdfs://${settings.nameserviceID}"
@@ -121,13 +121,16 @@ conf {
 
                 // dfs.namenode.name.dir
                 name {
-                    dir = settings.dataDirs.collect { "${it}/dfs/name" }.join(",")
+                    dir = settings.dataDirs.collect { "file://${it}/dfs/name" }.join(",")
                 }
 
+                /*
                 // dfs.namenode.checkpoint.dir
                 checkpoint {
-                    dir = settings.dataDirs.collect { "${it}/dfs/namesecondary" }.join(",")
+                    dir = settings.dataDirs.collect { "file://${it}/dfs/namesecondary" }.join(",")
                 }
+                */
+
 
             }
 
@@ -138,12 +141,13 @@ conf {
             this."datanode.data.dir" = settings.dataDirs.collect { "${it}/dfs/data" }.join(",")
 
             // dfs.journalnode.edits.dir - the path where the JournalNode daemon will store its local state
-//            this."journalnode.edits.dir" = "${conf.'core-site.xml'.hadoop.tmp.dir}/journal/local/data"
+            this."journalnode.edits.dir" = "${conf.'core-site.xml'.hadoop.tmp.dir}/journal/local/data"
 
         }
 
     }
 
+    /** Optional **/
     'mapred-site.xml' {
         /**
          * The **LOCAL DIRECTORY** where MapReduce stores intermediate data files.
@@ -218,10 +222,13 @@ conf {
                 //yarn.resourcemanager.zk-address
                 this."zk-address" = settings.zkAddress.collect { it }.join(",")
 
+                //To configure the ResourceManager to use the CapacityScheduler, set the following property in the conf/yarn-site.xml
+                this.scheduler.class = "org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler"
+
             }
         }
-
     }
+    /** Optional **/
 
     'hadoop-env.sh' {
         setProperty("export HADOOP_PID_DIR","${settings.dataDirs[0]}/logs")
