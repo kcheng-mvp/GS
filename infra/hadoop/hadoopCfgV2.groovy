@@ -66,9 +66,7 @@ conf {
                 this."automatic-failover" {
                     enabled = true
                 }
-                zookeeper {
-                    quorum = settings.zkAddress.collect { it }.join(",")
-                }
+
 
                 // dfs.ha.fencing.methods - a list of scripts or Java classes which will be used to fence the Active NameNode during a failover
                 fencing {
@@ -77,6 +75,10 @@ conf {
                     this."ssh.connect-timeout" = 30000
                 }
 
+            }
+
+            zookeeper {
+                quorum = settings.zkAddress.collect { it }.join(",")
             }
 
 
