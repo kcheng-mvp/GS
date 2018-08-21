@@ -339,7 +339,7 @@ def consolidate(deployable, configDir, host = null, Closure closure = null) {
     }
 
     logger.info("** Re-generate ${rootName}.tar ")
-    rt = shell.exec("tar -cvzf  ${tmpDir.absolutePath}/${rootName}.tar -C ${tmpDir.absolutePath} ./${rootName}")
+    rt = shell.execPipe("COPYFILE_DISABLE=1 tar -cvzf  ${tmpDir.absolutePath}/${rootName}.tar -C ${tmpDir.absolutePath} ./${rootName}")
     if (rt.code) {
         rt.msg.each {
             logger.error it

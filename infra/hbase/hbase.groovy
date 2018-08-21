@@ -62,6 +62,7 @@ def deploy = { config, deployable, host ->
                 it.value.split(",")
             }.flatten()
             osBuilder.mkdirs(host, dirs)
+            consolidated.getParentFile().deleteDir()
         }
     } else {
         logger.error "${host} is not in the server list: ${config.conf.regionservers.toString()}"
@@ -69,7 +70,7 @@ def deploy = { config, deployable, host ->
 }
 
 if (!args) {
-    logger.info("** Available commands : init, cfg build and deploy")
+    logger.info("** Available commands : init, cfg, build, mkdir and deploy")
 } else {
     if ("init".equalsIgnoreCase(args[0])) {
 //        new File(CONFIG_FILE_NAME).withWriter { w ->
@@ -78,7 +79,7 @@ if (!args) {
 //        logger.info "** Please do the changes according to your environments in ${CONFIG_FILE_NAME}"
 
         new File(CONFIG_FILE_NAME).withWriter { w ->
-            versionCfg = args.length > 1 ? "hadoopCfg${args[1].toUpperCase()}.groovy" : CONFIG_FILE_NAME
+            versionCfg = args.length > 1 ? "hbaseCfg${args[1].toUpperCase()}.groovy" : CONFIG_FILE_NAME
             f = new File(currentPath, versionCfg)
             if (f.exists()){
                 w << new File(currentPath, versionCfg).text
