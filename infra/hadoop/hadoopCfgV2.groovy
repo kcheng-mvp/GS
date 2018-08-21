@@ -38,6 +38,9 @@ conf {
 
     'core-site.xml' {
 
+        // data node
+        // @todo
+        slaves = ["xly01", "xly02", "xly03"] as List
         // fs.defaultFS
         fs {
             defaultFS = "hdfs://${settings.nameserviceID}"
@@ -84,7 +87,6 @@ conf {
                 }
 
             }
-
             namenode {
 
                 // the fully-qualified RPC address for each NameNode to listen on
