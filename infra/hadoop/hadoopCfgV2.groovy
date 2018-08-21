@@ -49,6 +49,14 @@ conf {
                 dir = "${settings.dataDirs[0]}/hadoop-tmp"
             }
         }
+
+        // zk ha
+
+        ha {
+            zookeeper {
+                quorum = settings.zkAddress.collect { it }.join(",")
+            }
+        }
     }
 
 
@@ -76,11 +84,6 @@ conf {
                 }
 
             }
-
-            zookeeper {
-                quorum = settings.zkAddress.collect { it }.join(",")
-            }
-
 
             namenode {
 

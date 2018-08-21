@@ -30,7 +30,7 @@ def buildOs = { config ->
 def mkdir = { config, host ->
     if (config.settings.hosts.contains(host)) {
         def dirs = config.flatten().findAll {
-            it -> it.key.toUpperCase().indexOf("DIR") > -1 && it.key.indexOf("mapred.system.dir") < 0 &&
+            it -> it.key.indexOf("qjournal") < 0 && it.key.toUpperCase().indexOf("DIR") > -1 && it.key.indexOf("mapred.system.dir") < 0 &&
                     it.key.indexOf("mapreduce.jobtracker.staging.root.dir") < 0 &&
                     it.key.indexOf("dataDirs") < 0
         }.collect(new HashSet<>()) {
