@@ -136,9 +136,17 @@ def etcHost(hosts) {
 
 def deploy(deployable, host, homeVar) {
 
+    logger.info "** Checking home variable ${homeVar} ......"
+    def rt = shell.exec("cat ~/.bash_profile", host)
+    def exists = rt.msg.any { v -> v.indexOf("export ${homeVar}") > -1 }
+     if (exists) {
+        logger.error(" ** Variable ${homeVar} has been definied ...")
+        return -1
+    }
+
     logger.info("** Deploy ${deployable} on {} ......", host)
     def targetFolder = deployable.name.replace(".tar", "")
-    def rt = shell.exec("ls -l /usr/local/${targetFolder}", host)
+    rt = shell.exec("ls -l /usr/local/${targetFolder}", host)
     if (rt.code) {
         def sdf = new SimpleDateFormat("yyyyMMddHHmmss")
         logger.info "** scp ${deployable.absolutePath} ${host} (This may take minutes) ......"
@@ -162,15 +170,9 @@ def deploy(deployable, host, homeVar) {
 
     logger.info("** Create ${homeVar} environment variable on {} ......", host)
     rt = shell.exec("cat ~/.bash_profile", host)
-    def exists = rt.msg.any { v -> v.indexOf("export ${homeVar}") > -1 }
-    if (exists) {
-        logger.error(" ** Variable ${homeVar} has been definied ...")
-        return -1
-    } else {
-        rt = shell.exec("echo '' >> ~/.bash_profile", host)
-        rt = shell.exec("echo 'export ${homeVar}=/usr/local/${targetFolder}' >> ~/.bash_profile", host)
-        rt = shell.exec("echo 'export PATH=\$${homeVar}/bin:\$PATH' >> ~/.bash_profile", host)
-    }
+    rt = shell.exec("echo '' >> ~/.bash_profile", host)
+    rt = shell.exec("echo 'export ${homeVar}=/usr/local/${targetFolder}' >> ~/.bash_profile", host)
+    rt = shell.exec("echo 'export PATH=\$${homeVar}/bin:\$PATH' >> ~/.bash_profile", host)
     return 1
 }
 
