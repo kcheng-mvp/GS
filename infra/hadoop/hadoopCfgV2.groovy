@@ -28,7 +28,7 @@ settings {
 
 
     //@todo
-    zkAddress = ["zk1:2181","zk2:2181","zk3:2181"] as List
+    zkAddress = ["xly01:12181","xly02:12181","xly03:12181"] as List
 
     //@todo
     rmIds = ["rm1":"xly01","rm2":"xly02"] as Map
@@ -68,6 +68,13 @@ conf {
         dfs {
             //  the logical name for this new nameservice
             nameservices = "${settings.nameserviceID}"
+
+            /**
+             * dfs.replication
+             * Default block replication. The actual number of replications can be specified when the file is created.
+             * The default is used if replication is not specified in create time. Default is 3
+             */
+            replication = 2
 
             ha {
                 //  dfs.ha.namenodes.[nameservice ID]
@@ -120,9 +127,14 @@ conf {
                 }
 
                 // dfs.namenode.name.dir
-                name {
-                    dir = settings.dataDirs.collect { "file://${it}/dfs/name" }.join(",")
-                }
+                this."name.dir" = settings.dataDirs.collect { "file://${it}/dfs/name" }.join(",")
+
+                /**
+                 * The number of Namenode RPC server threads that listen to requests from clients.
+                 * If dfs.namenode.servicerpc-address is not configured then Namenode RPC server threads
+                 * listen to requests from all nodes.
+                 */
+                this."handler.count" = 20
 
                 /*
                 // dfs.namenode.checkpoint.dir
@@ -231,9 +243,11 @@ conf {
     /** Optional **/
 
     'hadoop-env.sh' {
-        setProperty("export HADOOP_PID_DIR","${settings.dataDirs[0]}/logs")
-        setProperty("export HADOOP_LOG_DIR","${settings.dataDirs[0]}/pids")
+        setProperty("export HADOOP_PID_DIR","${settings.dataDirs[0]}/pids")
+        setProperty("export HADOOP_LOG_DIR","${settings.dataDirs[0]}/logs")
         setProperty("export JAVA_HOME","/usr/local/jdk")
+        //https://www.evernote.com/l/Abl5eVXVYDRMgK07MThA2yh5s-JAanEpbmU
+        setProperty("export HADOOP_NAMENODE_OPTS","-server -XX:ParallelGCThreads=8 -XX:+UseConcMarkSweepGC  -XX:NewSize=800m -XX:MaxNewSize=800m -Xms6144m -Xmx6144m -XX:PermSize=128m -XX:MaxPermSize=256m")
     }
 }
 
