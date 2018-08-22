@@ -12,20 +12,30 @@ conf {
         //@todo
         setProperty("export HBASE_MANAGES_ZK",false)
     }
+
+    /**
+     * hbase master high available settings. this should keep all the nodes which want to start master
+     * To configure backup Masters, create a new file in the conf/ directory which will be distributed across your cluster,
+     * called backup-masters. For each backup Master you wish to start,
+     * add a new line with the hostname where the Master should be started.
+     * Each host that will run a Master needs to have all of the configuration files available.
+     * In general, it is a good practice to distribute the entire conf/ directory across all cluster nodes.
+     */
+    this."backup-masters" = ["xly02"] as List
+
     //https://github.com/apache/hbase/blob/master/hbase-common/src/main/resources/hbase-default.xml
     'hbase-site.xml' {
         hbase {
             this."tmp.dir" = "/data0/hbase-tmp"
-            rootdir = "hdfs://hdcluster/hbase"
+            rootdir = "hdfs://hdcluster:8020/hbase"
             cluster {
                 distributed = true
             }
             zookeeper {
                 //@todo
                 quorum = "xly01,xly02,xly03"
-                property {
-                    dataDir = "/data0/hbase/zookeeper"
-                }
+                //@todo keep this just for embedded zookeeper server
+                this."property.dataDir" = "/data0/hbase/zookeeper"
                 //hbase.zookeeper.property.clientPort
                 //@todo
                 this.property.clientPort = 12181
