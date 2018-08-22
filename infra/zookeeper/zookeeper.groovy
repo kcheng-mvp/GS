@@ -52,6 +52,9 @@ def deploy = { config, deployable, host ->
                 it.value
             }.flatten()
             osBuilder.mkdirs(host, dirs)
+            
+            logger.info "Deleting consolidated file ......"
+            consolidated.getParentFile().deleteDir()
 
             // specials for zookeeper
             def ug = shell.sshug(host)
@@ -66,6 +69,7 @@ def deploy = { config, deployable, host ->
                     rt = shell.exec("stat -c '%n %U %G %y' ${config.conf.'zoo.cfg'.dataDir}/myid", host)
                 }
             }
+
         }
 
     } else {
