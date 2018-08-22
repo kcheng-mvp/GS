@@ -150,9 +150,10 @@ conf {
             this."client.failover.proxy.provider.${nameservices}" = "org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider"
 
             // dfs.datanode.data.dir
-            this."datanode.data.dir" = settings.dataDirs.collect { "${it}/dfs/data" }.join(",")
+            this."datanode.data.dir" = settings.dataDirs.collect { "file://${it}/dfs/data" }.join(",")
 
             // dfs.journalnode.edits.dir - the path where the JournalNode daemon will store its local state
+            // can not start with file:/
             this."journalnode.edits.dir" = "${conf.'core-site.xml'.hadoop.tmp.dir}/journal/local/data"
 
         }
