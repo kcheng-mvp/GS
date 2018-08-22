@@ -248,7 +248,7 @@ conf {
         setProperty("export JAVA_HOME","/usr/local/jdk")
         //https://www.evernote.com/l/Abl5eVXVYDRMgK07MThA2yh5s-JAanEpbmU
         //@todo
-        setProperty("export HADOOP_NAMENODE_OPTS","-server -XX:ParallelGCThreads=8 -XX:+UseConcMarkSweepGC  -XX:NewSize=800m -XX:MaxNewSize=800m -Xms6144m -Xmx6144m -XX:PermSize=128m -XX:MaxPermSize=256m")
+        setProperty("export HADOOP_NAMENODE_OPTS",'"-server -XX:ParallelGCThreads=8 -XX:+UseConcMarkSweepGC -XX:NewSize=800m -XX:MaxNewSize=800m -Xms6144m -Xmx6144m -XX:PermSize=128m -XX:MaxPermSize=256m"')
     }
 }
 

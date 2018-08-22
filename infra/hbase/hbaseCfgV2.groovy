@@ -3,8 +3,8 @@ conf {
         setProperty("export JAVA_HOME","/usr/local/jdk")
         //Add a pointer to your HADOOP_CONF_DIR to the HBASE_CLASSPATH environment variable in hbase-env.sh
         setProperty("export HBASE_CLASSPATH","/usr/local/hadoop/conf")
-        setProperty("export HBASE_PID_DIR","/var/hbase/pid")
-        setProperty("export HBASE_LOG_DIR","/var/hbase/log")
+        setProperty("export HBASE_PID_DIR","/var/hbase/pids")
+        setProperty("export HBASE_LOG_DIR","/var/hbase/logs")
         /**
          * Use the HBASE_MANAGES_ZK variable in conf/hbase-env.sh. This variable, which defaults to true,
          * tells HBase whether to start/stop the ZooKeeper ensemble servers as part of HBase start/stop
