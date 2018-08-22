@@ -72,6 +72,8 @@ def deploy = { config, deployable, host ->
                 return -1
             }
             osBuilder.mkdirs(host, getDirs(config,host))
+            logger.info "Deleting consolidated file ......"
+            consolidated.getParentFile().deleteDir()
         }
     } else {
         logger.error "${host} is not in the server list: ${config.settings.hosts.toString()}"
