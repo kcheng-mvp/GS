@@ -1,17 +1,27 @@
+// Please refer to https://www.evernote.com/shard/s441/nl/77222586/abdddd4f-1d72-4d42-83d4-03afdd5c4ecf/
 settings {
+    //@todo
     ka.hosts = ["xly04", "xly05"] as List
+    //@todo
     zk.hosts = ["xly01", "xly02", "xly03"] as List
     zk.client.port = 12181
     ka.client.port = 9092
     zk.connect = settings.zk.hosts.collect { "${it}:${settings.zk.client.port}" }.join(",") + "/kafka"
+    //@todo
+    ka.dataDirs = ["/data0/kafka/data","/data1/kafka/data","/data2/kafka/data","/data3/kafka/data"] as List
 }
 
 config {
     settings.ka.hosts.eachWithIndex { host, idx ->
         "server-(${host}).properties" {
             listeners = "PLAINTEXT://:${settings.ka.client.port}"
-            log.dirs = "/data0/kafka/data"
-            // number of partition default as the number of the 2 * ka_hosts
+            log.dirs = ka.dataDirs.collect { it }.join(",")
+            /**
+             * The default number of log partitions per topic,
+             * number of partition default as the number of the 2 * ka_hosts
+             * Required partitions = Max (T/P, T/C)
+             */
+            //@todo
             num.partitions = settings.ka.hosts.size() * 2
             broker.id = settings.ka.hosts.indexOf(host) + 1
             zookeeper.connect = settings.zk.connect
@@ -43,6 +53,7 @@ config {
     }
 
 }
+
 bin {
     'kafka-run-class.sh' {
         // set kafka log4j folder
