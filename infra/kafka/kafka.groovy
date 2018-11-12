@@ -36,14 +36,24 @@ def buildOs = { config ->
 
 }
 
+def getDirs = {config, host  ->
+    if (config.settings.ka.hosts.contains(host)) {
+        def dirs = config.flatten().findAll {
+            it -> it.key.toUpperCase().indexOf("DIR") > -1 && it.key.indexOf("dataDirs") < 0
+        }.collect(new HashSet<>()) {
+            it.value.split(",")
+        }.flatten()
+        return dirs
+    }
+    return null
+
+}
+
 def mkdir = { config, host ->
 
     if (config.settings.ka.hosts.contains(host)) {
 
-        def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 }.collect(new HashSet<>()) {
-            it.value.split(",")
-        }.flatten()
-        osBuilder.mkdirs(host, dirs)
+        osBuilder.mkdirs(host, getDirs(config,host))
     } else {
         logger.error "${host} is not in the server list: ${config.setting.ka.hosts.toString()}"
     }
@@ -58,10 +68,9 @@ def deploy = { config, deployable, host ->
                 logger.error "** Failed to deploy ${deployable} on host ${host}"
                 return -1
             }
-            def dirs = config.flatten().findAll { it -> it.key.toUpperCase().indexOf("DIR") > -1 }.collect(new HashSet<>()) {
-                it.value.split(",")
-            }.flatten()
-            osBuilder.mkdirs(host, dirs)
+            osBuilder.mkdirs(host, getDirs(config,host))
+            logger.info "Deleting consolidated file ......"
+            consolidated.getParentFile().deleteDir()
         }
     } else {
         logger.error "${host} is not in the server list: ${config.setting.ka.hosts.toString()}"

@@ -15,7 +15,7 @@ config {
     settings.ka.hosts.eachWithIndex { host, idx ->
         "server-(${host}).properties" {
             listeners = "PLAINTEXT://:${settings.ka.client.port}"
-            log.dirs = ka.dataDirs.collect { it }.join(",")
+            log.dirs = settings.ka.dataDirs.collect { it }.join(",")
             /**
              * The default number of log partitions per topic,
              * number of partition default as the number of the 2 * ka_hosts
