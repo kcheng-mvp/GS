@@ -111,6 +111,10 @@ if (!args) {
         } else if ("build".equalsIgnoreCase(args[0])) {
             buildOs(config)
         } else if ("mkdir".equalsIgnoreCase(args[0])) {
+            if(args.length < 2){
+                logger.error "** Missed the target host, run the command as `mkdir host_name`"
+                return
+            }
             mkdir(config, args[1])
         }
         else if ("deploy".equalsIgnoreCase(args[0])) {
