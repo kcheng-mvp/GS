@@ -118,6 +118,10 @@ if (!args) {
             mkdir(config, args[1])
         }
         else if ("deploy".equalsIgnoreCase(args[0])) {
+            if(args.length < 3){
+                logger.error "** Missed the target host, run the command as `deploy **.tar host_name`"
+                return
+            }
             deploy(config, args[1], args[2])
         }
     }

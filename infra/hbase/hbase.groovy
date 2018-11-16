@@ -102,8 +102,16 @@ if (!args) {
         } else if ("build".equalsIgnoreCase(args[0])) {
             buildOs(config)
         } else if ("mkdir".equalsIgnoreCase(args[0])) {
+            if(args.length < 2){
+                logger.error "execute the command with mkdir host_name"
+                return
+            }
             mkdir(config, args[1])
         } else if ("deploy".equalsIgnoreCase(args[0])) {
+            if(args.length < 3){
+                logger.error "execute the command with deploy tar host"
+                return
+            }
             deploy(config, args[1], args[2])
         }
     }

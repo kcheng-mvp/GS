@@ -127,6 +127,11 @@ conf {
                 }
 
                 // dfs.namenode.name.dir
+                /**
+                 * Determines where on the local filesystem the DFS name node should store the name table(fsimage).
+                 * If this is a comma-delimited list of directories
+                 * then the name table is replicated in all of the directories, for redundancy.
+                 */
                 this."name.dir" = settings.dataDirs.collect { "file://${it}/dfs/name" }.join(",")
 
                 /**

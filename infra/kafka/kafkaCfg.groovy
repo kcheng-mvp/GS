@@ -65,6 +65,6 @@ bin {
 scripts {
     setProperty("kafka-topics.sh", ["../bin/kafka-topics.sh  --zookeeper ${settings.zk.connect}"])
     setProperty("kafka-console-producer.sh", ["../bin/kafka-console-producer.sh --broker-list ${config.'producer.properties'.bootstrap.servers}"])
-    setProperty("kafka-console-consumer.sh", ["../bin/kafka-console-consumer.sh --zookeeper ${settings.zk.connect}"])
+    setProperty("kafka-console-consumer.sh", ["../bin/kafka-console-consumer.sh --bootstrap-server ${config.'producer.properties'.bootstrap.servers}"])
     setProperty("kafka-consumer-groups.sh", ["../bin/kafka-consumer-groups.sh --zookeeper ${settings.zk.connect}"])
 }

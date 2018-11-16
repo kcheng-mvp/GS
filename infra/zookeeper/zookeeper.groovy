@@ -78,7 +78,7 @@ def deploy = { config, deployable, host ->
 }
 
 if (!args) {
-    logger.info("** Available commands : init, cfg, build(os,optional) and deploy")
+    logger.info("** Available commands : init, cfg, build(os,optional) mkdir and deploy")
 } else {
     if ("init".equalsIgnoreCase(args[0])) {
         new File(CONFIG_FILE_NAME).withWriter { w ->
@@ -98,6 +98,10 @@ if (!args) {
         } else if ("build".equalsIgnoreCase(args[0])) {
             buildOs(config)
         } else if ("mkdir".equalsIgnoreCase(args[0])){
+            if(args.length < 2){
+                logger.error "please run the command as mkdir host_name"
+                return -1
+            }
             mkdir(config, args[1])
         } else if ("deploy".equalsIgnoreCase(args[0])) {
             deploy(config, args[1], args[2])
