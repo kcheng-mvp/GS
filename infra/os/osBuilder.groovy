@@ -139,7 +139,7 @@ def deploy(deployable, host, homeVar) {
     logger.info "** Checking home variable ${homeVar} ......"
     def rt = shell.exec("cat ~/.bash_profile", host)
     def exists = rt.msg.any { v -> v.indexOf("export ${homeVar}") > -1 }
-     if (exists) {
+    if (exists) {
         logger.error(" ** Variable ${homeVar} has been definied ...")
         return -1
     }
@@ -183,23 +183,33 @@ def mkdirs(host, dirs) {
     def user = ug.u
     dirs.each { dir ->
         // in case there are " in the directory settings, especially in the shell file.
-        dir = dir.replace("\"","")
+        dir = dir.replace("\"", "")
         def rt = shell.exec("ls -l ${dir}", host);
         if (rt.code) {
             logger.info("** [${host}]: Creating folder: ${dir} ...... ")
             def pathEle = new StringBuffer()
-            dir.split(File.separator).each { ele ->
-                if (ele) {
-                    pathEle.append(File.separator).append(ele)
-                    rt = shell.exec("ls -l ${pathEle.toString()}", host)
-                    if (rt.code) {
-                        rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
-                        rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
-                    } else {
-                        logger.info("** Path ${pathEle.toString()} exists ...")
+
+            def root = File.separator+dir.split(File.separator)[0]
+            rt = shell.exec("ls -l ${pathEle.toString()}", host)
+
+            // 0, exists, 1 -> need to create, root must be existing
+            if (!rt.code){
+                dir.split(File.separator).each { ele ->
+                    if (ele) {
+                        pathEle.append(File.separator).append(ele)
+                        rt = shell.exec("ls -l ${pathEle.toString()}", host)
+                        if (rt.code) {
+                            rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
+                            rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
+                        } else {
+                            logger.info("** Path ${pathEle.toString()} exists ...")
+                        }
                     }
                 }
+            } else {
+                logger.info("** root path ${pathEle.toString()} does not exist, ignore ......")
             }
+
         } else {
             logger.warn "** Folder ${dir} exits on ${host}, ignore "
         }
@@ -228,7 +238,7 @@ def findBound(configFile, hosts) {
 // It only supports .xml and .properties like style
 def generateCfg(config, dir) {
     def settings = new File(dir)
-    if(settings.exists()) settings.deleteDir()
+    if (settings.exists()) settings.deleteDir()
     settings.mkdir()
     config.keySet().each { key ->
         if (key.trim() && !"settings".equals(key)) {
@@ -249,7 +259,19 @@ def generateCfg(config, dir) {
                             }
                         }
                         w.close()
-                    }else {
+                    } else if (f.endsWith(".sh")) {
+                        def bw = new BufferedWriter(w)
+                        def var = config."${key}".get(f).flatten()
+                        var.each { item ->
+                            if (var instanceof Map) {
+                                bw.write("${item.key}=${item.value}")
+                            } else {
+                                bw.write(item)
+                            }
+                            bw.newLine()
+                        }
+                        bw.close()
+                    } else {
                         def bw = new BufferedWriter(w)
                         def var = config."${key}".get(f).flatten()
                         var.each { item ->
@@ -298,11 +320,11 @@ def consolidate(deployable, configDir, host = null, Closure closure = null) {
                 logger.info "Process file ${f.absolutePath} ..."
                 def target = f.name.replaceAll(pattern, "")
                 def targetFolder = new File("${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}")
-                if(!targetFolder.exists()){
+                if (!targetFolder.exists()) {
                     targetFolder.mkdirs()
                     logger.info("** Create folder ${targetFolder.absolutePath}")
                 }
-                target = new File(targetFolder,target);
+                target = new File(targetFolder, target);
                 if (target.exists()) {
                     def backup = new File("${tmpDir.absolutePath}/${rootName}/${f.getParentFile().getName()}/${target.name}.${sdf.format(Calendar.getInstance().getTime())}").with {
                         it << target.text

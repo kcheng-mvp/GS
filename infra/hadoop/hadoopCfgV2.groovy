@@ -1,17 +1,24 @@
 
 /**
  * https://hadoop.apache.org/docs/r2.8.4/hadoop-project-dist/hadoop-hdfs/hdfs-default.xml
+ * https://hadoop.apache.org/docs/r2.7.4/hadoop-mapreduce-client/hadoop-mapreduce-client-core/mapred-default.xml
+ * https://hadoop.apache.org/docs/r2.7.5/hadoop-yarn/hadoop-yarn-common/yarn-default.xml
+ * https://www.evernote.com/l/AbkS20fpTRtOE4F26R0GJvKljFsCl_SEIso
  */
 /****
  *    Hadoop V2
+ *
  */
 settings {
 
     //@todo
-    hosts = ["xly01", "xly02", "xly03"] as List
+    hosts = ["prd-hadoop01", "prd-hadoop02", "prd-hadoop03","prd-hadoop04","prd-hadoop05"] as List
 
     //@todo
-    dataDirs = ["/data0/hadoop1", "/data0/hadoop2"] as List
+    dataDirs = ["/data0/hadoop", "/data1/hadoop","/data2/hadoop", "/data3/hadoop",
+    "/data4/hadoop", "/data5/hadoop","/data6/hadoop", "/data7/hadoop"] as List
+    //@todo
+    nameDirs = ["/data0/hadoop1", "/data0/hadoop2"] as List
 
     // Just a logic name, so you can set it any value
     nameserviceID="hdcluster"
@@ -49,7 +56,7 @@ conf {
         // hadoop.tmp.dir
         hadoop {
             tmp {
-                dir = "${settings.dataDirs[0]}/hadoop-tmp"
+                dir = "${settings.dataDirs[0]}/hadoop-tmpdir"
             }
         }
 
@@ -132,14 +139,15 @@ conf {
                  * If this is a comma-delimited list of directories
                  * then the name table is replicated in all of the directories, for redundancy.
                  */
-                this."name.dir" = settings.dataDirs.collect { "file://${it}/dfs/name" }.join(",")
+                this."name.dir" = settings.nameDirs.collect { "file://${it}/dfs/name" }.join(",")
 
                 /**
                  * The number of Namenode RPC server threads that listen to requests from clients.
                  * If dfs.namenode.servicerpc-address is not configured then Namenode RPC server threads
                  * listen to requests from all nodes.
+                 * Refer to https://www.evernote.com/l/AblzkvH9bRxMJ4JvFGcqfjgfK6iAPTx-EWo
                  */
-                this."handler.count" = 20
+                this."handler.count" = 20 * (Integer)(Math.log(settings.hosts.size()) / Math.log(2))
 
                 /*
                 // dfs.namenode.checkpoint.dir
@@ -150,12 +158,16 @@ conf {
 
 
             }
+            datanode {
+                //@todo
+                this."handler.count" = num_of_cpu_core
+                // dfs.datanode.data.dir
+                this."data.dir" = settings.dataDirs.collect { "file://${it}/dfs/data" }.join(",")
+            }
 
-             // dfs.client.failover.proxy.provider.[nameservice ID]
+            // dfs.client.failover.proxy.provider.[nameservice ID]
             this."client.failover.proxy.provider.${nameservices}" = "org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider"
 
-            // dfs.datanode.data.dir
-            this."datanode.data.dir" = settings.dataDirs.collect { "file://${it}/dfs/data" }.join(",")
 
             // dfs.journalnode.edits.dir - the path where the JournalNode daemon will store its local state
             // can not start with file:/
@@ -213,6 +225,8 @@ conf {
             }
         }
     }
+    // https://hadoop.apache.org/docs/r2.7.5/hadoop-yarn/hadoop-yarn-common/yarn-default.xml
+    // resourcemanager and  nodemanager should run with different user with hadoop
     'yarn-site.xml' {
         yarn{
             resourcemanager{
@@ -231,7 +245,7 @@ conf {
                 //yarn.resourcemanager.webapp.address
                 this."webapp.address" {
                     settings.rmIds.each {k, v ->
-                        this."${k}" = "${v}:8080"
+                        this."${k}" = "${v}:8088"
                     }
                 }
                 //yarn.resourcemanager.cluster-id
@@ -243,6 +257,19 @@ conf {
                 //To configure the ResourceManager to use the CapacityScheduler, set the following property in the conf/yarn-site.xml
                 this.scheduler.class = "org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler"
 
+            }
+            nodemanager{
+                // mb
+                /**
+                 * Amount of physical memory, in MB, that can be allocated for containers.
+                 * 8G
+                 */
+                //@todo
+                this.'resource.memory-mb'=8192
+                //@todo
+                this.'resource.cpu-vcores'=8
+                //@todo
+                this.'resource.percentage-physical-cpu-limit'=40
             }
         }
     }

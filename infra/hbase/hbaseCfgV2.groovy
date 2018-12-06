@@ -21,7 +21,7 @@ conf {
      * Each host that will run a Master needs to have all of the configuration files available.
      * In general, it is a good practice to distribute the entire conf/ directory across all cluster nodes.
      */
-    this."backup-masters" = ["xly02"] as List
+    this."backup-masters" = ["xly01","xly02"] as List
 
     //https://github.com/apache/hbase/blob/master/hbase-common/src/main/resources/hbase-default.xml
     'hbase-site.xml' {
