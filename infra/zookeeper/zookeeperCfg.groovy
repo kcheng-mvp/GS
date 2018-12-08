@@ -5,6 +5,8 @@ settings {
 
 conf {
     'log4j.properties' {
+        log4j.rootLogger="INFO, ROLLINGFILE"
+        log4j.appender.ROLLINGFILE.MaxFileSize="10MB"
         log4j.appender.ROLLINGFILE.MaxBackupIndex = 20
     }
     'zoo.cfg' {

@@ -11,6 +11,18 @@ conf {
          */
         //@todo
         setProperty("export HBASE_MANAGES_ZK",false)
+
+        //todo -XX:ParallelGCThreads=8+(logical processors-8)(5/8)
+        /**
+         *  Refer to https://www.evernote.com/l/Abna63xMNrNAH6zzaMiSr0zpWXf_3bJNDOE
+         * 16 cpu then 8 + (16-8) * 5/8 = 8 + 5 = 13
+         *
+         *  32GB heap, -XX:G1NewSizePercent=3;
+         *  64GB heap, -XX:G1NewSizePercent=2;
+         *  100GB and above heap, -XX:G1NewSizePercent=1;
+         *  as we are using 32g heap, so it should be '-XX:G1NewSizePercent=3'
+         */
+        setProperty("export HBASE_REGIONSERVER_OPTS",'"-XX:+UseG1GC -Xms32g -Xmx32g -XX:NewSize=3g -XX:MaxNewSize=3g  -XX:MaxGCPauseMillis=150 -XX:+ParallelRefProcEnabled -XX:-ResizePLAB -XX:ParallelGCThreads=13"')
     }
 
     /**
@@ -53,5 +65,10 @@ conf {
     }
     //@todo
     regionservers=["xly01", "xly02", "xly03", "xly04"]
+
+
+    'log4j.properties' {
+        log4j.rootLogger="INFO, DFRA"
+    }
 
 }

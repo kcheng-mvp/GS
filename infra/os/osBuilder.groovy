@@ -189,27 +189,18 @@ def mkdirs(host, dirs) {
             logger.info("** [${host}]: Creating folder: ${dir} ...... ")
             def pathEle = new StringBuffer()
 
-            def root = File.separator+dir.split(File.separator)[0]
-            rt = shell.exec("ls -l ${pathEle.toString()}", host)
-
-            // 0, exists, 1 -> need to create, root must be existing
-            if (!rt.code){
-                dir.split(File.separator).each { ele ->
-                    if (ele) {
-                        pathEle.append(File.separator).append(ele)
-                        rt = shell.exec("ls -l ${pathEle.toString()}", host)
-                        if (rt.code) {
-                            rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
-                            rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
-                        } else {
-                            logger.info("** Path ${pathEle.toString()} exists ...")
-                        }
+            dir.split(File.separator).eachWithIndex { ele, idx ->
+                if (ele) {
+                    pathEle.append(File.separator).append(ele)
+                    rt = shell.exec("ls -l ${pathEle.toString()}", host)
+                    if (rt.code) {
+                        rt = shell.exec("sudo mkdir ${pathEle.toString()}", host)
+                        rt = shell.exec("sudo chown ${user}:${group} ${pathEle.toString()}", host)
+                    } else {
+                        logger.info("** Path ${pathEle.toString()} exists ...")
                     }
                 }
-            } else {
-                logger.info("** root path ${pathEle.toString()} does not exist, ignore ......")
             }
-
         } else {
             logger.warn "** Folder ${dir} exits on ${host}, ignore "
         }

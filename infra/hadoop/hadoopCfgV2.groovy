@@ -17,8 +17,6 @@ settings {
     //@todo
     dataDirs = ["/data0/hadoop", "/data1/hadoop","/data2/hadoop", "/data3/hadoop",
     "/data4/hadoop", "/data5/hadoop","/data6/hadoop", "/data7/hadoop"] as List
-    //@todo
-    nameDirs = ["/data0/hadoop1", "/data0/hadoop2"] as List
 
     // Just a logic name, so you can set it any value
     nameserviceID="hdcluster"
@@ -139,7 +137,8 @@ conf {
                  * If this is a comma-delimited list of directories
                  * then the name table is replicated in all of the directories, for redundancy.
                  */
-                this."name.dir" = settings.nameDirs.collect { "file://${it}/dfs/name" }.join(",")
+                //@todo might be just sublist of dataDirs
+                this."name.dir" = settings.dataDirs.collect { "file://${it}/dfs/name" }.join(",")
 
                 /**
                  * The number of Namenode RPC server threads that listen to requests from clients.
@@ -267,9 +266,9 @@ conf {
                 //@todo
                 this.'resource.memory-mb'=8192
                 //@todo
-                this.'resource.cpu-vcores'=8
+                this.'resource.cpu-vcores'=3
                 //@todo
-                this.'resource.percentage-physical-cpu-limit'=40
+                this.'resource.percentage-physical-cpu-limit'=20
             }
         }
     }
@@ -281,7 +280,12 @@ conf {
         setProperty("export JAVA_HOME","/usr/local/jdk")
         //https://www.evernote.com/l/Abl5eVXVYDRMgK07MThA2yh5s-JAanEpbmU
         //@todo
-        setProperty("export HADOOP_NAMENODE_OPTS",'"-server -XX:ParallelGCThreads=8 -XX:+UseConcMarkSweepGC -XX:NewSize=800m -XX:MaxNewSize=800m -Xms6144m -Xmx6144m -XX:PermSize=128m -XX:MaxPermSize=256m"')
+        //setProperty("export HADOOP_NAMENODE_OPTS",'"-server -XX:ParallelGCThreads=8 -XX:+UseConcMarkSweepGC -XX:NewSize=800m -XX:MaxNewSize=800m -Xms6144m -Xmx6144m -XX:PermSize=128m -XX:MaxPermSize=256m"')
+        setProperty("export HADOOP_NAMENODE_OPTS",'"-XX:+UseG1GC -Xms26g -Xmx26g -XX:NewSize=3g -XX:MaxNewSize=3g ' +
+                '-XX:MaxGCPauseMillis=150 -XX:+ParallelRefProcEnabled -XX:-ResizePLAB -XX:ParallelGCThreads=13 ' +
+                '-verbose:gc -XX:+PrintGCDetails -Xloggc:${HADOOP_LOG_DIR}/hadoop-hdfs-namenode-`date +\'%Y%m%d%H%M\'`.gclog -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=20 ${HADOOP_NAMENODE_OPTS}"')
+
+        setProperty("export HADOOP_DATANODE_OPTS",'"-verbose:gc -XX:+PrintGCDetails -Xloggc:${HADOOP_LOG_DIR}/hadoop-hdfs-datanode-`date +\'%Y%m%d%H%M\'`.gclog -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=20 ${HADOOP_DATANODE_OPTS}"')
     }
 }
 

@@ -6,6 +6,8 @@ import com.google.common.base.CaseFormat
 import groovy.io.FileType
 import groovy.xml.MarkupBuilder
 
+import java.util.stream.Collectors
+
 def currentPath = new File(getClass().protectionDomain.codeSource.location.path).parent
 GroovyShell groovyShell = new GroovyShell()
 def shell = groovyShell.parse(new File(currentPath, "../../core/Shell.groovy"))
@@ -27,18 +29,31 @@ def buildOs = { config ->
     osBuilder.etcHost(config.settings.hosts)
 }
 
-def getDirs = {config, host  ->
+def getDirs = { config, host ->
     if (config.settings.hosts.contains(host)) {
-        def dirs = config.flatten().findAll {
-            it -> it.key.indexOf("dfs.namenode.shared.edits") < 0 && it.key.toUpperCase().indexOf("DIR") > -1 && it.key.indexOf("mapred.system.dir") < 0 &&
-                    it.key.indexOf("mapreduce.jobtracker.staging.root.dir") < 0 &&
-                    it.key.indexOf("dataDirs") < 0
-        }.collect(new HashSet<>()) {
-            it.value.replaceAll("file://","").split(",")
-        }.flatten()
+
+        def dirs = []
+        config.flatten().entrySet().stream().filter { it ->
+            return it.key.indexOf("dfs.namenode.shared.edits") < 0 &&
+                    it.key.toUpperCase().indexOf("DIR") > -1 &&
+                    it.key.indexOf("mapred.system.dir") < 0 &&
+                    it.key.indexOf("dataDirs") < 0 &&
+                    it.key.indexOf("nameDirs") < 0
+
+        }.each({
+            if (it.value instanceof java.util.Collection) {
+                logger.info "collections -> {}" it
+                it.value.each{e ->
+                    dirs.addAll(e.replaceAll("file://", "").split(","))
+                }
+            } else {
+                dirs.addAll(it.value.replaceAll("file://","").split(","))
+            }
+        })
+
+        logger.info "{}",dirs
         return dirs
     }
-    return null
 
 }
 
