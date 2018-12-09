@@ -21,10 +21,16 @@ config {
              * number of partition default as the number of the 2 * ka_hosts
              * Required partitions = Max (T/P, T/C)
              */
-            //@todo
+            //@todo default as : 2 * ka_hosts
             num.partitions = settings.ka.hosts.size() * 2
             broker.id = settings.ka.hosts.indexOf(host) + 1
             zookeeper.connect = settings.zk.connect
+
+            //@todo 2 or more
+            offsets.topic.replication.factor=2
+            transaction.state.log.replication.factor=2
+            transaction.state.log.min.isr=2
+
         }
 
     }
