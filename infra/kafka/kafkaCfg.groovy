@@ -10,7 +10,9 @@ settings {
     //@todo
     ka.dataDirs = ["/data0/kafka/data","/data1/kafka/data","/data2/kafka/data","/data3/kafka/data"] as List
 }
+// please refer to https://www.evernote.com/l/Abl60pq7lmJEzYG9GWNj5aytAUl9NMbFN-8
 
+// XFS
 config {
     settings.ka.hosts.eachWithIndex { host, idx ->
         "server-(${host}).properties" {
@@ -30,6 +32,9 @@ config {
             offsets.topic.replication.factor=2
             transaction.state.log.replication.factor=2
             transaction.state.log.min.isr=2
+
+            log.retention.hours=24
+
 
         }
 
@@ -64,6 +69,10 @@ bin {
     'kafka-run-class.sh' {
         // set kafka log4j folder
         LOG_DIR = '"/data0/kafka/log"'
+        // 64 ram/ 32 cpu
+        KAFKA_HEAP_OPTS='"-Xms6g -Xmx6g"'
+        KAFKA_JVM_PERFORMANCE_OPTS='"-server -XX:MetaspaceSize=96m XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 ' +
+                '-XX:G1HeapRegionSize=16M -XX:MinMetaspaceFreeRatio=50 -XX:MaxMetaspaceFreeRatio=80"'
     }
 
 }
@@ -74,3 +83,4 @@ scripts {
     setProperty("kafka-console-consumer.sh", ["../bin/kafka-console-consumer.sh --bootstrap-server ${config.'producer.properties'.bootstrap.servers}"])
     setProperty("kafka-consumer-groups.sh", ["../bin/kafka-consumer-groups.sh --zookeeper ${settings.zk.connect}"])
 }
+
