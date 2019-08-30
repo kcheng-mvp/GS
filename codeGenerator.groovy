@@ -1,6 +1,5 @@
 #! /usr/bin/env groovy
 
-
 @Grapes([
         @Grab(group = 'com.google.guava', module = 'guava', version = '18.0'),
         @Grab(group = 'jaxen', module = 'jaxen', version = '1.1.4')
@@ -10,6 +9,7 @@ import com.google.common.base.CaseFormat
 import groovy.io.FileType;
 import groovy.xml.*
 
+import java.text.SimpleDateFormat
 import java.util.regex.Matcher
 import java.util.regex.Pattern;
 
@@ -60,7 +60,7 @@ def genSchema = {
     ]
 
 
-    def tableName = "T_${CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, entity)}";
+    def tableName = "${prefix}_${CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, entity)}";
 
     def targetFileName = null
     def columnOrderMap = [:]
@@ -171,7 +171,7 @@ def genSchema = {
 def genInsert = {
 
     def clz = getClaz();
-    def tableName = "T_${CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, entity)}";
+    def tableName = "${prefix}_${CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, entity)}";
 
     def insertBuffer = new StringBuffer(linebreak);
     def valueBuffer = new StringBuffer(" values (")
@@ -284,24 +284,39 @@ def genMapper = {
     } else {
         def fw = new FileWriter(mapper);
         def bw = new BufferedWriter(fw);
+        def now = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().time)
         bw.write("package ${mapperPackage};");
         bw.newLine();
         bw.write("import ${domainPackage}.${entity};")
         bw.write(linebreak)
+        bw.write(" ")
+        bw.newLine()
+        bw.write("/**")
+        bw.newLine()
+        bw.write("* @author ${System.getProperty("user.name")}")
+        bw.newLine()
+        bw.write("* @version ${project.version}")
+        bw.newLine()
+        bw.write("* @date ${now}")
+        bw.newLine()
+        bw.write("*/")
+        bw.newLine()
+        bw.write(" ")
+        bw.newLine()
         bw.write("public interface ${entity}Mapper {")
-        bw.newLine();
+        bw.newLine()
         bw.write("\t");
         bw.write("Long create${entity}(${entity} ${entity.toLowerCase()});");
-        bw.newLine();
+        bw.newLine()
         bw.write("\t");
         bw.write("Integer update${entity}(${entity} ${entity.toLowerCase()});");
-        bw.newLine();
+        bw.newLine()
         bw.write("\t");
         bw.write("${entity} find${entity}ById(Long id);");
-        bw.newLine();
+        bw.newLine()
         bw.write("}")
-        bw.newLine();
-        bw.close();
+        bw.newLine()
+        bw.close()
         println "**Info**: ${mapper.path}"
     }
 
