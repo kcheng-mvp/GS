@@ -13,19 +13,17 @@ import java.text.SimpleDateFormat
 import java.util.regex.Matcher
 import java.util.regex.Pattern;
 
-/*
 println "--- project.build.sourceDirectory: "+ project.build.sourceDirectory
 println "--- project.build.scriptSourceDirectory: "+ project.build.scriptSourceDirectory
 println "--- project.build.testSourceDirectory: "+ project.build.testSourceDirectory
 println "--- project.build.outputDirectory: "+ project.build.outputDirectory
 println "--- project.build.testOutputDirectory: "+ project.build.testOutputDirectory
 println "--- project.build.directory:"+ project.build.directory
-*/
 
 
 
 def linebreak = System.getProperty("line.separator");
-def resources = null;
+def resources = null
 project.build.resources.each {
     resources = it.directory
 }
@@ -52,7 +50,9 @@ def genSchema = {
     def typeMap = [
             "java.lang.String"    : "VARCHAR(10)",
             "java.lang.Integer"   : "INT",
+            "int"   : "INT",
             "java.lang.Long"      : "BIGINT",
+            "long"      : "BIGINT",
             "java.lang.Double"    : "NUMERIC(8,2)",
             "java.math.BigDecimal": "NUMERIC(12,2)",
             "java.util.Date"      : "DATETIME",
@@ -67,7 +67,7 @@ def genSchema = {
     def columnTypeMap = [:]
     def indexClause = [] as List;
     schemaFolder.eachFileRecurse { f ->
-        if (f.name.indexOf("${tableName}.SQL") > -1) {
+        if (f.name.indexOf("${tableName}.sql") > -1) {
             targetFileName = f.name
             f.eachWithIndex { line, idx ->
                 if (line && idx != 0) {
@@ -95,7 +95,11 @@ def genSchema = {
             def column = CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, prop.name);
             if (!type) {
                 if (claz.isEnum()) {
-                    type = "VARCHAR(15)"
+                    def fields = claz.getDeclaredFields()
+                    def b = fields.stream().filter{p ->
+                        p.type.name.indexOf(claz.name) < 0
+                    }.findFirst().orElse(null)
+                    type = typeMap.get(b.type.name)
                     column = CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, prop.name);
                 } else if(java.util.Collection.class.isAssignableFrom(claz)) {
                     println "**Info**: ${prop.name} (${prop.type}) is assigned from  java.util.Collection"
@@ -127,7 +131,7 @@ def genSchema = {
 
     if (!targetFileName) {
         def sdf = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss");
-        targetFileName = "V${sdf.format(Calendar.instance.getTime())}.${tableName}.SQL"
+        targetFileName = "V${sdf.format(Calendar.instance.getTime())}.${tableName}.sql"
         println "**Info**: ${targetFileName}  is generated !"
     } else {
         println "**Info**: ${targetFileName}  is updated !"
@@ -145,7 +149,7 @@ def genSchema = {
     def mysql = new File("${resources}/schema-mysql.sql");
     def cnt = 0;
     schemaFolder.listFiles().sort { it.name }.each { f ->
-        if (f.name.indexOf(".SQL") > -1) {
+        if (f.name.indexOf(".sql") > -1) {
             cnt++;
             f.eachWithIndex { line, idx ->
                 mysb.append(line).append(linebreak)
@@ -204,7 +208,7 @@ def genInsert = {
 
 def genSelectById = {
     def clz = getClaz();
-    def tableName = "T_${CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, entity)}";
+    def tableName = "${prefix}_${CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, entity)}";
 
     def selectBuffer = new StringBuffer(linebreak).append("SELECT ");
     def size = clz.metaClass.properties.size();
@@ -227,7 +231,7 @@ def genSelectById = {
 }
 def genUpdate = {
     def clz = getClaz();
-    def tableName = "T_${CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, entity)}";
+    def tableName = "${prefix}_${CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, entity)}";
 
 
     def ignoredProperties = ["createdAt", "createdBy", "id", "class", "updatedAt"]
@@ -384,9 +388,9 @@ def genMapper = {
         println "**Info**: ${mapperXml.getAbsolutePath()}"
 
     }
-
-
 }
+
+println ">>> action is ${action} ......"
 
 if (action.equalsIgnoreCase("schema")) {
     genSchema()
