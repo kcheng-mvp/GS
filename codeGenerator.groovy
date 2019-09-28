@@ -74,6 +74,8 @@ def genSchema = {
                     if (line.indexOf("ENGINE") < 0) {
                         line = line.subSequence(0, line.length() - 1);
                         def entries = line.split();
+                        if (entries.size() > 2)
+                            entries[1] = entries[1] +" " + entries[2]
                         columnTypeMap.put(entries[0], entries[1])
                         columnOrderMap.put(entries[0], idx);
                     }
