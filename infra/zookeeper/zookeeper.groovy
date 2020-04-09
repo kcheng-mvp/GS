@@ -67,7 +67,11 @@ def deploy = { config, deployable, host ->
                 if (!rt.code) {
                     rt = shell.exec("sudo chown ${ug.u}:${ug.g} ${config.conf.'zoo.cfg'.dataDir}/myid", host)
                     rt = shell.exec("stat -c '%n %U %G %y' ${config.conf.'zoo.cfg'.dataDir}/myid", host)
+                } else {
+                    println "command [echo > myid] runs into error ${rt.msg}"
                 }
+            } else {
+                println "command [ls -l myid] runs into error ${rt.msg}"
             }
 
         }
