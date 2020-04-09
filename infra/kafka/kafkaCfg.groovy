@@ -28,9 +28,9 @@ config {
             broker.id = settings.ka.hosts.indexOf(host) + 1
             zookeeper.connect = settings.zk.connect
 
-            //@todo 2 or more
-            offsets.topic.replication.factor=2
-            transaction.state.log.replication.factor=2
+            //@todo for 3 node
+            offsets.topic.replication.factor=3
+            transaction.state.log.replication.factor=3
             transaction.state.log.min.isr=2
 
             log.retention.hours=24

@@ -1,7 +1,5 @@
 #! /usr/bin/env groovy
-@Grapes([
-        @Grab(group = 'com.google.guava', module = 'guava', version = '18.0')
-])
+
 import com.google.common.base.CaseFormat
 
 import groovy.io.FileType
