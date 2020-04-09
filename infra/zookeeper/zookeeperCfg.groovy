@@ -31,6 +31,9 @@ bin {
 scripts {
     settings.hosts.eachWithIndex { h, idx ->
         setProperty("zkCli-(${h}).sh", ["../bin/zkCli.sh -server ${settings.hosts[(idx + 1) % settings.hosts.size()]}:${conf.'zoo.cfg'.clientPort}"])
+        //echo stat | nc dgvxl5199 12181
         setProperty("stat-(${h}).sh",["echo stat | nc ${settings.hosts[(idx + 1) % settings.hosts.size()]} ${conf.'zoo.cfg'.clientPort}"])
+        //echo mntr | nc localhost 12181
+        setProperty("mntr-(${h}).sh",["echo mntr | nc ${settings.hosts[(idx + 1) % settings.hosts.size()]} ${conf.'zoo.cfg'.clientPort}"])
     }
 }
