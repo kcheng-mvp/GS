@@ -23,8 +23,8 @@ config {
              * number of partition default as the number of the 2 * ka_hosts
              * Required partitions = Max (T/P, T/C)
              */
-            //@todo default as : 2 * ka_hosts
-            num.partitions = settings.ka.hosts.size() * 2
+            //@todo default as : 5 * ka_hosts but less 20
+            num.partitions = Math.min(20,settings.ka.hosts.size() * 5)
             broker.id = settings.ka.hosts.indexOf(host) + 1
             zookeeper.connect = settings.zk.connect
 
@@ -33,7 +33,7 @@ config {
             transaction.state.log.replication.factor=3
             transaction.state.log.min.isr=2
 
-            log.retention.hours=24
+            log.retention.hours=12
 
 
         }
